@@ -1,4 +1,4 @@
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onUnmounted } from 'vue'
 
 export interface Satellite {
   noradId: string
@@ -17,12 +17,15 @@ export function useWebSocket() {
   const satellites = ref<Satellite[]>([])
   const satelliteCount = ref(0)
   const lastUpdate = ref('--')
+  const isInitialized = ref(false)
 
   // 后端地址
   const wsUrl = 'ws://localhost:3001/ws/satellites'
   const apiUrl = 'http://localhost:3001/api/satellites'
 
   const initWebSocket = () => {
+    if (isInitialized.value) return
+
     try {
       ws.value = new WebSocket(wsUrl)
 
@@ -52,7 +55,56 @@ export function useWebSocket() {
         // 尝试重连
         setTimeout(() => {
           console.log('尝试重新连接...')
-          initWebSocket()
+          if (isInitialized.value) {
+            reconnect()
+          }
+        }, 5000)
+      }
+
+      ws.value.onerror = (error) => {
+        console.error('WebSocket 错误:', error)
+        status.value = '连接错误'
+      }
+
+      isInitialized.value = true
+    } catch (error) {
+      console.error('创建 WebSocket 连接失败:', error)
+      status.value = '连接失败'
+    }
+  }
+
+  // 重连（不重置 isInitialized）
+  const reconnect = () => {
+    try {
+      ws.value = new WebSocket(wsUrl)
+
+      ws.value.onopen = () => {
+        console.log('WebSocket 连接已建立')
+        status.value = '已连接'
+      }
+
+      ws.value.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data)
+
+          if (data.type === 'satellites') {
+            satellites.value = data.data
+            satelliteCount.value = data.data.length
+            lastUpdate.value = new Date(data.timestamp).toLocaleTimeString()
+          }
+        } catch (error) {
+          console.error('解析 WebSocket 消息失败:', error)
+        }
+      }
+
+      ws.value.onclose = () => {
+        console.log('WebSocket 连接已关闭')
+        status.value = '已断开'
+
+        setTimeout(() => {
+          if (isInitialized.value) {
+            reconnect()
+          }
         }, 5000)
       }
 
@@ -61,8 +113,7 @@ export function useWebSocket() {
         status.value = '连接错误'
       }
     } catch (error) {
-      console.error('创建 WebSocket 连接失败:', error)
-      status.value = '连接失败'
+      console.error('重连失败:', error)
     }
   }
 
@@ -93,16 +144,17 @@ export function useWebSocket() {
     initWebSocket()
   }
 
-  onMounted(() => {
-    initWebSocket()
-    // 也通过 HTTP 获取一次数据作为备份
-    setTimeout(fetchSatellites, 1000)
-  })
+  // 断开连接并清理
+  const disconnect = () => {
+    if (ws.value) {
+      isInitialized.value = false
+      ws.value.close()
+      ws.value = null
+    }
+  }
 
   onUnmounted(() => {
-    if (ws.value) {
-      ws.value.close()
-    }
+    disconnect()
   })
 
   return {
@@ -110,7 +162,9 @@ export function useWebSocket() {
     satellites,
     satelliteCount,
     lastUpdate,
+    isInitialized,
     connect,
+    disconnect,
     fetchSatellites,
     cleanupSatelliteImageMap
   }

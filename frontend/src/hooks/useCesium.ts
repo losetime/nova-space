@@ -1,12 +1,15 @@
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onUnmounted } from 'vue'
 import * as Cesium from 'cesium'
 
 export function useCesium() {
   const viewer = ref(null)
   const satelliteEntities = new Map()
+  const isInitialized = ref(false)
 
   // 初始化 Cesium 场景
   const initCesium = () => {
+    if (isInitialized.value) return
+
     viewer.value = new Cesium.Viewer('cesium-container', {
       baseLayerPicker: false,
       homeButton: false,
@@ -40,6 +43,8 @@ export function useCesium() {
         roll: 0
       }
     })
+
+    isInitialized.value = true
   }
 
   // 更新卫星位置
@@ -195,11 +200,8 @@ export function useCesium() {
       viewer.value = null
     }
     satelliteEntities.clear()
+    isInitialized.value = false
   }
-
-  onMounted(() => {
-    initCesium()
-  })
 
   onUnmounted(() => {
     destroyCesium()
@@ -207,6 +209,7 @@ export function useCesium() {
 
   return {
     viewer,
+    isInitialized,
     initCesium,
     updateSatellitePosition,
     updateOrbit,

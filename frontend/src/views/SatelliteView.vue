@@ -171,14 +171,26 @@ watch(satellites, (newSatellites) => {
   }
 }, { deep: true })
 
-// 监听 Cesium 初始化完成
-watch(cesium.viewer, (viewer) => {
-  if (viewer) {
-    // 延迟隐藏加载状态，确保渲染完成
+// 延迟初始化 - 先渲染页面，再加载数据
+onMounted(async () => {
+  // 使用 requestAnimationFrame 确保 DOM 已渲染
+  requestAnimationFrame(() => {
+    // 初始化 Cesium
+    cesium.initCesium()
+
+    // 初始化 WebSocket
+    websocket.connect()
+
+    // 延迟获取一次 HTTP 数据作为备份
+    setTimeout(() => {
+      websocket.fetchSatellites()
+    }, 1000)
+
+    // 延迟隐藏 loading，确保 Cesium 渲染完成
     setTimeout(() => {
       loading.value = false
-    }, 100)
-  }
+    }, 300)
+  })
 })
 
 const handleRefresh = () => {
