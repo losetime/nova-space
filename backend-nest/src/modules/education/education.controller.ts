@@ -11,7 +11,7 @@ import {
 import { EducationService } from './education.service';
 import { CreateArticleDto } from './dto/create-article.dto';
 import { SubmitAnswerDto } from './dto/submit-answer.dto';
-import { JwtAuthGuard } from '../modules/auth/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('education')
 export class EducationController {
