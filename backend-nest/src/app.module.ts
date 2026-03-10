@@ -11,7 +11,7 @@ import { PointsModule } from './modules/points/points.module';
 import { SatelliteModule } from './modules/satellite/satellite.module';
 import { AllExceptionsFilter } from './common/filters';
 import { TransformInterceptor } from './common/interceptors';
-import { EducationModule } from './education/education.module';
+import { EducationModule } from './modules/education/education.module';
 import { IntelligenceModule } from './modules/intelligence/intelligence.module';
 import appConfig from './config/app.config';
 

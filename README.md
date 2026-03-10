@@ -45,8 +45,8 @@ nova-space/
 │       │   ├── points/    # 积分模块
 │       │   ├── subscription/ # 订阅模块
 │       │   ├── satellite/ # 卫星模块
+│       │   ├── education/ # 科普模块
 │       │   └── intelligence/ # 情报模块
-│       ├── education/     # 科普模块
 │       └── main.ts
 └── docs/                  # 项目文档
 ```
