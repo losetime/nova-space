@@ -1,0 +1,198 @@
+
+Running 7 tests using 1 worker
+
+[1A[2K[1/7] [chromium] › tests\auth.spec.ts:11:3 › Nova Space 前端测试 › 首页加载
+[1A[2K  1) [chromium] › tests\auth.spec.ts:11:3 › Nova Space 前端测试 › 首页加载 ─────────────────────────────────
+
+    Error: [2mexpect([22m[31mpage[39m[2m).[22mtoHaveTitle[2m([22m[32mexpected[39m[2m)[22m failed
+
+    Expected pattern: [32m/Nova Space/[39m
+    Received string:  [31m"Vite App"[39m
+    Timeout: 5000ms
+
+    Call log:
+    [2m  - Expect "toHaveTitle" with timeout 5000ms[22m
+    [2m    8 × unexpected value "Vite App"[22m
+
+
+      11 |   test('首页加载', async ({ page }) => {
+      12 |     await page.goto('/');
+    > 13 |     await expect(page).toHaveTitle(/Nova Space/);
+         |                        ^
+      14 |   });
+      15 |
+      16 |   test('用户注册', async ({ page }) => {
+        at F:\wwp-work\nova-space\frontend\tests\auth.spec.ts:13:24
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\auth-Nova-Space-前端测试-首页加载-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\auth-Nova-Space-前端测试-首页加载-chromium\error-context.md
+
+
+[1A[2K[2/7] [chromium] › tests\auth.spec.ts:16:3 › Nova Space 前端测试 › 用户注册
+[1A[2K  2) [chromium] › tests\auth.spec.ts:16:3 › Nova Space 前端测试 › 用户注册 ─────────────────────────────────
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error: page.click: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for locator('text=注册')[22m
+
+
+      18 |     
+      19 |     // 切换到注册表单
+    > 20 |     await page.click('text=注册');
+         |                ^
+      21 |     
+      22 |     // 填写注册表单
+      23 |     await page.fill('input[placeholder="请输入用户名"]', testUser.username);
+        at F:\wwp-work\nova-space\frontend\tests\auth.spec.ts:20:16
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\auth-Nova-Space-前端测试-用户注册-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\auth-Nova-Space-前端测试-用户注册-chromium\error-context.md
+
+
+[1A[2K[3/7] [chromium] › tests\auth.spec.ts:38:3 › Nova Space 前端测试 › 用户登录
+[1A[2K  3) [chromium] › tests\auth.spec.ts:38:3 › Nova Space 前端测试 › 用户登录 ─────────────────────────────────
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error: page.click: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for locator('text=登录')[22m
+
+
+      40 |     
+      41 |     // 确保在登录表单
+    > 42 |     await page.click('text=登录');
+         |                ^
+      43 |     
+      44 |     // 填写登录表单
+      45 |     await page.fill('input[placeholder="请输入用户名"]', testUser.username);
+        at F:\wwp-work\nova-space\frontend\tests\auth.spec.ts:42:16
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\auth-Nova-Space-前端测试-用户登录-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\auth-Nova-Space-前端测试-用户登录-chromium\error-context.md
+
+
+[1A[2K[4/7] [chromium] › tests\auth.spec.ts:58:3 › Nova Space 前端测试 › 个人中心
+[1A[2K  4) [chromium] › tests\auth.spec.ts:58:3 › Nova Space 前端测试 › 个人中心 ─────────────────────────────────
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error: page.fill: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for locator('input[placeholder="请输入用户名"]')[22m
+
+
+      59 |     // 先登录
+      60 |     await page.goto('/auth');
+    > 61 |     await page.fill('input[placeholder="请输入用户名"]', testUser.username);
+         |                ^
+      62 |     await page.fill('input[placeholder="请输入密码"]', testUser.password);
+      63 |     await page.click('button:has-text("登录")');
+      64 |     await page.waitForURL(/\/$/, { timeout: 10000 });
+        at F:\wwp-work\nova-space\frontend\tests\auth.spec.ts:61:16
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\auth-Nova-Space-前端测试-个人中心-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\auth-Nova-Space-前端测试-个人中心-chromium\error-context.md
+
+
+[1A[2K[5/7] [chromium] › tests\auth.spec.ts:75:3 › Nova Space 前端测试 › 每日签到
+[1A[2K  5) [chromium] › tests\auth.spec.ts:75:3 › Nova Space 前端测试 › 每日签到 ─────────────────────────────────
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error: page.fill: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for locator('input[placeholder="请输入用户名"]')[22m
+
+
+      76 |     // 先登录
+      77 |     await page.goto('/auth');
+    > 78 |     await page.fill('input[placeholder="请输入用户名"]', testUser.username);
+         |                ^
+      79 |     await page.fill('input[placeholder="请输入密码"]', testUser.password);
+      80 |     await page.click('button:has-text("登录")');
+      81 |     await page.waitForURL(/\/$/, { timeout: 10000 });
+        at F:\wwp-work\nova-space\frontend\tests\auth.spec.ts:78:16
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\auth-Nova-Space-前端测试-每日签到-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\auth-Nova-Space-前端测试-每日签到-chromium\error-context.md
+
+
+[1A[2K[6/7] [chromium] › tests\auth.spec.ts:96:3 › Nova Space 前端测试 › 积分记录
+[1A[2K  6) [chromium] › tests\auth.spec.ts:96:3 › Nova Space 前端测试 › 积分记录 ─────────────────────────────────
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error: page.fill: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for locator('input[placeholder="请输入用户名"]')[22m
+
+
+       97 |     await page.click('.ant-btn-primary:has-text("登录")');
+       98 |     await page.waitForURL(/\/$/, { timeout: 15000 });
+    >  99 |     
+          |     ^
+      100 |     // 点击退出
+      101 |     await page.click('text=退出');
+      102 |     
+        at F:\wwp-work\nova-space\frontend\tests\auth.spec.ts:99:16
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\auth-Nova-Space-前端测试-积分记录-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\auth-Nova-Space-前端测试-积分记录-chromium\error-context.md
+
+
+[1A[2K[7/7] [chromium] › tests\auth.spec.ts:113:3 › Nova Space 前端测试 › 退出登录
+[1A[2K  7) [chromium] › tests\auth.spec.ts:113:3 › Nova Space 前端测试 › 退出登录 ────────────────────────────────
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: locator('.auth-card')
+    Expected: visible
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 10000ms[22m
+    [2m  - waiting for locator('.auth-card')[22m
+
+
+      90 |     // 先登录
+      91 |     await page.goto('/auth');
+    > 92 |     await expect(page.locator('.auth-card')).toBeVisible({ timeout: 10000 });
+         |                                              ^
+      93 |     
+      94 |     const inputs = page.locator('.ant-input');
+      95 |     await inputs.nth(0).fill(testUser.username);
+        at F:\wwp-work\nova-space\frontend\tests\auth.spec.ts:92:46
+
+
+[1A[2K  7 failed
+    [chromium] › tests\auth.spec.ts:11:3 › Nova Space 前端测试 › 首页加载 ──────────────────────────────────
+    [chromium] › tests\auth.spec.ts:16:3 › Nova Space 前端测试 › 用户注册 ──────────────────────────────────
+    [chromium] › tests\auth.spec.ts:38:3 › Nova Space 前端测试 › 用户登录 ──────────────────────────────────
+    [chromium] › tests\auth.spec.ts:58:3 › Nova Space 前端测试 › 个人中心 ──────────────────────────────────
+    [chromium] › tests\auth.spec.ts:75:3 › Nova Space 前端测试 › 每日签到 ──────────────────────────────────
+    [chromium] › tests\auth.spec.ts:96:3 › Nova Space 前端测试 › 积分记录 ──────────────────────────────────
+    [chromium] › tests\auth.spec.ts:113:3 › Nova Space 前端测试 › 退出登录 ─────────────────────────────────
+
+[36m  Serving HTML report at http://localhost:65248. Press Ctrl+C to quit.[39m
+^C^C

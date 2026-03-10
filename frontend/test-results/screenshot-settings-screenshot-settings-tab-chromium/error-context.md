@@ -1,0 +1,48 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - img "rocket" [ref=e7]:
+        - img [ref=e8]
+      - heading "Nova Space" [level=1] [ref=e10]
+      - paragraph [ref=e11]: 探索宇宙，从这里开始
+    - generic [ref=e13]:
+      - tablist [ref=e14]:
+        - generic [ref=e16]:
+          - tab "登录" [selected] [ref=e18] [cursor=pointer]
+          - tab "注册" [ref=e20] [cursor=pointer]
+      - tabpanel "登录" [ref=e23]:
+        - generic [ref=e24]:
+          - generic [ref=e26]:
+            - generic "用户名" [ref=e28]: "* 用户名"
+            - generic [ref=e32]:
+              - img "user" [ref=e34]:
+                - img [ref=e35]
+              - textbox "* 用户名" [ref=e37]:
+                - /placeholder: 请输入用户名
+          - generic [ref=e39]:
+            - generic "密码" [ref=e41]: "* 密码"
+            - generic [ref=e45]:
+              - img "lock" [ref=e47]:
+                - img [ref=e48]
+              - textbox "* 密码" [ref=e50]:
+                - /placeholder: 请输入密码
+              - img "eye-invisible" [ref=e52] [cursor=pointer]:
+                - img [ref=e53]
+          - button "登 录" [ref=e61] [cursor=pointer]:
+            - generic [ref=e62]: 登 录
+    - paragraph [ref=e64]:
+      - text: 注册即表示同意
+      - link "服务条款" [ref=e65] [cursor=pointer]:
+        - /url: "#"
+      - text: 和
+      - link "隐私政策" [ref=e66] [cursor=pointer]:
+        - /url: "#"
+  - generic [ref=e67]:
+    - generic "Toggle devtools panel" [ref=e68] [cursor=pointer]:
+      - img [ref=e69]
+    - generic "Toggle Component Inspector" [ref=e74] [cursor=pointer]:
+      - img [ref=e75]
+```

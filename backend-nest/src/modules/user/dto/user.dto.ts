@@ -1,0 +1,83 @@
+import { IsString, IsEmail, IsOptional, MinLength, MaxLength, IsEnum } from 'class-validator';
+import { UserLevel } from '../../../common/enums/user.enum';
+
+export class RegisterDto {
+  @IsString()
+  @MinLength(3)
+  @MaxLength(20)
+  username: string;
+
+  @IsString()
+  @MinLength(6)
+  @MaxLength(50)
+  password: string;
+
+  @IsOptional()
+  @IsEmail()
+  email?: string;
+
+  @IsOptional()
+  @IsString()
+  phone?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(30)
+  nickname?: string;
+}
+
+export class LoginDto {
+  @IsString()
+  username: string;
+
+  @IsString()
+  password: string;
+}
+
+export class UpdateUserDto {
+  @IsOptional()
+  @IsString()
+  @MaxLength(30)
+  nickname?: string;
+
+  @IsOptional()
+  @IsString()
+  avatar?: string;
+
+  @IsOptional()
+  @IsEmail()
+  email?: string;
+
+  @IsOptional()
+  @IsString()
+  phone?: string;
+}
+
+export class ChangePasswordDto {
+  @IsString()
+  oldPassword: string;
+
+  @IsString()
+  @MinLength(6)
+  newPassword: string;
+}
+
+export class AdminUpdateUserDto {
+  @IsOptional()
+  @IsString()
+  @MaxLength(30)
+  nickname?: string;
+
+  @IsOptional()
+  @IsEnum(UserLevel)
+  level?: UserLevel;
+
+  @IsOptional()
+  points?: number;
+
+  @IsOptional()
+  isVerified?: boolean;
+
+  @IsOptional()
+  isActive?: boolean;
+}
