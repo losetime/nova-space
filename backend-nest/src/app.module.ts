@@ -13,6 +13,8 @@ import { AllExceptionsFilter } from './common/filters';
 import { TransformInterceptor } from './common/interceptors';
 import { EducationModule } from './modules/education/education.module';
 import { IntelligenceModule } from './modules/intelligence/intelligence.module';
+import { NotificationModule } from './modules/notification/notification.module';
+import { FeedbackModule } from './modules/feedback/feedback.module';
 import appConfig from './config/app.config';
 
 @Module({
@@ -43,6 +45,8 @@ import appConfig from './config/app.config';
     SatelliteModule,
     EducationModule,
     IntelligenceModule,
+    NotificationModule,
+    FeedbackModule,
   ],
   controllers: [AppController],
   providers: [

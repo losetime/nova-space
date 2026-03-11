@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Article } from './entities/article.entity';
 import { Quiz } from './entities/quiz.entity';
 import { QuizAnswer } from './entities/quiz-answer.entity';
+import { ArticleCollect } from './entities/article-collect.entity';
 import { CreateArticleDto } from './dto/create-article.dto';
 import { SubmitAnswerDto } from './dto/submit-answer.dto';
 
@@ -164,6 +165,8 @@ export class EducationService implements OnModuleInit {
     private quizRepository: Repository<Quiz>,
     @InjectRepository(QuizAnswer)
     private quizAnswerRepository: Repository<QuizAnswer>,
+    @InjectRepository(ArticleCollect)
+    private articleCollectRepository: Repository<ArticleCollect>,
   ) {}
 
   // 模块初始化时运行种子数据
@@ -333,5 +336,52 @@ export class EducationService implements OnModuleInit {
     }
 
     return { totalAnswered, correctCount, totalPoints, streak };
+  }
+
+  // 收藏/取消收藏文章
+  async toggleCollect(userId: string, articleId: number): Promise<{ isCollected: boolean }> {
+    const existing = await this.articleCollectRepository.findOne({
+      where: { userId, articleId },
+    });
+
+    if (existing) {
+      await this.articleCollectRepository.remove(existing);
+      return { isCollected: false };
+    } else {
+      const collect = this.articleCollectRepository.create({ userId, articleId });
+      await this.articleCollectRepository.save(collect);
+      return { isCollected: true };
+    }
+  }
+
+  // 检查是否已收藏
+  async isCollected(userId: string, articleId: number): Promise<boolean> {
+    const count = await this.articleCollectRepository.count({
+      where: { userId, articleId },
+    });
+    return count > 0;
+  }
+
+  // 获取用户收藏的文章列表
+  async getUserCollects(userId: string, page = 1, limit = 10): Promise<{ data: any[]; total: number }> {
+    const [collects, total] = await this.articleCollectRepository.findAndCount({
+      where: { userId },
+      order: { createdAt: 'DESC' },
+      skip: (page - 1) * limit,
+      take: limit,
+      relations: ['article'],
+    });
+
+    const data = collects.map((collect) => ({
+      id: collect.id,
+      articleId: collect.articleId,
+      title: collect.article?.title,
+      summary: collect.article?.summary,
+      cover: collect.article?.cover,
+      category: collect.article?.category,
+      collectedAt: collect.createdAt,
+    }));
+
+    return { data, total };
   }
 }

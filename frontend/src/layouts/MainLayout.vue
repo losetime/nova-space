@@ -37,6 +37,9 @@
 
         <!-- 右侧操作区 -->
         <div class="nav-actions">
+          <!-- 通知图标 -->
+          <NotificationIcon v-if="userStore.isLoggedIn" />
+          
           <!-- 未登录状态 -->
           <template v-if="!userStore.isLoggedIn">
             <a-button type="link" class="login-btn" @click="router.push('/login')">
@@ -65,6 +68,10 @@
                   <a-menu-item key="profile">
                     <UserOutlined />
                     个人中心
+                  </a-menu-item>
+                  <a-menu-item key="feedback">
+                    <CommentOutlined />
+                    意见反馈
                   </a-menu-item>
                   <a-menu-item key="vip" class="vip-item">
                     <CrownOutlined />
@@ -107,6 +114,7 @@ import { computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 import { useUserStore } from '@/stores/user'
+import NotificationIcon from '@/components/NotificationIcon.vue'
 import {
   UserOutlined,
   GlobalOutlined,
@@ -115,7 +123,8 @@ import {
   HomeOutlined,
   DownOutlined,
   CrownOutlined,
-  LogoutOutlined
+  LogoutOutlined,
+  CommentOutlined
 } from '@ant-design/icons-vue'
 
 const route = useRoute()
@@ -153,6 +162,9 @@ const handleMenuClick = ({ key }: { key: string }) => {
   switch (key) {
     case 'profile':
       router.push('/profile')
+      break
+    case 'feedback':
+      router.push('/feedback')
       break
     case 'vip':
       router.push('/profile')

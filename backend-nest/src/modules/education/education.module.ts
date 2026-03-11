@@ -5,9 +5,10 @@ import { EducationService } from './education.service';
 import { Article } from './entities/article.entity';
 import { Quiz } from './entities/quiz.entity';
 import { QuizAnswer } from './entities/quiz-answer.entity';
+import { ArticleCollect } from './entities/article-collect.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Article, Quiz, QuizAnswer])],
+  imports: [TypeOrmModule.forFeature([Article, Quiz, QuizAnswer, ArticleCollect])],
   controllers: [EducationController],
   providers: [EducationService],
 })

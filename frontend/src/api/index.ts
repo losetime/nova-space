@@ -222,6 +222,10 @@ export const educationApi = {
   // 获取文章详情
   getArticle: (id: string | number) => api.get<ApiResponse<Article>>(`/education/articles/${id}`),
 
+  // 收藏/取消收藏文章
+  toggleCollect: (id: string | number) =>
+    api.post<ApiResponse<{ collected: boolean }>>(`/education/articles/${id}/collect`),
+
   // 获取每日问答
   getDailyQuiz: () => api.get<ApiResponse<Quiz>>('/education/quiz/daily'),
 
@@ -293,6 +297,46 @@ export const intelligenceApi = {
 
   // 获取用户收藏列表
   getUserCollects: () => api.get<ApiResponse<Intelligence[]>>('/intelligence/user/collects'),
+}
+
+// 反馈
+export interface Feedback {
+  id: string
+  userId?: string
+  type: 'bug' | 'feature' | 'suggestion' | 'other'
+  title: string
+  content: string
+  status: 'pending' | 'processing' | 'resolved' | 'closed'
+  createdAt: string
+}
+
+// 反馈 API
+export const feedbackApi = {
+  submit: (data: { type: string; title: string; content: string }) =>
+    api.post<ApiResponse<Feedback>>('/feedback', data),
+}
+
+// 通知
+export interface Notification {
+  id: string
+  userId: string
+  type: 'intelligence' | 'system' | 'achievement'
+  title: string
+  content: string
+  isRead: boolean
+  relatedId?: string
+  createdAt: string
+}
+
+// 通知 API
+export const notificationApi = {
+  getList: () => api.get<ApiResponse<Notification[]>>('/notifications'),
+
+  markRead: (id: string) => api.put<ApiResponse<void>>(`/notifications/${id}/read`),
+
+  markAllRead: () => api.put<ApiResponse<void>>('/notifications/read-all'),
+
+  getUnreadCount: () => api.get<ApiResponse<{ count: number }>>('/notifications/unread-count'),
 }
 
 export default api

@@ -57,9 +57,14 @@
             <template #icon><ShareAltOutlined /></template>
             分享
           </a-button>
-          <a-button type="text" @click="collectArticle">
+          <a-button 
+            type="text" 
+            :class="{ collected: isCollected }" 
+            :loading="collectLoading"
+            @click="collectArticle"
+          >
             <template #icon><BookOutlined /></template>
-            收藏
+            {{ isCollected ? '已收藏' : '收藏' }}
           </a-button>
         </div>
         <div class="publish-date">
@@ -93,6 +98,7 @@ import {
   BookOutlined,
 } from '@ant-design/icons-vue'
 import { educationApi } from '@/api'
+import { useUserStore } from '@/stores/user'
 
 // 配置 marked
 marked.setOptions({
@@ -116,10 +122,13 @@ interface Article {
 
 const route = useRoute()
 const router = useRouter()
+const userStore = useUserStore()
 
 const article = ref<Article | null>(null)
 const loading = ref(true)
 const isLiked = ref(false)
+const isCollected = ref(false)
+const collectLoading = ref(false)
 
 // 分类映射
 const categoryMap: Record<string, { label: string; color: string }> = {
@@ -189,8 +198,26 @@ const shareArticle = () => {
 }
 
 // 收藏
-const collectArticle = () => {
-  message.info('收藏功能开发中')
+const collectArticle = async () => {
+  if (!userStore.isLoggedIn) {
+    message.warning('请先登录')
+    router.push('/login')
+    return
+  }
+
+  if (!article.value || collectLoading.value) return
+
+  collectLoading.value = true
+  try {
+    const res = await educationApi.toggleCollect(article.value.id)
+    isCollected.value = res.data.data.isCollected
+    message.success(isCollected.value ? '已收藏' : '已取消收藏')
+  } catch (error: any) {
+    console.error('收藏失败:', error)
+    message.error(error.response?.data?.message || '操作失败')
+  } finally {
+    collectLoading.value = false
+  }
 }
 
 // 格式化日期
@@ -423,6 +450,10 @@ onMounted(() => {
 
 .actions :deep(.liked) {
   color: #1890ff;
+}
+
+.actions :deep(.collected) {
+  color: #faad14;
 }
 
 .publish-date {

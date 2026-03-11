@@ -64,4 +64,43 @@ export class EducationController {
   async getQuizStats(@Request() req: { user: { id: string } }) {
     return this.educationService.getQuizStats(req.user.id);
   }
+
+  // 收藏/取消收藏文章
+  @Post('articles/:id/collect')
+  @UseGuards(JwtAuthGuard)
+  async toggleCollect(
+    @Request() req: { user: { id: string } },
+    @Param('id') id: string,
+  ) {
+    return this.educationService.toggleCollect(req.user.id, parseInt(id, 10));
+  }
+
+  // 检查是否已收藏
+  @Get('articles/:id/collected')
+  @UseGuards(JwtAuthGuard)
+  async isCollected(
+    @Request() req: { user: { id: string } },
+    @Param('id') id: string,
+  ) {
+    const isCollected = await this.educationService.isCollected(
+      req.user.id,
+      parseInt(id, 10),
+    );
+    return { isCollected };
+  }
+
+  // 获取用户收藏的文章列表
+  @Get('articles/user/collects')
+  @UseGuards(JwtAuthGuard)
+  async getUserCollects(
+    @Request() req: { user: { id: string } },
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.educationService.getUserCollects(
+      req.user.id,
+      parseInt(page || '1', 10),
+      parseInt(limit || '10', 10),
+    );
+  }
 }
