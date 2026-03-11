@@ -200,11 +200,15 @@ const handleRefresh = () => {
 </script>
 
 <style scoped lang="scss">
+// Red Noir Design Theme
+// Primary: #ef233c | Background: #000000, #09090b, #18181b
+// Text: #ffffff, #f4f4f5, #a1a1aa | Fonts: Manrope, Inter
+
 .satellite-view {
   height: calc(100vh - 64px);
   display: flex;
   flex-direction: column;
-  background: #0a0a0f;
+  background: #000000;
   position: relative;
   overflow: hidden;
 }
@@ -216,7 +220,7 @@ const handleRefresh = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(10, 10, 15, 0.95);
+  background: rgba(0, 0, 0, 0.95);
   z-index: 1000;
 }
 
@@ -230,8 +234,8 @@ const handleRefresh = () => {
 .loading-spinner {
   width: 48px;
   height: 48px;
-  border: 3px solid rgba(0, 212, 255, 0.2);
-  border-top-color: #00d4ff;
+  border: 3px solid rgba(239, 35, 60, 0.2);
+  border-top-color: #ef233c;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -241,8 +245,9 @@ const handleRefresh = () => {
 }
 
 .loading-text {
-  color: rgba(255, 255, 255, 0.7);
+  color: #a1a1aa;
   font-size: 14px;
+  font-family: 'Inter', sans-serif;
   margin: 0;
 }
 
@@ -262,19 +267,19 @@ const handleRefresh = () => {
   align-items: center;
   gap: 12px;
   padding: 12px 20px;
-  background: rgba(15, 15, 25, 0.85);
+  background: #18181b;
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(0, 212, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4),
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6),
               inset 0 1px 0 rgba(255, 255, 255, 0.05);
   transition: all 0.3s ease;
 
   &:hover {
     transform: translateY(-2px);
-    border-color: rgba(0, 212, 255, 0.25);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5),
-                0 0 30px rgba(0, 212, 255, 0.1);
+    border-color: rgba(239, 35, 60, 0.4);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.7),
+                0 0 30px rgba(239, 35, 60, 0.15);
   }
 
   .stat-icon {
@@ -288,26 +293,26 @@ const handleRefresh = () => {
     transition: all 0.3s;
 
     &.satellites {
-      background: linear-gradient(135deg, rgba(0, 212, 255, 0.15) 0%, rgba(0, 212, 255, 0.05) 100%);
-      color: #00d4ff;
-      box-shadow: 0 0 20px rgba(0, 212, 255, 0.2);
+      background: linear-gradient(135deg, rgba(239, 35, 60, 0.2) 0%, rgba(239, 35, 60, 0.05) 100%);
+      color: #ef233c;
+      box-shadow: 0 0 20px rgba(239, 35, 60, 0.25);
     }
 
     &.connection {
-      background: linear-gradient(135deg, rgba(255, 77, 77, 0.15) 0%, rgba(255, 77, 77, 0.05) 100%);
-      color: #ff4d4d;
+      background: linear-gradient(135deg, rgba(239, 35, 60, 0.15) 0%, rgba(239, 35, 60, 0.05) 100%);
+      color: #ef233c;
 
       &.connected {
-        background: linear-gradient(135deg, rgba(0, 255, 136, 0.15) 0%, rgba(0, 255, 136, 0.05) 100%);
-        color: #00ff88;
-        box-shadow: 0 0 20px rgba(0, 255, 136, 0.2);
+        background: linear-gradient(135deg, rgba(239, 35, 60, 0.25) 0%, rgba(239, 35, 60, 0.1) 100%);
+        color: #ef233c;
+        box-shadow: 0 0 20px rgba(239, 35, 60, 0.35);
         animation: pulse-glow 2s ease-in-out infinite;
       }
     }
 
     &.time {
-      background: linear-gradient(135deg, rgba(123, 44, 191, 0.15) 0%, rgba(123, 44, 191, 0.05) 100%);
-      color: #7b2cbf;
+      background: linear-gradient(135deg, rgba(239, 35, 60, 0.15) 0%, rgba(239, 35, 60, 0.05) 100%);
+      color: #ef233c;
     }
   }
 
@@ -319,25 +324,27 @@ const handleRefresh = () => {
     .stat-value {
       font-size: 15px;
       font-weight: 600;
-      color: #fff;
+      color: #ffffff;
+      font-family: 'Manrope', sans-serif;
       letter-spacing: 0.5px;
     }
 
     .stat-label {
       font-size: 11px;
-      color: rgba(255, 255, 255, 0.45);
+      color: #a1a1aa;
       text-transform: uppercase;
       letter-spacing: 0.5px;
+      font-family: 'Inter', sans-serif;
     }
   }
 }
 
 @keyframes pulse-glow {
   0%, 100% {
-    box-shadow: 0 0 20px rgba(0, 255, 136, 0.2);
+    box-shadow: 0 0 20px rgba(239, 35, 60, 0.25);
   }
   50% {
-    box-shadow: 0 0 30px rgba(0, 255, 136, 0.4);
+    box-shadow: 0 0 30px rgba(239, 35, 60, 0.45);
   }
 }
 
@@ -352,11 +359,11 @@ const handleRefresh = () => {
 // 侧边栏通用样式
 .sidebar, .detail-sidebar {
   width: 320px;
-  background: rgba(12, 12, 20, 0.8);
+  background: #09090b;
   backdrop-filter: blur(20px);
   display: flex;
   flex-direction: column;
-  border-right: 1px solid rgba(0, 212, 255, 0.08);
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
 
   .sidebar-header {
     height: 56px;
@@ -364,7 +371,7 @@ const handleRefresh = () => {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    border-bottom: 1px solid rgba(0, 212, 255, 0.08);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     flex-shrink: 0;
 
     .header-title {
@@ -373,11 +380,12 @@ const handleRefresh = () => {
       gap: 10px;
       font-size: 14px;
       font-weight: 600;
-      color: #fff;
+      color: #ffffff;
+      font-family: 'Manrope', sans-serif;
 
       .title-icon {
         font-size: 16px;
-        color: #00d4ff;
+        color: #ef233c;
       }
     }
 
@@ -387,13 +395,13 @@ const handleRefresh = () => {
       display: flex;
       align-items: center;
       justify-content: center;
-      color: rgba(255, 255, 255, 0.5);
+      color: #a1a1aa;
       border-radius: 8px;
       transition: all 0.2s;
 
       &:hover {
-        background: rgba(0, 212, 255, 0.1);
-        color: #00d4ff;
+        background: rgba(239, 35, 60, 0.15);
+        color: #ef233c;
       }
     }
   }
@@ -401,7 +409,7 @@ const handleRefresh = () => {
 
 .detail-sidebar {
   border-right: none;
-  border-left: 1px solid rgba(0, 212, 255, 0.08);
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 // 面板触发器
@@ -414,11 +422,12 @@ const handleRefresh = () => {
   align-items: center;
   gap: 8px;
   padding: 12px 16px;
-  background: rgba(15, 15, 25, 0.9);
+  background: #18181b;
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(0, 212, 255, 0.15);
-  color: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #a1a1aa;
   font-size: 13px;
+  font-family: 'Inter', sans-serif;
   cursor: pointer;
   transition: all 0.3s ease;
 
@@ -435,9 +444,9 @@ const handleRefresh = () => {
   }
 
   &:hover {
-    background: rgba(0, 212, 255, 0.1);
-    border-color: rgba(0, 212, 255, 0.3);
-    color: #00d4ff;
+    background: rgba(239, 35, 60, 0.15);
+    border-color: rgba(239, 35, 60, 0.4);
+    color: #ef233c;
     padding: 12px 20px;
   }
 }
@@ -446,7 +455,7 @@ const handleRefresh = () => {
 .visualization-area {
   flex: 1;
   position: relative;
-  background: radial-gradient(ellipse at center, #0f1628 0%, #0a0a0f 70%);
+  background: radial-gradient(ellipse at center, #18181b 0%, #000000 70%);
 }
 
 .cesium-container {
@@ -504,9 +513,9 @@ const handleRefresh = () => {
   align-items: center;
   gap: 16px;
   padding: 8px 16px;
-  background: rgba(15, 15, 25, 0.85);
+  background: #18181b;
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(0, 212, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 24px;
   z-index: 100;
 
@@ -524,24 +533,25 @@ const handleRefresh = () => {
     width: 140px;
 
     :deep(.ant-select-selector) {
-      background: rgba(0, 212, 255, 0.08) !important;
-      border: 1px solid rgba(0, 212, 255, 0.2) !important;
+      background: rgba(239, 35, 60, 0.1) !important;
+      border: 1px solid rgba(255, 255, 255, 0.1) !important;
       border-radius: 20px !important;
-      color: #fff !important;
+      color: #ffffff !important;
       padding: 4px 12px !important;
       height: auto !important;
 
       &:hover {
-        border-color: rgba(0, 212, 255, 0.4) !important;
+        border-color: rgba(239, 35, 60, 0.5) !important;
       }
     }
 
     :deep(.ant-select-arrow) {
-      color: rgba(255, 255, 255, 0.5);
+      color: #a1a1aa;
     }
 
     :deep(.ant-select-selection-item) {
       font-size: 13px;
+      font-family: 'Inter', sans-serif;
     }
   }
 
@@ -551,13 +561,13 @@ const handleRefresh = () => {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: rgba(255, 255, 255, 0.6);
+    color: #a1a1aa;
     border-radius: 50%;
     transition: all 0.2s;
 
     &:hover {
-      background: rgba(0, 212, 255, 0.15);
-      color: #00d4ff;
+      background: rgba(239, 35, 60, 0.15);
+      color: #ef233c;
     }
   }
 }

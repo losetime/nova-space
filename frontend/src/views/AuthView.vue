@@ -1,17 +1,25 @@
 <template>
   <div class="auth-view">
+    <!-- Background Effects -->
+    <div class="auth-bg">
+      <div class="glow-orb glow-orb-1"></div>
+      <div class="glow-orb glow-orb-2"></div>
+    </div>
+
     <div class="auth-container">
+      <!-- Header -->
       <div class="auth-header">
         <div class="logo">
-          <RocketOutlined />
+          <span>N</span>
         </div>
         <h1>Nova Space</h1>
         <p>探索宇宙，从这里开始</p>
       </div>
 
+      <!-- Auth Card -->
       <div class="auth-card">
         <a-tabs v-model:activeKey="activeTab" centered>
-          <!-- 登录 -->
+          <!-- Login Tab -->
           <a-tab-pane key="login" tab="登录">
             <a-form
               :model="loginForm"
@@ -44,20 +52,14 @@
               </a-form-item>
 
               <a-form-item>
-                <a-button
-                  type="primary"
-                  html-type="submit"
-                  size="large"
-                  block
-                  :loading="loading"
-                >
+                <RedButton variant="primary" size="lg" :loading="loading" style="width: 100%">
                   登录
-                </a-button>
+                </RedButton>
               </a-form-item>
             </a-form>
           </a-tab-pane>
 
-          <!-- 注册 -->
+          <!-- Register Tab -->
           <a-tab-pane key="register" tab="注册">
             <a-form
               :model="registerForm"
@@ -114,21 +116,16 @@
               </a-form-item>
 
               <a-form-item>
-                <a-button
-                  type="primary"
-                  html-type="submit"
-                  size="large"
-                  block
-                  :loading="loading"
-                >
+                <RedButton variant="shiny" size="lg" :loading="loading" style="width: 100%">
                   注册
-                </a-button>
+                </RedButton>
               </a-form-item>
             </a-form>
           </a-tab-pane>
         </a-tabs>
       </div>
 
+      <!-- Footer -->
       <div class="auth-footer">
         <p>注册即表示同意 <a href="#">服务条款</a> 和 <a href="#">隐私政策</a></p>
       </div>
@@ -144,9 +141,9 @@ import {
   UserOutlined,
   LockOutlined,
   MailOutlined,
-  RocketOutlined,
 } from '@ant-design/icons-vue'
 import { useUserStore } from '@/stores/user'
+import RedButton from '@/components/RedButton.vue'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -154,13 +151,13 @@ const userStore = useUserStore()
 const activeTab = ref('login')
 const loading = ref(false)
 
-// 登录表单
+// Login form
 const loginForm = reactive({
   username: '',
   password: '',
 })
 
-// 注册表单
+// Register form
 const registerForm = reactive({
   username: '',
   email: '',
@@ -168,13 +165,13 @@ const registerForm = reactive({
   confirmPassword: '',
 })
 
-// 登录校验规则
+// Login validation rules
 const loginRules = {
   username: [{ required: true, message: '请输入用户名' }],
   password: [{ required: true, message: '请输入密码' }],
 }
 
-// 注册校验规则
+// Register validation rules
 const registerRules = {
   username: [
     { required: true, message: '请输入用户名' },
@@ -201,7 +198,7 @@ const registerRules = {
   ],
 }
 
-// 登录
+// Handle login
 async function handleLogin() {
   loading.value = true
   try {
@@ -217,7 +214,7 @@ async function handleLogin() {
   }
 }
 
-// 注册
+// Handle register
 async function handleRegister() {
   loading.value = true
   try {
@@ -238,163 +235,194 @@ async function handleRegister() {
 }
 </script>
 
-<style scoped lang="scss">
+<style scoped>
 .auth-view {
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #0a0a0f 100%);
+  background: var(--color-bg-primary);
   padding: 24px;
+  position: relative;
+  overflow: hidden;
 }
 
+/* Background Effects */
+.auth-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.glow-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(100px);
+}
+
+.glow-orb-1 {
+  width: 400px;
+  height: 400px;
+  top: -100px;
+  right: -100px;
+  background: var(--color-primary);
+  opacity: 0.1;
+}
+
+.glow-orb-2 {
+  width: 300px;
+  height: 300px;
+  bottom: -50px;
+  left: -50px;
+  background: var(--color-primary);
+  opacity: 0.08;
+}
+
+/* Container */
 .auth-container {
   width: 100%;
   max-width: 420px;
+  position: relative;
+  z-index: 1;
 }
 
+/* Header */
 .auth-header {
   text-align: center;
   margin-bottom: 32px;
-
-  .logo {
-    width: 80px;
-    height: 80px;
-    background: linear-gradient(135deg, #00d4ff 0%, #7b2cbf 100%);
-    border-radius: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 16px;
-    font-size: 40px;
-    color: #fff;
-    box-shadow: 0 10px 40px rgba(0, 212, 255, 0.3);
-  }
-
-  h1 {
-    font-size: 32px;
-    font-weight: 700;
-    color: #fff;
-    margin-bottom: 8px;
-    background: linear-gradient(135deg, #00d4ff 0%, #7b2cbf 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  p {
-    font-size: 14px;
-    color: rgba(255, 255, 255, 0.6);
-  }
 }
 
+.auth-header .logo {
+  width: 72px;
+  height: 72px;
+  background: var(--color-primary);
+  transform: rotate(45deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+  border-radius: 12px;
+  box-shadow: 0 0 40px rgba(239, 35, 60, 0.4);
+}
+
+.auth-header .logo span {
+  transform: rotate(-45deg);
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-size: 32px;
+  color: white;
+}
+
+.auth-header h1 {
+  font-family: var(--font-heading);
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-bottom: 8px;
+}
+
+.auth-header p {
+  font-size: 14px;
+  color: var(--color-text-muted);
+}
+
+/* Auth Card */
 .auth-card {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(0, 212, 255, 0.2);
+  background: var(--color-bg-tertiary);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 16px;
   padding: 32px;
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(12px);
+}
 
-  :deep(.ant-tabs) {
-    .ant-tabs-nav {
-      margin-bottom: 24px;
-
-      &::before {
-        border-bottom-color: rgba(255, 255, 255, 0.1);
-      }
-    }
-
-    .ant-tabs-tab {
-      color: rgba(255, 255, 255, 0.6);
-      font-size: 16px;
-
-      &:hover {
-        color: #00d4ff;
-      }
-
-      &.ant-tabs-tab-active {
-        .ant-tabs-tab-btn {
-          color: #00d4ff;
-        }
-      }
-    }
-
-    .ant-tabs-ink-bar {
-      background: linear-gradient(135deg, #00d4ff 0%, #7b2cbf 100%);
-    }
+/* Ant Design Tabs Override */
+.auth-card :deep(.ant-tabs) {
+  .ant-tabs-nav {
+    margin-bottom: 24px;
   }
 
-  :deep(.ant-form) {
-    .ant-form-item-label > label {
-      color: rgba(255, 255, 255, 0.8);
-    }
+  .ant-tabs-nav::before {
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+  }
 
-    .ant-input,
-    .ant-input-password {
-      background: rgba(255, 255, 255, 0.05);
-      border-color: rgba(255, 255, 255, 0.1);
-      color: #fff;
+  .ant-tabs-tab {
+    color: var(--color-text-muted);
+    font-size: 16px;
+    font-weight: 500;
+  }
 
-      &::placeholder {
-        color: rgba(255, 255, 255, 0.3);
-      }
+  .ant-tabs-tab:hover {
+    color: var(--color-text-secondary);
+  }
 
-      &:hover,
-      &:focus {
-        border-color: #00d4ff;
-        box-shadow: 0 0 0 2px rgba(0, 212, 255, 0.1);
-      }
-    }
+  .ant-tabs-tab-active .ant-tabs-tab-btn {
+    color: var(--color-primary);
+  }
 
-    .ant-input-affix-wrapper {
-      background: rgba(255, 255, 255, 0.05);
-      border-color: rgba(255, 255, 255, 0.1);
-
-      &:hover,
-      &:focus,
-      &.ant-input-affix-wrapper-focused {
-        border-color: #00d4ff;
-        box-shadow: 0 0 0 2px rgba(0, 212, 255, 0.1);
-      }
-
-      .ant-input {
-        background: transparent;
-      }
-    }
-
-    .ant-input-prefix {
-      color: rgba(255, 255, 255, 0.4);
-    }
-
-    .ant-btn-primary {
-      background: linear-gradient(135deg, #00d4ff 0%, #7b2cbf 100%);
-      border: none;
-      height: 48px;
-      font-size: 16px;
-      font-weight: 500;
-
-      &:hover {
-        opacity: 0.9;
-      }
-    }
+  .ant-tabs-ink-bar {
+    background: var(--color-primary);
   }
 }
 
+/* Ant Design Form Override */
+.auth-card :deep(.ant-form) {
+  .ant-form-item-label > label {
+    color: var(--color-text-secondary);
+    font-weight: 500;
+  }
+
+  .ant-input,
+  .ant-input-password {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: var(--color-text-primary);
+  }
+
+  .ant-input::placeholder,
+  .ant-input-password input::placeholder {
+    color: var(--color-text-subtle);
+  }
+
+  .ant-input:hover,
+  .ant-input:focus,
+  .ant-input-affix-wrapper:hover,
+  .ant-input-affix-wrapper-focused {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px rgba(239, 35, 60, 0.1);
+  }
+
+  .ant-input-affix-wrapper {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .ant-input-prefix {
+    color: var(--color-text-subtle);
+  }
+
+  .ant-form-item-explain-error {
+    color: var(--color-primary);
+  }
+}
+
+/* Footer */
 .auth-footer {
   text-align: center;
   margin-top: 24px;
+}
 
-  p {
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.4);
+.auth-footer p {
+  font-size: 12px;
+  color: var(--color-text-subtle);
+}
 
-    a {
-      color: #00d4ff;
+.auth-footer a {
+  color: var(--color-primary);
+  transition: color 150ms ease;
+}
 
-      &:hover {
-        text-decoration: underline;
-      }
-    }
-  }
+.auth-footer a:hover {
+  color: var(--color-text-primary);
+  text-decoration: underline;
 }
 </style>

@@ -121,14 +121,14 @@ const article = ref<Article | null>(null)
 const loading = ref(true)
 const isLiked = ref(false)
 
-// 分类映射
+// 分类映射 - Red Noir 主题统一使用红色
 const categoryMap: Record<string, { label: string; color: string }> = {
-  basics: { label: '基础知识', color: 'blue' },
-  satellite: { label: '卫星技术', color: 'green' },
-  rocket: { label: '火箭技术', color: 'orange' },
-  mission: { label: '航天任务', color: 'purple' },
-  people: { label: '航天人物', color: 'cyan' },
-  history: { label: '航天历史', color: 'gold' },
+  basics: { label: '基础知识', color: 'red' },
+  satellite: { label: '卫星技术', color: 'red' },
+  rocket: { label: '火箭技术', color: 'red' },
+  mission: { label: '航天任务', color: 'red' },
+  people: { label: '航天人物', color: 'red' },
+  history: { label: '航天历史', color: 'red' },
 }
 
 const categoryLabel = computed(() => {
@@ -214,6 +214,8 @@ onMounted(() => {
   max-width: 900px;
   margin: 0 auto;
   padding: 24px;
+  min-height: 100vh;
+  background: #000000;
 }
 
 .loading-container,
@@ -223,7 +225,12 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   min-height: 400px;
-  color: rgba(255, 255, 255, 0.65);
+  color: #a1a1aa;
+}
+
+.loading-container p {
+  color: #a1a1aa;
+  margin-top: 16px;
 }
 
 .back-nav {
@@ -231,15 +238,20 @@ onMounted(() => {
 }
 
 .back-nav :deep(.ant-btn) {
-  color: rgba(255, 255, 255, 0.65);
+  color: #a1a1aa;
+  transition: all 0.3s ease;
 }
 
 .back-nav :deep(.ant-btn:hover) {
-  color: #1890ff;
+  color: #ef233c;
 }
 
 .article-header {
   margin-bottom: 32px;
+  padding: 24px;
+  background: #18181b;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .article-meta {
@@ -247,8 +259,9 @@ onMounted(() => {
   align-items: center;
   gap: 16px;
   margin-bottom: 16px;
-  color: rgba(255, 255, 255, 0.45);
+  color: #a1a1aa;
   font-size: 14px;
+  font-family: 'Inter', sans-serif;
 }
 
 .article-meta span {
@@ -260,16 +273,18 @@ onMounted(() => {
 .article-title {
   font-size: 32px;
   font-weight: 600;
-  color: #fff;
+  color: #ffffff;
   margin: 0 0 16px;
   line-height: 1.4;
+  font-family: 'Manrope', sans-serif;
 }
 
 .article-summary {
   font-size: 18px;
-  color: rgba(255, 255, 255, 0.65);
+  color: #f4f4f5;
   margin: 0 0 16px;
   line-height: 1.6;
+  font-family: 'Inter', sans-serif;
 }
 
 .article-tags {
@@ -278,10 +293,17 @@ onMounted(() => {
   gap: 8px;
 }
 
+.article-tags :deep(.ant-tag) {
+  background: rgba(239, 35, 60, 0.15);
+  border-color: rgba(239, 35, 60, 0.3);
+  color: #ef233c;
+}
+
 .article-cover {
   margin-bottom: 32px;
   border-radius: 12px;
   overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .article-cover img {
@@ -291,17 +313,23 @@ onMounted(() => {
 }
 
 .article-body {
-  color: rgba(255, 255, 255, 0.85);
+  color: #f4f4f5;
   font-size: 16px;
   line-height: 1.8;
+  font-family: 'Inter', sans-serif;
+  padding: 24px;
+  background: #18181b;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .article-body :deep(h1),
 .article-body :deep(h2),
 .article-body :deep(h3) {
-  color: #fff;
+  color: #ffffff;
   margin-top: 32px;
   margin-bottom: 16px;
+  font-family: 'Manrope', sans-serif;
 }
 
 .article-body :deep(h1) {
@@ -333,12 +361,12 @@ onMounted(() => {
 }
 
 .article-body :deep(blockquote) {
-  border-left: 4px solid #1890ff;
+  border-left: 4px solid #ef233c;
   padding: 12px 16px;
   margin: 16px 0;
-  background: rgba(24, 144, 255, 0.1);
+  background: rgba(239, 35, 60, 0.1);
   border-radius: 0 8px 8px 0;
-  color: rgba(255, 255, 255, 0.75);
+  color: #f4f4f5;
 }
 
 .article-body :deep(code) {
@@ -347,32 +375,37 @@ onMounted(() => {
   border-radius: 4px;
   font-family: 'Fira Code', monospace;
   font-size: 14px;
+  color: #ef233c;
 }
 
 .article-body :deep(pre) {
-  background: rgba(0, 0, 0, 0.3);
+  background: #09090b;
   padding: 16px;
   border-radius: 8px;
   overflow-x: auto;
   margin: 16px 0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .article-body :deep(pre code) {
   background: none;
   padding: 0;
+  color: #f4f4f5;
 }
 
 .article-body :deep(strong) {
-  color: #fff;
+  color: #ffffff;
   font-weight: 600;
 }
 
 .article-body :deep(a) {
-  color: #1890ff;
+  color: #ef233c;
+  transition: all 0.3s ease;
 }
 
 .article-body :deep(a:hover) {
   text-decoration: underline;
+  color: #ff4d5f;
 }
 
 .article-body :deep(hr) {
@@ -395,14 +428,17 @@ onMounted(() => {
 }
 
 .article-body :deep(th) {
-  background: rgba(255, 255, 255, 0.05);
+  background: #09090b;
   font-weight: 600;
+  color: #ffffff;
 }
 
 .article-footer {
   margin-top: 48px;
-  padding-top: 24px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 24px;
+  background: #18181b;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -414,20 +450,71 @@ onMounted(() => {
 }
 
 .actions :deep(.ant-btn) {
-  color: rgba(255, 255, 255, 0.65);
+  color: #a1a1aa;
+  transition: all 0.3s ease;
 }
 
 .actions :deep(.ant-btn:hover) {
-  color: #1890ff;
+  color: #ef233c;
 }
 
 .actions :deep(.liked) {
-  color: #1890ff;
+  color: #ef233c;
 }
 
 .publish-date {
-  color: rgba(255, 255, 255, 0.45);
+  color: #a1a1aa;
   font-size: 14px;
+  font-family: 'Inter', sans-serif;
+}
+
+/* 分类标签颜色 - Red Noir 主题 */
+:deep(.ant-tag-blue) {
+  background: rgba(239, 35, 60, 0.15) !important;
+  border-color: rgba(239, 35, 60, 0.3) !important;
+  color: #ef233c !important;
+}
+
+:deep(.ant-tag-green) {
+  background: rgba(239, 35, 60, 0.15) !important;
+  border-color: rgba(239, 35, 60, 0.3) !important;
+  color: #ef233c !important;
+}
+
+:deep(.ant-tag-orange) {
+  background: rgba(239, 35, 60, 0.15) !important;
+  border-color: rgba(239, 35, 60, 0.3) !important;
+  color: #ef233c !important;
+}
+
+:deep(.ant-tag-purple) {
+  background: rgba(239, 35, 60, 0.15) !important;
+  border-color: rgba(239, 35, 60, 0.3) !important;
+  color: #ef233c !important;
+}
+
+:deep(.ant-tag-cyan) {
+  background: rgba(239, 35, 60, 0.15) !important;
+  border-color: rgba(239, 35, 60, 0.3) !important;
+  color: #ef233c !important;
+}
+
+:deep(.ant-tag-gold) {
+  background: rgba(239, 35, 60, 0.15) !important;
+  border-color: rgba(239, 35, 60, 0.3) !important;
+  color: #ef233c !important;
+}
+
+:deep(.ant-tag-default) {
+  background: rgba(239, 35, 60, 0.15) !important;
+  border-color: rgba(239, 35, 60, 0.3) !important;
+  color: #ef233c !important;
+}
+
+:deep(.ant-tag-red) {
+  background: rgba(239, 35, 60, 0.15) !important;
+  border-color: rgba(239, 35, 60, 0.3) !important;
+  color: #ef233c !important;
 }
 
 @media (max-width: 768px) {

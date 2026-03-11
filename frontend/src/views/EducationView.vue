@@ -260,7 +260,7 @@ const formatViews = (views: number) => {
 // 图片加载失败处理
 const handleImageError = (e: Event) => {
   const target = e.target as HTMLImageElement
-  target.src = 'https://via.placeholder.com/400x225/1a1a2e/00d4ff?text=航天科普'
+  target.src = 'https://via.placeholder.com/400x225/18181b/ef233c?text=航天科普'
 }
 
 // 打开文章详情
@@ -275,9 +275,23 @@ onMounted(() => {
 </script>
 
 <style scoped lang="scss">
+// Red Noir 设计主题变量
+$primary-red: #ef233c;
+$primary-red-dark: #d90429;
+$primary-red-light: #ff4d6d;
+$bg-black: #000000;
+$bg-dark: #09090b;
+$bg-card: #18181b;
+$text-white: #ffffff;
+$text-light: #f4f4f5;
+$text-muted: #a1a1aa;
+$border-subtle: rgba(255, 255, 255, 0.1);
+$border-hover: rgba(255, 255, 255, 0.2);
+
 .education-view {
   min-height: calc(100vh - 64px);
-  background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 100%);
+  background: $bg-black;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 .edu-hero {
@@ -285,54 +299,90 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: radial-gradient(ellipse at center, rgba(0, 212, 255, 0.1) 0%, transparent 70%);
-  border-bottom: 1px solid rgba(0, 212, 255, 0.1);
+  background: $bg-black;
+  position: relative;
+  overflow: hidden;
+
+  // 红色发光效果
+  &::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 600px;
+    height: 300px;
+    background: radial-gradient(ellipse, rgba($primary-red, 0.15) 0%, transparent 70%);
+    pointer-events: none;
+  }
 
   .hero-content {
     text-align: center;
+    position: relative;
+    z-index: 1;
 
     h1 {
       font-size: 48px;
       font-weight: 700;
-      background: linear-gradient(135deg, #00d4ff 0%, #7b2cbf 100%);
+      font-family: 'Manrope', 'Inter', sans-serif;
+      background: linear-gradient(135deg, $primary-red 0%, $primary-red-light 50%, $primary-red-dark 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
       margin-bottom: 16px;
+      text-shadow: 0 0 60px rgba($primary-red, 0.5);
+      filter: drop-shadow(0 0 30px rgba($primary-red, 0.3));
     }
 
     p {
       font-size: 18px;
-      color: rgba(255, 255, 255, 0.6);
+      color: $text-muted;
     }
   }
 }
 
 .category-nav {
   padding: 24px 0;
-  border-bottom: 1px solid rgba(0, 212, 255, 0.1);
+  background: $bg-dark;
+  border-bottom: 1px solid $border-subtle;
 
   :deep(.ant-tabs) {
     .ant-tabs-nav {
       margin: 0;
+      background: transparent;
+
+      &::before {
+        border-bottom: none;
+      }
     }
 
     .ant-tabs-tab {
-      color: rgba(255, 255, 255, 0.7);
+      color: $text-muted;
       font-size: 16px;
       padding: 12px 24px;
+      transition: all 0.3s ease;
 
       &:hover {
-        color: #00d4ff;
+        color: $text-light;
       }
 
       &.ant-tabs-tab-active {
-        color: #00d4ff;
+        color: $primary-red;
+
+        .ant-tabs-tab-btn {
+          color: $primary-red;
+        }
+      }
+
+      .anticon {
+        margin-right: 8px;
       }
     }
 
     .ant-tabs-ink-bar {
-      background: linear-gradient(135deg, #00d4ff 0%, #7b2cbf 100%);
+      background: $primary-red;
+      height: 3px;
+      border-radius: 2px;
     }
   }
 }
@@ -341,6 +391,7 @@ onMounted(() => {
   padding: 40px 24px;
   max-width: 1440px;
   margin: 0 auto;
+  background: $bg-black;
 }
 
 .loading-container {
@@ -349,7 +400,7 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   padding: 80px 0;
-  color: rgba(255, 255, 255, 0.5);
+  color: $text-muted;
 
   p {
     margin-top: 16px;
@@ -364,8 +415,8 @@ onMounted(() => {
 }
 
 .content-card {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(0, 212, 255, 0.1);
+  background: $bg-card;
+  border: 1px solid $border-subtle;
   border-radius: 12px;
   overflow: hidden;
   transition: all 0.3s ease;
@@ -373,8 +424,12 @@ onMounted(() => {
 
   &:hover {
     transform: translateY(-8px);
-    border-color: rgba(0, 212, 255, 0.3);
-    box-shadow: 0 20px 40px rgba(0, 212, 255, 0.1);
+    border-color: $border-hover;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 0 20px rgba($primary-red, 0.1);
+
+    .card-body h3 {
+      color: $primary-red-light;
+    }
   }
 
   .card-cover {
@@ -386,18 +441,25 @@ onMounted(() => {
       width: 100%;
       height: 100%;
       object-fit: cover;
+      transition: transform 0.3s ease;
     }
 
     .card-type {
       position: absolute;
       top: 12px;
       right: 12px;
-      background: rgba(0, 0, 0, 0.7);
-      color: #00d4ff;
+      background: rgba(0, 0, 0, 0.8);
+      color: $primary-red;
       padding: 4px 12px;
       border-radius: 4px;
       font-size: 12px;
+      font-weight: 500;
+      border: 1px solid rgba($primary-red, 0.3);
     }
+  }
+
+  &:hover .card-cover img {
+    transform: scale(1.05);
   }
 
   .card-body {
@@ -406,13 +468,15 @@ onMounted(() => {
     h3 {
       font-size: 18px;
       font-weight: 600;
-      color: #fff;
+      color: $text-white;
       margin-bottom: 12px;
+      transition: color 0.3s ease;
+      font-family: 'Manrope', 'Inter', sans-serif;
     }
 
     p {
       font-size: 14px;
-      color: rgba(255, 255, 255, 0.5);
+      color: $text-muted;
       line-height: 1.6;
       margin-bottom: 16px;
       display: -webkit-box;
@@ -425,7 +489,7 @@ onMounted(() => {
       display: flex;
       gap: 16px;
       font-size: 13px;
-      color: rgba(255, 255, 255, 0.4);
+      color: rgba($text-muted, 0.7);
 
       span {
         display: flex;
@@ -439,14 +503,14 @@ onMounted(() => {
 .empty-state {
   text-align: center;
   padding: 80px 0;
-  color: rgba(255, 255, 255, 0.5);
+  color: $text-muted;
 }
 
 .daily-quiz {
   max-width: 600px;
   margin: 0 auto;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(0, 212, 255, 0.1);
+  background: $bg-card;
+  border: 1px solid $border-subtle;
   border-radius: 16px;
   padding: 32px;
 
@@ -459,19 +523,20 @@ onMounted(() => {
     h2 {
       font-size: 24px;
       font-weight: 600;
-      color: #fff;
+      color: $text-white;
       display: flex;
       align-items: center;
       gap: 8px;
+      font-family: 'Manrope', 'Inter', sans-serif;
 
       .anticon {
-        color: #ff6b35;
+        color: $primary-red;
       }
     }
 
     span {
       font-size: 14px;
-      color: rgba(255, 255, 255, 0.5);
+      color: $text-muted;
     }
   }
 
@@ -480,8 +545,18 @@ onMounted(() => {
     padding: 40px 0;
 
     p {
-      color: rgba(255, 255, 255, 0.5);
+      color: $text-muted;
       margin-bottom: 16px;
+    }
+
+    .ant-btn-primary {
+      background: $primary-red;
+      border-color: $primary-red;
+
+      &:hover {
+        background: $primary-red-light;
+        border-color: $primary-red-light;
+      }
     }
   }
 
@@ -497,16 +572,16 @@ onMounted(() => {
 
     .done-icon {
       font-size: 48px;
-      color: #52c41a;
+      color: #22c55e;
       margin-bottom: 16px;
     }
 
     p {
-      color: rgba(255, 255, 255, 0.7);
+      color: $text-light;
       margin: 0;
 
       &.done-sub {
-        color: rgba(255, 255, 255, 0.4);
+        color: $text-muted;
         font-size: 14px;
         margin-top: 8px;
       }
@@ -518,7 +593,7 @@ onMounted(() => {
       margin-bottom: 24px;
 
       .question-label {
-        color: #00d4ff;
+        color: $primary-red;
         font-weight: 600;
         margin-right: 8px;
       }
@@ -526,7 +601,7 @@ onMounted(() => {
       p {
         display: inline;
         font-size: 18px;
-        color: #fff;
+        color: $text-white;
       }
     }
 
@@ -537,32 +612,35 @@ onMounted(() => {
       margin-bottom: 24px;
 
       .quiz-option {
-        background: rgba(255, 255, 255, 0.05);
-        border-color: rgba(0, 212, 255, 0.2);
-        color: #fff;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid $border-subtle;
+        color: $text-light;
         height: 48px;
         font-size: 15px;
+        transition: all 0.3s ease;
 
         &:hover:not(:disabled) {
-          border-color: #00d4ff;
-          background: rgba(0, 212, 255, 0.1);
+          border-color: rgba($primary-red, 0.5);
+          background: rgba($primary-red, 0.1);
+          color: $text-white;
         }
 
         &.selected {
-          border-color: #00d4ff;
-          background: rgba(0, 212, 255, 0.2);
+          border-color: $primary-red;
+          background: rgba($primary-red, 0.15);
+          color: $text-white;
         }
 
         &.correct {
-          border-color: #52c41a;
-          background: rgba(82, 196, 26, 0.2);
-          color: #52c41a;
+          border-color: #22c55e;
+          background: rgba(34, 197, 94, 0.15);
+          color: #22c55e;
         }
 
         &.wrong {
-          border-color: #ff4d4f;
-          background: rgba(255, 77, 79, 0.2);
-          color: #ff4d4f;
+          border-color: $primary-red;
+          background: rgba($primary-red, 0.15);
+          color: $primary-red;
         }
       }
     }
@@ -571,7 +649,8 @@ onMounted(() => {
       margin-bottom: 24px;
       padding: 16px;
       border-radius: 8px;
-      background: rgba(255, 255, 255, 0.03);
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid $border-subtle;
 
       .result-header {
         display: flex;
@@ -582,21 +661,21 @@ onMounted(() => {
         margin-bottom: 12px;
 
         &.success {
-          color: #52c41a;
+          color: #22c55e;
         }
 
         &.error {
-          color: #ff4d4f;
+          color: $primary-red;
         }
 
         .points {
           margin-left: auto;
-          color: #faad14;
+          color: #f59e0b;
         }
       }
 
       .explanation {
-        color: rgba(255, 255, 255, 0.6);
+        color: $text-muted;
         font-size: 14px;
         line-height: 1.6;
         margin: 0;
@@ -606,11 +685,20 @@ onMounted(() => {
     .submit-btn {
       height: 48px;
       font-size: 16px;
-      background: linear-gradient(135deg, #00d4ff 0%, #7b2cbf 100%);
+      font-weight: 600;
+      background: $primary-red;
       border: none;
+      box-shadow: 0 4px 15px rgba($primary-red, 0.3);
+      transition: all 0.3s ease;
+
+      &:hover:not(:disabled) {
+        background: $primary-red-light;
+        box-shadow: 0 6px 20px rgba($primary-red, 0.4);
+      }
 
       &:disabled {
         opacity: 0.5;
+        box-shadow: none;
       }
     }
   }
@@ -623,6 +711,14 @@ onMounted(() => {
 }
 
 @media (max-width: 768px) {
+  .edu-hero {
+    height: 240px;
+
+    .hero-content h1 {
+      font-size: 32px;
+    }
+  }
+
   .content-grid {
     grid-template-columns: 1fr;
   }

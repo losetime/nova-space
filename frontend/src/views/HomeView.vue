@@ -1,14 +1,19 @@
 <template>
   <div class="home-view">
+    <!-- Navigation -->
+    <RedNavbar :transparent="isScrolledTop" />
+
     <!-- Hero Section -->
     <section class="hero-section">
       <div class="hero-bg">
-        <div class="stars"></div>
-        <div class="planet"></div>
+        <div class="stars stars-layer-1"></div>
+        <div class="stars stars-layer-2"></div>
+        <div class="stars stars-layer-3"></div>
+        <div class="glow-orb"></div>
       </div>
       <div class="hero-content">
         <h1 class="hero-title">
-          <span class="gradient-text">探索宇宙</span>
+          <span class="text-gradient">探索宇宙</span>
           <br />
           <span class="subtitle">从这里开始</span>
         </h1>
@@ -16,13 +21,13 @@
           诺维空间探索平台 —— 集卫星数据态势展示、航天知识科普、航天情报分级服务于一体的综合航天信息平台
         </p>
         <div class="hero-actions">
-          <a-button type="primary" size="large" class="cta-btn" @click="$router.push('/satellite')">
+          <RedButton variant="shiny" size="lg" @click="$router.push('/satellite')">
             开始探索
             <RightOutlined />
-          </a-button>
-          <a-button size="large" class="secondary-btn" @click="$router.push('/education')">
+          </RedButton>
+          <RedButton variant="secondary" size="lg" @click="$router.push('/education')">
             了解更多
-          </a-button>
+          </RedButton>
         </div>
       </div>
       <div class="scroll-indicator">
@@ -35,24 +40,23 @@
     <section class="features-section">
       <div class="section-container">
         <h2 class="section-title">
-          <span class="gradient-text">三大核心服务</span>
+          <span class="text-gradient">三大核心服务</span>
         </h2>
         <div class="features-grid">
-          <div 
-            v-for="(feature, index) in features" 
+          <RedCard
+            v-for="(feature, index) in features"
             :key="index"
+            :title="feature.title"
+            :description="feature.desc"
+            hoverable
             class="feature-card"
             :style="{ animationDelay: `${index * 0.1}s` }"
+            @click="$router.push(feature.path)"
           >
-            <div class="feature-icon">
+            <template #icon>
               <component :is="feature.icon" />
-            </div>
-            <h3>{{ feature.title }}</h3>
-            <p>{{ feature.desc }}</p>
-            <a-button type="link" class="learn-more" @click="$router.push(feature.path)">
-              进入服务 <ArrowRightOutlined />
-            </a-button>
-          </div>
+            </template>
+          </RedCard>
         </div>
       </div>
     </section>
@@ -74,15 +78,16 @@
       <div class="section-container">
         <div class="section-header">
           <h2 class="section-title">
-            <span class="gradient-text">最新情报</span>
+            <span class="text-gradient">最新情报</span>
           </h2>
-          <a-button type="link" @click="$router.push('/intelligence')">
-            查看全部 <RightOutlined />
-          </a-button>
+          <RedButton variant="ghost" @click="$router.push('/intelligence')">
+            查看全部
+            <RightOutlined />
+          </RedButton>
         </div>
         <div class="intelligence-list">
-          <div 
-            v-for="(item, index) in latestIntelligence" 
+          <div
+            v-for="(item, index) in latestIntelligence"
             :key="index"
             class="intelligence-card"
           >
@@ -97,17 +102,35 @@
         </div>
       </div>
     </section>
-  </div>
+
+    </div>
 </template>
 
 <script setup lang="ts">
+import { ref, onMounted, onUnmounted } from 'vue'
 import {
   RightOutlined,
-  ArrowRightOutlined,
   GlobalOutlined,
   BookOutlined,
   FileTextOutlined
 } from '@ant-design/icons-vue'
+import RedNavbar from '@/components/RedNavbar.vue'
+import RedButton from '@/components/RedButton.vue'
+import RedCard from '@/components/RedCard.vue'
+
+const isScrolledTop = ref(true)
+
+const handleScroll = () => {
+  isScrolledTop.value = window.scrollY < 50
+}
+
+onMounted(() => {
+  window.addEventListener('scroll', handleScroll)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('scroll', handleScroll)
+})
 
 const features = [
   {
@@ -165,12 +188,14 @@ const latestIntelligence = [
 ]
 </script>
 
-<style scoped lang="scss">
+<style scoped>
 .home-view {
-  color: #ffffff;
+  min-height: 100vh;
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
 }
 
-// Hero Section
+/* Hero Section */
 .hero-section {
   position: relative;
   height: 100vh;
@@ -185,38 +210,83 @@ const latestIntelligence = [
   position: absolute;
   inset: 0;
   z-index: 0;
+}
 
-  .stars {
-    position: absolute;
-    inset: 0;
-    background-image: 
-      radial-gradient(2px 2px at 20px 30px, #eee, rgba(0,0,0,0)),
-      radial-gradient(2px 2px at 40px 70px, #fff, rgba(0,0,0,0)),
-      radial-gradient(2px 2px at 50px 160px, #ddd, rgba(0,0,0,0)),
-      radial-gradient(2px 2px at 90px 40px, #fff, rgba(0,0,0,0)),
-      radial-gradient(2px 2px at 130px 80px, #fff, rgba(0,0,0,0));
-    background-repeat: repeat;
-    background-size: 200px 200px;
-    animation: twinkle 5s ease-in-out infinite;
-  }
+/* Stars - Multiple layers with drift effect */
+.hero-bg .stars {
+  position: absolute;
+  inset: 0;
+  background-repeat: repeat;
+}
 
-  .planet {
-    position: absolute;
-    width: 600px;
-    height: 600px;
-    right: -200px;
-    top: 50%;
-    transform: translateY(-50%);
-    background: radial-gradient(circle at 30% 30%, #7b2cbf 0%, #16213e 50%, transparent 70%);
-    border-radius: 50%;
-    opacity: 0.6;
-    filter: blur(60px);
-  }
+/* Layer 1: Large bright stars - slow drift */
+.stars-layer-1 {
+  background-image:
+    radial-gradient(2px 2px at 20px 30px, rgba(255, 255, 255, 0.9), transparent),
+    radial-gradient(2px 2px at 80px 70px, rgba(255, 255, 255, 0.8), transparent),
+    radial-gradient(2px 2px at 140px 120px, rgba(255, 255, 255, 0.85), transparent),
+    radial-gradient(2px 2px at 50px 180px, rgba(255, 255, 255, 0.75), transparent),
+    radial-gradient(2px 2px at 180px 40px, rgba(255, 255, 255, 0.7), transparent);
+  background-size: 250px 250px;
+  animation: twinkle 4s ease-in-out infinite, drift-slow 60s linear infinite;
+}
+
+/* Layer 2: Medium stars - medium drift */
+.stars-layer-2 {
+  background-image:
+    radial-gradient(1.5px 1.5px at 40px 50px, rgba(255, 255, 255, 0.7), transparent),
+    radial-gradient(1.5px 1.5px at 100px 130px, rgba(255, 255, 255, 0.6), transparent),
+    radial-gradient(1.5px 1.5px at 170px 80px, rgba(255, 255, 255, 0.65), transparent),
+    radial-gradient(1.5px 1.5px at 60px 200px, rgba(255, 255, 255, 0.55), transparent),
+    radial-gradient(1.5px 1.5px at 220px 160px, rgba(255, 255, 255, 0.5), transparent);
+  background-size: 300px 300px;
+  animation: twinkle 5s ease-in-out infinite 1s, drift-medium 45s linear infinite;
+}
+
+/* Layer 3: Small dim stars - fast drift */
+.stars-layer-3 {
+  background-image:
+    radial-gradient(1px 1px at 30px 80px, rgba(255, 255, 255, 0.5), transparent),
+    radial-gradient(1px 1px at 90px 20px, rgba(255, 255, 255, 0.4), transparent),
+    radial-gradient(1px 1px at 150px 100px, rgba(255, 255, 255, 0.45), transparent),
+    radial-gradient(1px 1px at 70px 150px, rgba(255, 255, 255, 0.35), transparent),
+    radial-gradient(1px 1px at 200px 60px, rgba(255, 255, 255, 0.3), transparent),
+    radial-gradient(1px 1px at 120px 190px, rgba(255, 255, 255, 0.4), transparent);
+  background-size: 220px 220px;
+  animation: twinkle 6s ease-in-out infinite 2s, drift-fast 30s linear infinite;
 }
 
 @keyframes twinkle {
-  0%, 100% { opacity: 0.5; }
+  0%, 100% { opacity: 0.6; }
   50% { opacity: 1; }
+}
+
+@keyframes drift-slow {
+  0% { background-position: 0 0; }
+  100% { background-position: -250px 150px; }
+}
+
+@keyframes drift-medium {
+  0% { background-position: 0 0; }
+  100% { background-position: -300px 180px; }
+}
+
+@keyframes drift-fast {
+  0% { background-position: 0 0; }
+  100% { background-position: -220px 132px; }
+}
+
+.hero-bg .glow-orb {
+  position: absolute;
+  width: 500px;
+  height: 500px;
+  right: -150px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: radial-gradient(circle at 30% 30%, var(--color-primary) 0%, transparent 70%);
+  border-radius: 50%;
+  opacity: 0.15;
+  filter: blur(80px);
 }
 
 .hero-content {
@@ -228,32 +298,27 @@ const latestIntelligence = [
 }
 
 .hero-title {
+  font-family: var(--font-heading);
   font-size: 72px;
   font-weight: 800;
   line-height: 1.1;
   margin-bottom: 24px;
-
-  .gradient-text {
-    background: linear-gradient(135deg, #00d4ff 0%, #7b2cbf 50%, #00d4ff 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    background-size: 200% auto;
-    animation: shine 3s linear infinite;
-  }
-
-  .subtitle {
-    color: rgba(255, 255, 255, 0.9);
-  }
 }
 
-@keyframes shine {
-  to { background-position: 200% center; }
+.hero-title .text-gradient {
+  background: linear-gradient(135deg, var(--color-text-primary) 0%, var(--color-primary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero-title .subtitle {
+  color: var(--color-text-secondary);
 }
 
 .hero-desc {
   font-size: 18px;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--color-text-muted);
   line-height: 1.8;
   margin-bottom: 40px;
 }
@@ -262,34 +327,7 @@ const latestIntelligence = [
   display: flex;
   gap: 16px;
   justify-content: center;
-
-  .cta-btn {
-    height: 48px;
-    padding: 0 32px;
-    font-size: 16px;
-    background: linear-gradient(135deg, #00d4ff 0%, #7b2cbf 100%);
-    border: none;
-    border-radius: 24px;
-
-    &:hover {
-      opacity: 0.9;
-      transform: translateY(-2px);
-    }
-  }
-
-  .secondary-btn {
-    height: 48px;
-    padding: 0 32px;
-    font-size: 16px;
-    color: #ffffff;
-    border-color: rgba(255, 255, 255, 0.3);
-    border-radius: 24px;
-
-    &:hover {
-      border-color: #00d4ff;
-      color: #00d4ff;
-    }
-  }
+  align-items: center;
 }
 
 .scroll-indicator {
@@ -301,29 +339,29 @@ const latestIntelligence = [
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--color-text-subtle);
   font-size: 12px;
+}
 
-  .mouse {
-    width: 24px;
-    height: 40px;
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    border-radius: 12px;
-    position: relative;
+.scroll-indicator .mouse {
+  width: 24px;
+  height: 40px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  position: relative;
+}
 
-    &::before {
-      content: '';
-      position: absolute;
-      top: 8px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 4px;
-      height: 8px;
-      background: #00d4ff;
-      border-radius: 2px;
-      animation: scroll 2s ease-in-out infinite;
-    }
-  }
+.scroll-indicator .mouse::before {
+  content: '';
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 8px;
+  background: var(--color-primary);
+  border-radius: 2px;
+  animation: scroll 2s ease-in-out infinite;
 }
 
 @keyframes scroll {
@@ -331,7 +369,7 @@ const latestIntelligence = [
   50% { opacity: 0.3; top: 20px; }
 }
 
-// Section Common Styles
+/* Section Common */
 .section-container {
   max-width: 1200px;
   margin: 0 auto;
@@ -339,22 +377,24 @@ const latestIntelligence = [
 }
 
 .section-title {
+  font-family: var(--font-heading);
   font-size: 42px;
   font-weight: 700;
   text-align: center;
   margin-bottom: 60px;
-
-  .gradient-text {
-    background: linear-gradient(135deg, #00d4ff 0%, #7b2cbf 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
 }
 
-// Features Section
+.text-gradient {
+  background: linear-gradient(135deg, var(--color-text-primary) 0%, var(--color-primary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Features Section */
 .features-section {
   padding: 120px 0;
+  background: var(--color-bg-secondary);
 }
 
 .features-grid {
@@ -364,56 +404,12 @@ const latestIntelligence = [
 }
 
 .feature-card {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(0, 212, 255, 0.1);
-  border-radius: 16px;
-  padding: 40px 32px;
-  text-align: center;
-  transition: all 0.3s ease;
   animation: fadeInUp 0.6s ease forwards;
   opacity: 0;
+}
 
-  &:hover {
-    transform: translateY(-8px);
-    border-color: rgba(0, 212, 255, 0.3);
-    box-shadow: 0 20px 40px rgba(0, 212, 255, 0.1);
-  }
-
-  .feature-icon {
-    width: 80px;
-    height: 80px;
-    margin: 0 auto 24px;
-    background: linear-gradient(135deg, rgba(0, 212, 255, 0.1) 0%, rgba(123, 44, 191, 0.1) 100%);
-    border-radius: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 36px;
-    color: #00d4ff;
-  }
-
-  h3 {
-    font-size: 24px;
-    font-weight: 600;
-    margin-bottom: 16px;
-    color: #ffffff;
-  }
-
-  p {
-    font-size: 15px;
-    color: rgba(255, 255, 255, 0.6);
-    line-height: 1.7;
-    margin-bottom: 24px;
-  }
-
-  .learn-more {
-    color: #00d4ff;
-    font-size: 14px;
-
-    &:hover {
-      color: #7b2cbf;
-    }
-  }
+.feature-card :deep(.red-card__icon) {
+  font-size: 28px;
 }
 
 @keyframes fadeInUp {
@@ -427,10 +423,12 @@ const latestIntelligence = [
   }
 }
 
-// Stats Section
+/* Stats Section */
 .stats-section {
   padding: 80px 0;
-  background: rgba(0, 0, 0, 0.2);
+  background: var(--color-bg-primary);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .stats-grid {
@@ -441,26 +439,28 @@ const latestIntelligence = [
 
 .stat-item {
   text-align: center;
-
-  .stat-number {
-    font-size: 48px;
-    font-weight: 800;
-    background: linear-gradient(135deg, #00d4ff 0%, #7b2cbf 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    margin-bottom: 8px;
-  }
-
-  .stat-label {
-    font-size: 16px;
-    color: rgba(255, 255, 255, 0.6);
-  }
 }
 
-// Intelligence Preview
+.stat-number {
+  font-family: var(--font-heading);
+  font-size: 48px;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--color-text-primary) 0%, var(--color-primary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 8px;
+}
+
+.stat-label {
+  font-size: 16px;
+  color: var(--color-text-muted);
+}
+
+/* Intelligence Preview */
 .intelligence-preview {
   padding: 120px 0;
+  background: var(--color-bg-secondary);
 }
 
 .section-header {
@@ -468,11 +468,11 @@ const latestIntelligence = [
   justify-content: space-between;
   align-items: center;
   margin-bottom: 40px;
+}
 
-  .section-title {
-    margin-bottom: 0;
-    text-align: left;
-  }
+.section-header .section-title {
+  margin-bottom: 0;
+  text-align: left;
 }
 
 .intelligence-list {
@@ -482,68 +482,71 @@ const latestIntelligence = [
 }
 
 .intelligence-card {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(0, 212, 255, 0.1);
+  background: var(--color-bg-tertiary);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
   padding: 24px;
-  transition: all 0.3s ease;
-
-  &:hover {
-    border-color: rgba(0, 212, 255, 0.3);
-    transform: translateY(-4px);
-  }
-
-  .card-tag {
-    display: inline-block;
-    padding: 4px 12px;
-    border-radius: 4px;
-    font-size: 12px;
-    margin-bottom: 16px;
-
-    &.launch {
-      background: rgba(0, 212, 255, 0.15);
-      color: #00d4ff;
-    }
-
-    &.satellite {
-      background: rgba(123, 44, 191, 0.15);
-      color: #9d4edd;
-    }
-
-    &.industry {
-      background: rgba(255, 193, 7, 0.15);
-      color: #ffc107;
-    }
-  }
-
-  h4 {
-    font-size: 18px;
-    font-weight: 600;
-    margin-bottom: 12px;
-    color: #ffffff;
-    line-height: 1.4;
-  }
-
-  p {
-    font-size: 14px;
-    color: rgba(255, 255, 255, 0.5);
-    line-height: 1.6;
-    margin-bottom: 16px;
-  }
-
-  .card-meta {
-    display: flex;
-    justify-content: space-between;
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.4);
-
-    .source {
-      color: #00d4ff;
-    }
-  }
+  transition: all 300ms ease;
 }
 
-// Responsive
+.intelligence-card:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-4px);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.card-tag {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  margin-bottom: 16px;
+}
+
+.card-tag.launch {
+  background: rgba(239, 35, 60, 0.15);
+  color: var(--color-primary);
+}
+
+.card-tag.satellite {
+  background: rgba(139, 92, 246, 0.15);
+  color: #a78bfa;
+}
+
+.card-tag.industry {
+  background: rgba(251, 191, 36, 0.15);
+  color: #fbbf24;
+}
+
+.intelligence-card h4 {
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: var(--color-text-primary);
+  line-height: 1.4;
+}
+
+.intelligence-card p {
+  font-size: 14px;
+  color: var(--color-text-muted);
+  line-height: 1.6;
+  margin-bottom: 16px;
+}
+
+.card-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--color-text-subtle);
+}
+
+.card-meta .source {
+  color: var(--color-primary);
+}
+
+/* Responsive */
 @media (max-width: 1024px) {
   .features-grid,
   .intelligence-list {
@@ -569,6 +572,16 @@ const latestIntelligence = [
   .hero-actions {
     flex-direction: column;
     align-items: center;
+  }
+
+  .section-header {
+    flex-direction: column;
+    gap: 16px;
+    text-align: center;
+  }
+
+  .section-header .section-title {
+    text-align: center;
   }
 }
 </style>

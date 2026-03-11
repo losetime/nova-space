@@ -267,9 +267,22 @@ onMounted(() => {
 </script>
 
 <style scoped lang="scss">
+// Red Noir 设计主题变量
+$primary-red: #ef233c;
+$primary-red-dark: #d90429;
+$primary-red-light: #ff4d6d;
+$bg-black: #000000;
+$bg-dark: #09090b;
+$bg-card: #18181b;
+$text-white: #ffffff;
+$text-light: #f4f4f5;
+$text-muted: #a1a1aa;
+$border-subtle: rgba(255, 255, 255, 0.1);
+$border-hover: rgba(255, 255, 255, 0.2);
+
 .intelligence-view {
   min-height: calc(100vh - 64px);
-  background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 100%);
+  background: $bg-black;
   padding: 40px 24px;
 }
 
@@ -278,18 +291,21 @@ onMounted(() => {
   margin-bottom: 40px;
 
   h1 {
+    font-family: 'Manrope', sans-serif;
     font-size: 48px;
     font-weight: 700;
-    background: linear-gradient(135deg, #00d4ff 0%, #7b2cbf 100%);
+    background: linear-gradient(135deg, $primary-red 0%, $primary-red-light 50%, #ff758f 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
     margin-bottom: 12px;
+    text-shadow: 0 0 40px rgba($primary-red, 0.3);
   }
 
   p {
+    font-family: 'Inter', sans-serif;
     font-size: 16px;
-    color: rgba(255, 255, 255, 0.6);
+    color: $text-muted;
   }
 }
 
@@ -300,24 +316,31 @@ onMounted(() => {
   :deep(.ant-tabs) {
     .ant-tabs-nav {
       margin: 0;
+      background: transparent;
     }
 
     .ant-tabs-tab {
-      background: rgba(255, 255, 255, 0.03);
-      border-color: rgba(0, 212, 255, 0.1) !important;
-      color: rgba(255, 255, 255, 0.7);
+      background: $bg-card;
+      border-color: $border-subtle !important;
+      color: $text-muted;
+      font-family: 'Inter', sans-serif;
       font-size: 15px;
       padding: 12px 24px;
-      transition: all 0.3s;
+      transition: all 0.3s ease;
 
       &:hover {
-        color: #00d4ff;
+        color: $primary-red-light;
+        border-color: rgba($primary-red, 0.3) !important;
       }
 
       &.ant-tabs-tab-active {
-        background: linear-gradient(135deg, rgba(0, 212, 255, 0.2) 0%, rgba(123, 44, 191, 0.2) 100%);
-        border-color: rgba(0, 212, 255, 0.3) !important;
-        color: #00d4ff;
+        background: linear-gradient(135deg, rgba($primary-red, 0.15) 0%, rgba($primary-red-dark, 0.1) 100%);
+        border-color: $primary-red !important;
+        color: $primary-red;
+
+        .ant-tabs-tab-btn {
+          color: $primary-red;
+        }
       }
     }
   }
@@ -335,12 +358,12 @@ onMounted(() => {
   .empty-state {
     text-align: center;
     padding: 60px 20px;
-    color: rgba(255, 255, 255, 0.5);
+    color: $text-muted;
   }
 
   .article-card {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(0, 212, 255, 0.1);
+    background: $bg-card;
+    border: 1px solid $border-subtle;
     border-radius: 12px;
     padding: 24px;
     margin-bottom: 20px;
@@ -351,8 +374,9 @@ onMounted(() => {
     cursor: pointer;
 
     &:hover {
-      border-color: rgba(0, 212, 255, 0.3);
-      transform: translateX(4px);
+      border-color: $border-hover;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba($primary-red, 0.1);
     }
 
     &.locked {
@@ -367,45 +391,54 @@ onMounted(() => {
         padding: 4px 12px;
         border-radius: 4px;
         font-size: 12px;
+        font-weight: 500;
         margin-bottom: 12px;
 
+        // 红色系配色
         &.launch {
-          background: rgba(0, 212, 255, 0.15);
-          color: #00d4ff;
+          background: rgba($primary-red, 0.15);
+          color: $primary-red-light;
+          border: 1px solid rgba($primary-red, 0.3);
         }
 
         &.satellite {
-          background: rgba(123, 44, 191, 0.15);
-          color: #9d4edd;
+          background: rgba(#ff6b6b, 0.15);
+          color: #ff8a8a;
+          border: 1px solid rgba(#ff6b6b, 0.3);
         }
 
         &.industry {
-          background: rgba(255, 193, 7, 0.15);
-          color: #ffc107;
+          background: rgba(#ffc107, 0.15);
+          color: #ffd54f;
+          border: 1px solid rgba(#ffc107, 0.3);
         }
 
         &.research {
-          background: rgba(0, 255, 136, 0.15);
-          color: #00ff88;
+          background: rgba(#4ade80, 0.15);
+          color: #86efac;
+          border: 1px solid rgba(#4ade80, 0.3);
         }
 
         &.environment {
-          background: rgba(255, 107, 53, 0.15);
-          color: #ff6b35;
+          background: rgba(#fb923c, 0.15);
+          color: #fdba74;
+          border: 1px solid rgba(#fb923c, 0.3);
         }
       }
 
       h3 {
+        font-family: 'Manrope', sans-serif;
         font-size: 18px;
         font-weight: 600;
-        color: #fff;
+        color: $text-white;
         margin-bottom: 12px;
         line-height: 1.4;
       }
 
       p {
+        font-family: 'Inter', sans-serif;
         font-size: 14px;
-        color: rgba(255, 255, 255, 0.5);
+        color: $text-muted;
         line-height: 1.7;
         margin-bottom: 16px;
       }
@@ -414,7 +447,7 @@ onMounted(() => {
         display: flex;
         gap: 20px;
         font-size: 13px;
-        color: rgba(255, 255, 255, 0.4);
+        color: rgba($text-muted, 0.7);
 
         span {
           display: flex;
@@ -432,9 +465,23 @@ onMounted(() => {
         background: linear-gradient(135deg, #ffd700 0%, #ffaa00 100%);
         border: none;
         color: #000;
+        font-weight: 600;
 
         &:hover {
           opacity: 0.9;
+          transform: scale(1.02);
+        }
+      }
+
+      :deep(.ant-btn-primary) {
+        background: transparent;
+        border-color: $primary-red;
+        color: $primary-red;
+
+        &:hover {
+          background: rgba($primary-red, 0.1);
+          border-color: $primary-red-light;
+          color: $primary-red-light;
         }
       }
     }
@@ -447,16 +494,42 @@ onMounted(() => {
 
     :deep(.ant-pagination) {
       .ant-pagination-item {
-        background: rgba(255, 255, 255, 0.05);
-        border-color: rgba(0, 212, 255, 0.2);
+        background: $bg-card;
+        border-color: $border-subtle;
 
         a {
-          color: #fff;
+          color: $text-light;
+        }
+
+        &:hover {
+          border-color: $primary-red;
+
+          a {
+            color: $primary-red;
+          }
         }
 
         &.ant-pagination-item-active {
-          background: linear-gradient(135deg, #00d4ff 0%, #7b2cbf 100%);
-          border-color: transparent;
+          background: $primary-red;
+          border-color: $primary-red;
+
+          a {
+            color: $text-white;
+          }
+        }
+      }
+
+      .ant-pagination-prev,
+      .ant-pagination-next {
+        .ant-pagination-item-link {
+          background: $bg-card;
+          border-color: $border-subtle;
+          color: $text-light;
+
+          &:hover {
+            border-color: $primary-red;
+            color: $primary-red;
+          }
         }
       }
     }
@@ -470,28 +543,30 @@ onMounted(() => {
 }
 
 .sidebar-section {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(0, 212, 255, 0.1);
+  background: $bg-card;
+  border: 1px solid $border-subtle;
   border-radius: 12px;
   padding: 20px;
 
   h3 {
+    font-family: 'Manrope', sans-serif;
     font-size: 16px;
     font-weight: 600;
-    color: #fff;
+    color: $text-white;
     margin-bottom: 16px;
     display: flex;
     align-items: center;
     gap: 8px;
 
     .anticon {
-      color: #ff6b35;
+      color: $primary-red;
     }
   }
 
   p {
+    font-family: 'Inter', sans-serif;
     font-size: 13px;
-    color: rgba(255, 255, 255, 0.5);
+    color: $text-muted;
     margin-bottom: 16px;
   }
 }
@@ -502,15 +577,24 @@ onMounted(() => {
     align-items: center;
     gap: 12px;
     padding: 12px 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid $border-subtle;
     cursor: pointer;
+    transition: all 0.2s ease;
 
     &:last-child {
       border-bottom: none;
     }
 
-    &:hover .rank-title {
-      color: #00d4ff;
+    &:hover {
+      background: rgba($primary-red, 0.05);
+      margin: 0 -8px;
+      padding-left: 8px;
+      padding-right: 8px;
+      border-radius: 6px;
+
+      .rank-title {
+        color: $primary-red-light;
+      }
     }
 
     .rank-num {
@@ -521,20 +605,20 @@ onMounted(() => {
       justify-content: center;
       font-size: 14px;
       font-weight: 600;
-      color: rgba(255, 255, 255, 0.5);
+      color: $text-muted;
       background: rgba(255, 255, 255, 0.05);
       border-radius: 4px;
 
       &.top {
-        background: linear-gradient(135deg, #ffd700 0%, #ffaa00 100%);
-        color: #000;
+        background: linear-gradient(135deg, $primary-red 0%, $primary-red-dark 100%);
+        color: $text-white;
       }
     }
 
     .rank-title {
       flex: 1;
       font-size: 13px;
-      color: rgba(255, 255, 255, 0.8);
+      color: $text-light;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -543,7 +627,7 @@ onMounted(() => {
 
     .rank-views {
       font-size: 12px;
-      color: rgba(255, 255, 255, 0.4);
+      color: rgba($text-muted, 0.7);
     }
   }
 }
@@ -551,25 +635,36 @@ onMounted(() => {
 .subscribe-section {
   :deep(.ant-input-search) {
     .ant-input {
-      background: rgba(255, 255, 255, 0.05);
-      border-color: rgba(0, 212, 255, 0.2);
-      color: #fff;
+      background: $bg-dark;
+      border: 1px solid $border-subtle;
+      color: $text-white;
+      font-family: 'Inter', sans-serif;
 
       &::placeholder {
-        color: rgba(255, 255, 255, 0.4);
+        color: $text-muted;
+      }
+
+      &:focus,
+      &:hover {
+        border-color: rgba($primary-red, 0.5);
       }
     }
 
     .ant-input-search-button {
-      background: linear-gradient(135deg, #00d4ff 0%, #7b2cbf 100%);
+      background: $primary-red;
       border: none;
+      font-weight: 600;
+
+      &:hover {
+        background: $primary-red-dark;
+      }
     }
   }
 }
 
 .vip-promo {
-  background: linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(255, 170, 0, 0.1) 100%);
-  border: 1px solid rgba(255, 215, 0, 0.3);
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.08) 0%, rgba(255, 170, 0, 0.05) 100%);
+  border: 1px solid rgba(255, 215, 0, 0.25);
   border-radius: 12px;
   padding: 24px;
 
@@ -579,9 +674,11 @@ onMounted(() => {
       color: #ffd700;
       margin-bottom: 16px;
       display: block;
+      filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.4));
     }
 
     h4 {
+      font-family: 'Manrope', sans-serif;
       font-size: 18px;
       font-weight: 600;
       color: #ffd700;
@@ -596,13 +693,26 @@ onMounted(() => {
         display: flex;
         align-items: center;
         gap: 8px;
+        font-family: 'Inter', sans-serif;
         font-size: 14px;
-        color: rgba(255, 255, 255, 0.8);
+        color: $text-light;
         margin-bottom: 8px;
 
         .anticon {
           color: #ffd700;
         }
+      }
+    }
+
+    :deep(.ant-btn-primary) {
+      background: linear-gradient(135deg, #ffd700 0%, #ffaa00 100%);
+      border: none;
+      color: #000;
+      font-weight: 600;
+
+      &:hover {
+        opacity: 0.9;
+        transform: scale(1.02);
       }
     }
   }
@@ -620,6 +730,10 @@ onMounted(() => {
 }
 
 @media (max-width: 768px) {
+  .intel-header h1 {
+    font-size: 32px;
+  }
+
   .sidebar {
     grid-template-columns: 1fr;
   }

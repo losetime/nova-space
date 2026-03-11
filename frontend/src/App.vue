@@ -7,26 +7,32 @@
 <script setup lang="ts">
 import { theme } from 'ant-design-vue'
 
+// Red Noir Theme for Ant Design
 const darkTheme = {
   algorithm: theme.darkAlgorithm,
   token: {
-    colorPrimary: '#00d4ff',
-    colorBgContainer: '#1a1a2e',
-    colorBgElevated: '#14142a',
-    colorBorder: 'rgba(0, 212, 255, 0.15)',
-    colorText: 'rgba(255, 255, 255, 0.85)',
-    colorTextSecondary: 'rgba(255, 255, 255, 0.65)',
-    colorTextTertiary: 'rgba(255, 255, 255, 0.45)',
-    colorBgLayout: '#0a0a0f',
+    colorPrimary: '#ef233c',
+    colorBgContainer: '#18181b',
+    colorBgElevated: '#27272a',
+    colorBorder: 'rgba(255, 255, 255, 0.1)',
+    colorText: 'rgba(255, 255, 255, 0.95)',
+    colorTextSecondary: 'rgba(255, 255, 255, 0.7)',
+    colorTextTertiary: 'rgba(255, 255, 255, 0.5)',
+    colorBgLayout: '#000000',
     borderRadius: 8,
+    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
   },
   components: {
     Button: {
-      primaryColor: '#00d4ff',
+      primaryColor: '#ef233c',
+      primaryColorHover: '#d90429',
+      primaryShadow: '0 0 20px rgba(239, 35, 60, 0.4)',
     },
     Input: {
       colorBgContainer: 'rgba(255, 255, 255, 0.05)',
       colorBorder: 'rgba(255, 255, 255, 0.1)',
+      colorBorderHover: 'rgba(255, 255, 255, 0.2)',
+      colorPrimaryBorderHover: '#ef233c',
     },
     Select: {
       colorBgContainer: 'rgba(255, 255, 255, 0.05)',
@@ -34,28 +40,29 @@ const darkTheme = {
     },
     Table: {
       colorBgContainer: 'transparent',
-      headerBg: 'rgba(0, 212, 255, 0.1)',
+      headerBg: 'rgba(239, 35, 60, 0.1)',
       headerColor: 'rgba(255, 255, 255, 0.9)',
-      rowHoverBg: 'rgba(0, 212, 255, 0.05)',
+      rowHoverBg: 'rgba(239, 35, 60, 0.05)',
       borderColor: 'rgba(255, 255, 255, 0.06)',
     },
     Tabs: {
-      colorText: 'rgba(255, 255, 255, 0.7)',
-      colorTextActive: '#00d4ff',
-      inkBarColor: '#00d4ff',
+      colorText: 'rgba(255, 255, 255, 0.6)',
+      colorTextActive: '#ef233c',
+      inkBarColor: '#ef233c',
     },
     Modal: {
-      contentBg: '#1a1a2e',
-      headerBg: '#1a1a2e',
+      contentBg: '#18181b',
+      headerBg: '#18181b',
     },
     Dropdown: {
-      colorBgElevated: 'rgba(20, 20, 42, 0.98)',
+      colorBgElevated: 'rgba(24, 24, 27, 0.98)',
     },
     Menu: {
       colorBgElevated: 'transparent',
       colorItemText: 'rgba(255, 255, 255, 0.7)',
-      colorItemTextHover: '#00d4ff',
-      colorItemBgHover: 'rgba(0, 212, 255, 0.1)',
+      colorItemTextHover: '#ef233c',
+      colorItemBgHover: 'rgba(239, 35, 60, 0.1)',
+      colorItemTextSelected: '#ef233c',
     },
     Form: {
       labelColor: 'rgba(255, 255, 255, 0.8)',
@@ -64,39 +71,14 @@ const darkTheme = {
       defaultBg: 'rgba(255, 255, 255, 0.1)',
       defaultColor: 'rgba(255, 255, 255, 0.85)',
     },
+    Card: {
+      colorBgContainer: '#18181b',
+      colorBorderSecondary: 'rgba(255, 255, 255, 0.1)',
+    },
   },
 }
 </script>
 
 <style>
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  background: #0a0a0f;
-  color: #ffffff;
-}
-
-/* 科技感滚动条 */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: #1a1a2e;
-}
-
-::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #00d4ff 0%, #7b2cbf 100%);
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #00a8cc 0%, #9d4edd 100%);
-}
+/* Global styles are in src/assets/base.css */
 </style>

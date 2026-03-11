@@ -582,25 +582,34 @@ onMounted(async () => {
 </script>
 
 <style scoped lang="scss">
-// 即刻风格黄色
-$yellow-primary: #FFE411;
-$yellow-light: #FFF9C4;
-$yellow-dark: #F5C518;
+// Red Noir 设计主题
+$red-primary: #ef233c;
+$red-light: #ff4d6a;
+$red-dark: #c9184a;
 
-// 主题色
-$primary: #00d4ff;
-$primary-light: #7dd3fc;
-$accent: #a855f7;
+// VIP 金色
+$gold-primary: #FFD700;
+$gold-light: #FFF4CC;
+$gold-dark: #DAA520;
+
+// 其他颜色
+$yellow-primary: #fbbf24;
+$green-primary: #22c55e;
+$orange-primary: #f97316;
 
 // 背景色
-$bg-dark: #0a0a0f;
-$bg-card: rgba(255, 255, 255, 0.03);
-$bg-elevated: rgba(255, 255, 255, 0.06);
+$bg-dark: #000000;
+$bg-base: #09090b;
+$bg-card: #18181b;
+$bg-elevated: #1f1f23;
 
 // 文字色
-$text-primary: rgba(255, 255, 255, 0.95);
-$text-secondary: rgba(255, 255, 255, 0.6);
-$text-muted: rgba(255, 255, 255, 0.4);
+$text-primary: #ffffff;
+$text-secondary: #f4f4f5;
+$text-muted: #a1a1aa;
+
+// 边框色
+$border-color: rgba(255, 255, 255, 0.1);
 
 .profile-view {
   min-height: calc(100vh - 64px);
@@ -620,13 +629,13 @@ $text-muted: rgba(255, 255, 255, 0.4);
     position: absolute;
     border-radius: 50%;
     filter: blur(120px);
-    opacity: 0.4;
+    opacity: 0.3;
   }
 
   .blob-1 {
     width: 600px;
     height: 600px;
-    background: linear-gradient(135deg, $primary 0%, $accent 100%);
+    background: linear-gradient(135deg, $red-primary 0%, $red-dark 100%);
     top: -200px;
     right: -200px;
   }
@@ -634,7 +643,7 @@ $text-muted: rgba(255, 255, 255, 0.4);
   .blob-2 {
     width: 400px;
     height: 400px;
-    background: linear-gradient(135deg, $accent 0%, $primary 100%);
+    background: linear-gradient(135deg, $red-dark 0%, $red-primary 100%);
     bottom: -100px;
     left: -100px;
   }
@@ -672,7 +681,7 @@ $text-muted: rgba(255, 255, 255, 0.4);
   gap: 20px;
   padding: 24px;
   background: $bg-card;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid $border-color;
   border-radius: 20px;
   backdrop-filter: blur(20px);
 }
@@ -690,7 +699,7 @@ $text-muted: rgba(255, 255, 255, 0.4);
 .avatar {
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, $primary 0%, $accent 100%);
+  background: linear-gradient(135deg, $red-primary 0%, $red-dark 100%);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -704,7 +713,7 @@ $text-muted: rgba(255, 255, 255, 0.4);
 .avatar-glow {
   position: absolute;
   inset: -6px;
-  background: linear-gradient(135deg, $primary 0%, $accent 100%);
+  background: linear-gradient(135deg, $red-primary 0%, $red-dark 100%);
   border-radius: 50%;
   opacity: 0.3;
   filter: blur(16px);
@@ -737,10 +746,10 @@ $text-muted: rgba(255, 255, 255, 0.4);
   font-weight: 600;
   background: rgba(255, 255, 255, 0.08);
   color: $text-secondary;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid $border-color;
 
   &.professional, &.advanced {
-    background: linear-gradient(135deg, $yellow-primary 0%, $yellow-dark 100%);
+    background: linear-gradient(135deg, $gold-primary 0%, $gold-dark 100%);
     color: #000;
     border: none;
   }
@@ -780,14 +789,14 @@ $text-muted: rgba(255, 255, 255, 0.4);
   gap: 14px;
   padding: 18px 20px;
   background: $bg-card;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid $border-color;
   border-radius: 16px;
   backdrop-filter: blur(20px);
   transition: all 0.25s ease;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.1);
+    background: $bg-elevated;
+    border-color: rgba(255, 255, 255, 0.15);
     transform: translateY(-2px);
   }
 
@@ -795,8 +804,8 @@ $text-muted: rgba(255, 255, 255, 0.4);
     cursor: pointer;
     
     &:hover {
-      border-color: rgba($primary, 0.3);
-      background: rgba($primary, 0.05);
+      border-color: rgba($red-primary, 0.4);
+      background: rgba($red-primary, 0.08);
     }
 
     &.loading {
@@ -817,13 +826,13 @@ $text-muted: rgba(255, 255, 255, 0.4);
   flex-shrink: 0;
 
   &.points {
-    background: linear-gradient(135deg, rgba($primary, 0.15) 0%, rgba($accent, 0.15) 100%);
-    color: $primary;
+    background: rgba($red-primary, 0.15);
+    color: $red-primary;
   }
 
   &.used {
-    background: rgba($yellow-primary, 0.12);
-    color: $yellow-primary;
+    background: rgba($gold-primary, 0.12);
+    color: $gold-primary;
   }
 
   &.days {
@@ -832,8 +841,8 @@ $text-muted: rgba(255, 255, 255, 0.4);
   }
 
   &.checkin {
-    background: linear-gradient(135deg, rgba($primary, 0.15) 0%, rgba($accent, 0.15) 100%);
-    color: $primary;
+    background: rgba($red-primary, 0.15);
+    color: $red-primary;
   }
 }
 
@@ -867,7 +876,7 @@ $text-muted: rgba(255, 255, 255, 0.4);
 // 内容区域
 .profile-content {
   background: $bg-card;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid $border-color;
   border-radius: 20px;
   padding: 24px;
   backdrop-filter: blur(20px);
@@ -881,7 +890,7 @@ $text-muted: rgba(255, 255, 255, 0.4);
       padding: 0;
 
       &::before {
-        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        border-bottom: 1px solid $border-color;
       }
     }
 
@@ -898,13 +907,13 @@ $text-muted: rgba(255, 255, 255, 0.4);
 
       &.ant-tabs-tab-active {
         .ant-tabs-tab-btn {
-          color: $primary;
+          color: $red-primary;
         }
       }
     }
 
     .ant-tabs-ink-bar {
-      background: linear-gradient(90deg, $primary 0%, $accent 100%);
+      background: $red-primary;
       height: 2px;
       border-radius: 1px;
     }
@@ -924,7 +933,7 @@ $text-muted: rgba(255, 255, 255, 0.4);
     .ant-table-thead > tr > th {
       background: rgba(255, 255, 255, 0.02);
       color: $text-secondary;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      border-bottom: 1px solid $border-color;
       font-weight: 500;
       padding: 12px;
       font-size: 13px;
@@ -955,8 +964,8 @@ $text-muted: rgba(255, 255, 255, 0.4);
   }
 
   &.daily_login {
-    background: rgba($primary, 0.15);
-    color: $primary;
+    background: rgba($red-primary, 0.15);
+    color: $red-primary;
   }
 
   &.consume {
@@ -965,8 +974,8 @@ $text-muted: rgba(255, 255, 255, 0.4);
   }
 
   &.admin_grant {
-    background: rgba($accent, 0.15);
-    color: $accent;
+    background: rgba($gold-primary, 0.15);
+    color: $gold-primary;
   }
 }
 
@@ -995,8 +1004,8 @@ $text-muted: rgba(255, 255, 255, 0.4);
 }
 
 .vip-card {
-  background: linear-gradient(135deg, rgba($yellow-primary, 0.08) 0%, rgba($yellow-dark, 0.04) 100%);
-  border: 1px solid rgba($yellow-primary, 0.2);
+  background: linear-gradient(135deg, rgba($gold-primary, 0.08) 0%, rgba($gold-dark, 0.04) 100%);
+  border: 1px solid rgba($gold-primary, 0.25);
   border-radius: 16px;
   padding: 20px;
   max-width: 560px;
@@ -1011,7 +1020,7 @@ $text-muted: rgba(255, 255, 255, 0.4);
     width: 44px;
     height: 44px;
     margin: 0 auto 10px;
-    background: linear-gradient(135deg, $yellow-primary 0%, $yellow-dark 100%);
+    background: linear-gradient(135deg, $gold-primary 0%, $gold-dark 100%);
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -1023,7 +1032,7 @@ $text-muted: rgba(255, 255, 255, 0.4);
   h3 {
     font-size: 18px;
     font-weight: 700;
-    color: $yellow-primary;
+    color: $gold-primary;
     margin: 0 0 4px 0;
   }
 
@@ -1052,7 +1061,7 @@ $text-muted: rgba(255, 255, 255, 0.4);
   color: $text-secondary;
 
   .feature-icon {
-    color: $yellow-primary;
+    color: $gold-primary;
     font-size: 12px;
   }
 }
@@ -1067,7 +1076,7 @@ $text-muted: rgba(255, 255, 255, 0.4);
   position: relative;
   padding: 16px 10px;
   background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid $border-color;
   border-radius: 10px;
   text-align: center;
   cursor: pointer;
@@ -1080,11 +1089,11 @@ $text-muted: rgba(255, 255, 255, 0.4);
   }
 
   &.popular {
-    border-color: $yellow-primary;
-    background: rgba($yellow-primary, 0.05);
+    border-color: $gold-primary;
+    background: rgba($gold-primary, 0.05);
 
     .plan-price .amount {
-      color: $yellow-primary;
+      color: $gold-primary;
     }
   }
 
@@ -1093,7 +1102,7 @@ $text-muted: rgba(255, 255, 255, 0.4);
     top: -6px;
     left: 50%;
     transform: translateX(-50%);
-    background: $yellow-primary;
+    background: $gold-primary;
     color: #000;
     font-size: 9px;
     font-weight: 600;
@@ -1137,7 +1146,7 @@ $text-muted: rgba(255, 255, 255, 0.4);
   input:-webkit-autofill:hover,
   input:-webkit-autofill:focus,
   input:-webkit-autofill:active {
-    -webkit-box-shadow: 0 0 0 1000px rgba(20, 20, 28, 1) inset !important;
+    -webkit-box-shadow: 0 0 0 1000px $bg-card inset !important;
     -webkit-text-fill-color: $text-primary !important;
     transition: background-color 5000s ease-in-out 0s;
     caret-color: $text-primary !important;
@@ -1153,7 +1162,7 @@ $text-muted: rgba(255, 255, 255, 0.4);
 
   &.danger {
     padding-top: 16px;
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    border-top: 1px solid $border-color;
   }
 
   h3 {
@@ -1189,8 +1198,8 @@ $text-muted: rgba(255, 255, 255, 0.4);
 
   input {
     padding: 8px 12px;
-    background: rgba(20, 20, 28, 1);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: $bg-base;
+    border: 1px solid $border-color;
     border-radius: 6px;
     color: $text-primary;
     font-size: 13px;
@@ -1202,15 +1211,15 @@ $text-muted: rgba(255, 255, 255, 0.4);
 
     &:focus {
       outline: none;
-      border-color: $primary;
-      box-shadow: 0 0 0 2px rgba($primary, 0.1);
-      background: rgba(30, 30, 40, 1);
+      border-color: $red-primary;
+      box-shadow: 0 0 0 2px rgba($red-primary, 0.15);
+      background: $bg-card;
     }
 
     &:disabled {
       opacity: 0.5;
       cursor: not-allowed;
-      background: rgba(20, 20, 28, 0.5);
+      background: rgba($bg-base, 0.5);
     }
   }
 }
@@ -1221,7 +1230,7 @@ $text-muted: rgba(255, 255, 255, 0.4);
   justify-content: center;
   gap: 5px;
   padding: 8px 16px;
-  background: linear-gradient(135deg, $primary 0%, $accent 100%);
+  background: linear-gradient(135deg, $red-primary 0%, $red-dark 100%);
   border: none;
   border-radius: 6px;
   color: #fff;
@@ -1233,7 +1242,7 @@ $text-muted: rgba(255, 255, 255, 0.4);
 
   &:hover:not(:disabled) {
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba($primary, 0.3);
+    box-shadow: 0 4px 12px rgba($red-primary, 0.3);
   }
 
   &:disabled {
@@ -1309,7 +1318,7 @@ $text-muted: rgba(255, 255, 255, 0.4);
 
   &:hover {
     background: rgba(255, 255, 255, 0.04);
-    border-color: rgba($primary, 0.2);
+    border-color: rgba($red-primary, 0.2);
     transform: translateX(4px);
   }
 
@@ -1321,13 +1330,13 @@ $text-muted: rgba(255, 255, 255, 0.4);
     font-weight: 500;
 
     &.launch {
-      background: rgba($primary, 0.15);
-      color: $primary;
+      background: rgba($red-primary, 0.15);
+      color: $red-primary;
     }
 
     &.satellite {
-      background: rgba($accent, 0.15);
-      color: $accent;
+      background: rgba($red-light, 0.15);
+      color: $red-light;
     }
 
     &.industry {
@@ -1336,13 +1345,13 @@ $text-muted: rgba(255, 255, 255, 0.4);
     }
 
     &.research {
-      background: rgba(#22c55e, 0.15);
-      color: #22c55e;
+      background: rgba($green-primary, 0.15);
+      color: $green-primary;
     }
 
     &.environment {
-      background: rgba(#f97316, 0.15);
-      color: #f97316;
+      background: rgba($orange-primary, 0.15);
+      color: $orange-primary;
     }
   }
 

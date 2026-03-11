@@ -1,86 +1,290 @@
-/* color palette from <https://github.com/vuejs/theme> */
+/* Red Noir Design System - Base Styles */
+
+/* ========================================
+   CSS Variables - Red Noir Theme
+   ======================================== */
 :root {
-  --vt-c-white: #ffffff;
-  --vt-c-white-soft: #f8f8f8;
-  --vt-c-white-mute: #f2f2f2;
-
-  --vt-c-black: #181818;
-  --vt-c-black-soft: #222222;
-  --vt-c-black-mute: #282828;
-
-  --vt-c-indigo: #2c3e50;
-
-  --vt-c-divider-light-1: rgba(60, 60, 60, 0.29);
-  --vt-c-divider-light-2: rgba(60, 60, 60, 0.12);
-  --vt-c-divider-dark-1: rgba(84, 84, 84, 0.65);
-  --vt-c-divider-dark-2: rgba(84, 84, 84, 0.48);
-
-  --vt-c-text-light-1: var(--vt-c-indigo);
-  --vt-c-text-light-2: rgba(60, 60, 60, 0.66);
-  --vt-c-text-dark-1: var(--vt-c-white);
-  --vt-c-text-dark-2: rgba(235, 235, 235, 0.64);
-}
-
-/* semantic color variables for this project */
-:root {
-  --color-background: var(--vt-c-white);
-  --color-background-soft: var(--vt-c-white-soft);
-  --color-background-mute: var(--vt-c-white-mute);
-
-  --color-border: var(--vt-c-divider-light-2);
-  --color-border-hover: var(--vt-c-divider-light-1);
-
-  --color-heading: var(--vt-c-text-light-1);
-  --color-text: var(--vt-c-text-light-1);
-
+  /* Primary Colors */
+  --color-primary: #ef233c;
+  --color-primary-glow: rgba(239, 35, 60, 0.5);
+  --color-primary-dark: #d90429;
+  
+  /* Background Colors */
+  --color-bg-primary: #000000;
+  --color-bg-secondary: #09090b;
+  --color-bg-tertiary: #18181b;
+  --color-bg-elevated: #27272a;
+  
+  /* Surface Colors */
+  --color-surface-1: #09090b;
+  --color-surface-2: #18181b;
+  --color-surface-3: #27272a;
+  --color-surface-4: #3f3f46;
+  
+  /* Text Colors */
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #f4f4f5;
+  --color-text-tertiary: #e4e4e7;
+  --color-text-muted: #a1a1aa;
+  --color-text-subtle: #71717a;
+  
+  /* Border Colors */
+  --color-border: rgba(255, 255, 255, 0.1);
+  --color-border-hover: rgba(255, 255, 255, 0.2);
+  --color-border-active: var(--color-primary);
+  
+  /* Gray Scale */
+  --gray-50: #fafafa;
+  --gray-100: #f4f4f5;
+  --gray-200: #e4e4e7;
+  --gray-300: #d4d4d8;
+  --gray-400: #a1a1aa;
+  --gray-500: #71717a;
+  --gray-600: #52525b;
+  --gray-700: #3f3f46;
+  --gray-800: #27272a;
+  --gray-900: #18181b;
+  --gray-950: #09090b;
+  
+  /* Spacing */
   --section-gap: 160px;
+  --content-max-width: 1280px;
+  
+  /* Typography */
+  --font-heading: 'Manrope', sans-serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  
+  /* Transitions */
+  --transition-fast: 150ms ease;
+  --transition-normal: 300ms ease;
+  --transition-slow: 500ms ease;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 0 20px var(--color-primary-glow);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-background: var(--vt-c-black);
-    --color-background-soft: var(--vt-c-black-soft);
-    --color-background-mute: var(--vt-c-black-mute);
-
-    --color-border: var(--vt-c-divider-dark-2);
-    --color-border-hover: var(--vt-c-divider-dark-1);
-
-    --color-heading: var(--vt-c-text-dark-1);
-    --color-text: var(--vt-c-text-dark-2);
-  }
-}
-
+/* ========================================
+   Base Reset & Typography
+   ======================================== */
 *,
 *::before,
 *::after {
   box-sizing: border-box;
   margin: 0;
-  font-weight: normal;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
 }
 
 body {
   min-height: 100vh;
-  color: var(--color-text);
-  background: var(--color-background);
-  transition:
-    color 0.5s,
-    background-color 0.5s;
+  color: var(--color-text-primary);
+  background: var(--color-bg-primary);
+  font-family: var(--font-body);
+  font-size: 1rem;
   line-height: 1.6;
-  font-family:
-    Inter,
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    Roboto,
-    Oxygen,
-    Ubuntu,
-    Cantarell,
-    'Fira Sans',
-    'Droid Sans',
-    'Helvetica Neue',
-    sans-serif;
-  font-size: 15px;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--color-text-primary);
+}
+
+h1 { font-size: 3rem; }
+h2 { font-size: 2.25rem; }
+h3 { font-size: 1.5rem; }
+h4 { font-size: 1.25rem; }
+h5 { font-size: 1.125rem; }
+h6 { font-size: 1rem; }
+
+a {
+  color: var(--color-primary);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+a:hover {
+  color: var(--color-text-primary);
+}
+
+/* ========================================
+   Animations
+   ======================================== */
+
+/* Fade In Up */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Border Spin (for shiny buttons) */
+@keyframes border-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Pulse Glow */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px var(--color-primary-glow);
+  }
+  50% {
+    box-shadow: 0 0 40px var(--color-primary-glow);
+  }
+}
+
+/* Shimmer */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* ========================================
+   Animation Classes
+   ======================================== */
+.animate-fade-up {
+  animation: fade-in-up 0.6s ease-out forwards;
+}
+
+.animate-fade-up-delay-1 {
+  animation: fade-in-up 0.6s ease-out 0.1s forwards;
+  opacity: 0;
+}
+
+.animate-fade-up-delay-2 {
+  animation: fade-in-up 0.6s ease-out 0.2s forwards;
+  opacity: 0;
+}
+
+.animate-fade-up-delay-3 {
+  animation: fade-in-up 0.6s ease-out 0.3s forwards;
+  opacity: 0;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* ========================================
+   Shiny CTA Button
+   ======================================== */
+.shiny-cta {
+  position: relative;
+  overflow: hidden;
+  border-radius: 8px;
+  background: var(--color-bg-tertiary);
+  z-index: 1;
+}
+
+.shiny-cta::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg 90deg,
+    var(--color-primary) 90deg 180deg,
+    transparent 180deg 270deg,
+    var(--color-primary) 270deg 360deg
+  );
+  border-radius: inherit;
+  animation: border-spin 2.5s linear infinite;
+  z-index: -1;
+}
+
+.shiny-cta::after {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  background: var(--color-bg-tertiary);
+  border-radius: inherit;
+  z-index: -1;
+}
+
+.shiny-cta:hover::after {
+  background: var(--color-bg-elevated);
+}
+
+/* ========================================
+   Utility Classes
+   ======================================== */
+.text-gradient {
+  background: linear-gradient(135deg, var(--color-text-primary) 0%, var(--color-primary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.glass {
+  background: rgba(9, 9, 11, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.border-subtle {
+  border: 1px solid var(--color-border);
+}
+
+.border-subtle:hover {
+  border-color: var(--color-border-hover);
+}
+
+/* ========================================
+   Scrollbar Styling
+   ======================================== */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--gray-700);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--gray-600);
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--gray-700) var(--color-bg-secondary);
+}
+
+/* ========================================
+   Selection
+   ======================================== */
+::selection {
+  background: var(--color-primary);
+  color: var(--color-text-primary);
 }

@@ -1,35 +1,138 @@
-@import './base.css';
+@import "tailwindcss";
 
-#app {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
+/* Red Noir Theme Custom Properties */
+:root {
+  /* Primary Dark */
+  --color-primary-dark: #000000;
+  --color-primary-dark-950: #1a0505;
+  
+  /* Accent Red */
+  --color-accent-red: #ef233c;
+  --color-accent-red-glow: rgba(239, 35, 60, 0.5);
+  
+  /* Surface */
+  --color-surface: #09090b;
+  --color-surface-50: #18181b;
+  --color-surface-100: #27272a;
+  --color-surface-200: #3f3f46;
+  
+  /* Text */
+  --color-text: #ffffff;
+  --color-text-primary: #f4f4f5;
+  --color-text-secondary: #e4e4e7;
+  
+  /* Muted */
+  --color-muted: #a1a1aa;
+  --color-muted-50: #71717a;
+  --color-muted-100: #52525b;
+  
+  /* Fonts */
+  --font-heading: 'Manrope', sans-serif;
+  --font-body: 'Inter', sans-serif;
+}
+
+/* Base Styles */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
   font-weight: normal;
 }
 
-a,
-.green {
-  text-decoration: none;
-  color: hsla(160, 100%, 37%, 1);
-  transition: 0.4s;
-  padding: 3px;
+body {
+  min-height: 100vh;
+  color: var(--color-text-primary);
+  background: var(--color-primary-dark);
+  line-height: 1.6;
+  font-family: var(--font-body);
+  font-size: 15px;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-@media (hover: hover) {
-  a:hover {
-    background-color: hsla(160, 100%, 37%, 0.2);
-  }
+/* Headings use Manrope font */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
 }
 
-@media (min-width: 1024px) {
-  body {
-    display: flex;
-    place-items: center;
-  }
+#app {
+  width: 100%;
+  min-height: 100vh;
+}
 
-  #app {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    padding: 0 2rem;
-  }
+/* Custom utility classes for Red Noir theme */
+.bg-primary-dark {
+  background-color: var(--color-primary-dark);
+}
+
+.bg-primary-dark-950 {
+  background-color: var(--color-primary-dark-950);
+}
+
+.bg-accent-red {
+  background-color: var(--color-accent-red);
+}
+
+.bg-accent-red-glow {
+  background-color: var(--color-accent-red-glow);
+}
+
+.bg-surface {
+  background-color: var(--color-surface);
+}
+
+.bg-surface-50 {
+  background-color: var(--color-surface-50);
+}
+
+.bg-surface-100 {
+  background-color: var(--color-surface-100);
+}
+
+.bg-surface-200 {
+  background-color: var(--color-surface-200);
+}
+
+.text-accent-red {
+  color: var(--color-accent-red);
+}
+
+.text-text-primary {
+  color: var(--color-text-primary);
+}
+
+.text-text-secondary {
+  color: var(--color-text-secondary);
+}
+
+.text-muted {
+  color: var(--color-muted);
+}
+
+.text-muted-50 {
+  color: var(--color-muted-50);
+}
+
+.text-muted-100 {
+  color: var(--color-muted-100);
+}
+
+/* Accent red glow effect */
+.glow-accent-red {
+  box-shadow: 0 0 20px var(--color-accent-red-glow);
+}
+
+.glow-accent-red-strong {
+  box-shadow: 0 0 40px var(--color-accent-red-glow), 0 0 80px var(--color-accent-red-glow);
+}
+
+/* Border colors */
+.border-surface {
+  border-color: var(--color-surface-100);
+}
+
+.border-accent-red {
+  border-color: var(--color-accent-red);
 }

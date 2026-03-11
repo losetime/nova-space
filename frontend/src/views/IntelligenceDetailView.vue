@@ -46,7 +46,7 @@
 
         <!-- 标签 -->
         <div v-if="detail.tags?.length" class="tags-box">
-          <a-tag v-for="tag in detail.tags" :key="tag" color="blue">{{ tag }}</a-tag>
+          <a-tag v-for="tag in detail.tags" :key="tag" color="red">{{ tag }}</a-tag>
         </div>
 
         <!-- 来源 -->
@@ -215,7 +215,7 @@ onMounted(() => {
 <style scoped lang="scss">
 .intelligence-detail-view {
   min-height: calc(100vh - 64px);
-  background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 100%);
+  background: #000000;
   padding: 40px 24px;
 }
 
@@ -231,7 +231,7 @@ onMounted(() => {
     color: rgba(255, 255, 255, 0.6);
 
     &:hover {
-      color: #00d4ff;
+      color: #ef233c;
     }
   }
 }
@@ -247,13 +247,13 @@ onMounted(() => {
     margin-bottom: 16px;
 
     &.launch {
-      background: rgba(0, 212, 255, 0.15);
-      color: #00d4ff;
+      background: rgba(239, 35, 60, 0.15);
+      color: #ef233c;
     }
 
     &.satellite {
-      background: rgba(123, 44, 191, 0.15);
-      color: #9d4edd;
+      background: rgba(239, 35, 60, 0.1);
+      color: #ff6b6b;
     }
 
     &.industry {
@@ -275,9 +275,10 @@ onMounted(() => {
   h1 {
     font-size: 32px;
     font-weight: 700;
-    color: #fff;
+    color: #ffffff;
     line-height: 1.4;
     margin-bottom: 16px;
+    font-family: 'Manrope', sans-serif;
   }
 
   .detail-meta {
@@ -285,7 +286,7 @@ onMounted(() => {
     flex-wrap: wrap;
     gap: 20px;
     font-size: 14px;
-    color: rgba(255, 255, 255, 0.5);
+    color: #a1a1aa;
 
     span {
       display: flex;
@@ -296,30 +297,35 @@ onMounted(() => {
 }
 
 .summary-box {
-  background: rgba(0, 212, 255, 0.1);
-  border-left: 3px solid #00d4ff;
+  background: #18181b;
+  border-left: 3px solid #ef233c;
   padding: 20px 24px;
   margin-bottom: 32px;
   border-radius: 0 12px 12px 0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-left: 3px solid #ef233c;
 
   p {
-    color: rgba(255, 255, 255, 0.85);
+    color: #f4f4f5;
     font-size: 16px;
     line-height: 1.8;
     margin: 0;
+    font-family: 'Inter', sans-serif;
   }
 }
 
 .content-text {
-  color: rgba(255, 255, 255, 0.85);
+  color: #f4f4f5;
   font-size: 16px;
   line-height: 1.9;
   margin-bottom: 32px;
+  font-family: 'Inter', sans-serif;
 
   :deep(h1), :deep(h2), :deep(h3) {
-    color: #fff;
+    color: #ffffff;
     margin-top: 32px;
     margin-bottom: 16px;
+    font-family: 'Manrope', sans-serif;
   }
 
   :deep(h1) { font-size: 28px; }
@@ -347,11 +353,12 @@ onMounted(() => {
   }
 
   :deep(pre) {
-    background: rgba(0, 0, 0, 0.3);
+    background: #18181b;
     padding: 16px;
     border-radius: 8px;
     overflow-x: auto;
     margin-bottom: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
 
     code {
       background: none;
@@ -360,42 +367,42 @@ onMounted(() => {
   }
 
   :deep(blockquote) {
-    border-left: 3px solid #00d4ff;
+    border-left: 3px solid #ef233c;
     padding-left: 16px;
     margin: 20px 0;
-    color: rgba(255, 255, 255, 0.7);
+    color: #a1a1aa;
   }
 }
 
 .analysis-box, .trend-box {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(0, 212, 255, 0.15);
+  background: #18181b;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
   padding: 24px;
   margin-bottom: 20px;
 
   h4 {
-    color: #00d4ff;
+    color: #ef233c;
     font-size: 16px;
     margin-bottom: 12px;
     display: flex;
     align-items: center;
     gap: 8px;
+    font-family: 'Manrope', sans-serif;
   }
 
   p {
-    color: rgba(255, 255, 255, 0.75);
+    color: #a1a1aa;
     font-size: 15px;
     line-height: 1.8;
     margin: 0;
+    font-family: 'Inter', sans-serif;
   }
 }
 
 .trend-box {
-  border-color: rgba(123, 44, 191, 0.3);
-
   h4 {
-    color: #9d4edd;
+    color: #ff6b6b;
   }
 }
 
@@ -406,6 +413,9 @@ onMounted(() => {
     margin-bottom: 8px;
     padding: 4px 12px;
     font-size: 13px;
+    background: rgba(239, 35, 60, 0.15);
+    border-color: rgba(239, 35, 60, 0.3);
+    color: #ef233c;
   }
 }
 
@@ -414,13 +424,14 @@ onMounted(() => {
   align-items: center;
   gap: 8px;
   padding: 16px;
-  background: rgba(255, 255, 255, 0.03);
+  background: #18181b;
   border-radius: 8px;
   margin-bottom: 32px;
-  color: rgba(255, 255, 255, 0.6);
+  color: #a1a1aa;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 
   a {
-    color: #00d4ff;
+    color: #ef233c;
     text-decoration: none;
 
     &:hover {
@@ -434,6 +445,27 @@ onMounted(() => {
   gap: 16px;
   padding-top: 24px;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
+
+  :deep(.ant-btn-primary) {
+    background: #ef233c;
+    border-color: #ef233c;
+
+    &:hover {
+      background: #dc1c33;
+      border-color: #dc1c33;
+    }
+  }
+
+  :deep(.ant-btn-default) {
+    background: transparent;
+    border-color: rgba(255, 255, 255, 0.2);
+    color: #f4f4f5;
+
+    &:hover {
+      border-color: #ef233c;
+      color: #ef233c;
+    }
+  }
 }
 
 .error-state {
@@ -443,11 +475,21 @@ onMounted(() => {
   min-height: 60vh;
 
   :deep(.ant-result-title) {
-    color: #fff;
+    color: #ffffff;
   }
 
   :deep(.ant-result-subtitle) {
-    color: rgba(255, 255, 255, 0.5);
+    color: #a1a1aa;
+  }
+
+  :deep(.ant-btn-primary) {
+    background: #ef233c;
+    border-color: #ef233c;
+
+    &:hover {
+      background: #dc1c33;
+      border-color: #dc1c33;
+    }
   }
 }
 

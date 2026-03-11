@@ -3,12 +3,14 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import vueDevTools from 'vite-plugin-vue-devtools'
 import cesium from 'vite-plugin-cesium'
+import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
   plugins: [
     vue(),
     vueDevTools(),
-    cesium()
+    cesium(),
+    tailwindcss()
   ],
   resolve: {
     alias: {

@@ -5,6 +5,10 @@ import 'ant-design-vue/dist/reset.css'
 import App from './App.vue'
 import router from './router'
 
+// 导入样式
+import './assets/base.css'
+import './assets/main.css'
+
 // 导入 Cesium 样式
 import 'cesium/Build/Cesium/Widgets/widgets.css'
 
