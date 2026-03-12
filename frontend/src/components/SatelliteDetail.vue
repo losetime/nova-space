@@ -89,28 +89,20 @@
       </div>
     </div>
 
-    <!-- 操作按钮 -->
-    <div class="actions-section">
-      <a-button type="primary" block class="action-btn primary">
-        <EyeOutlined />
-        查看详细轨道
-      </a-button>
-      <a-button block class="action-btn" disabled>
-        <LockOutlined />
-        <span>轨道预测</span>
-        <span class="coming-soon">即将推出</span>
-      </a-button>
+    <!-- 轨道预测面板 -->
+    <div class="section prediction-section">
+      <OrbitPrediction
+        ref="orbitPredictionRef"
+        :satellite="satellite"
+        @show-orbit="handleShowOrbit"
+        @fly-to="handleFlyTo"
+        @clear-orbit="handleClearOrbit"
+      />
     </div>
 
-    <!-- 升级提示 -->
-    <div class="upgrade-card">
-      <div class="upgrade-icon">
-        <CrownOutlined />
-      </div>
-      <div class="upgrade-content">
-        <span class="upgrade-title">升级会员</span>
-        <span class="upgrade-desc">解锁轨道预测、过境分析等高级功能</span>
-      </div>
+    <!-- 过境预测面板 -->
+    <div class="section pass-section">
+      <PassPrediction ref="passPredictionRef" :satellite="satellite" />
     </div>
   </div>
 
@@ -128,23 +120,42 @@
 </template>
 
 <script setup lang="ts">
+import { ref, watch } from 'vue'
 import {
   GlobalOutlined,
-  LockOutlined,
-  CrownOutlined,
   CompassOutlined,
   EnvironmentOutlined,
   RocketOutlined,
   DashboardOutlined,
-  EyeOutlined
 } from '@ant-design/icons-vue'
+import OrbitPrediction from './OrbitPrediction.vue'
+import PassPrediction from './PassPrediction.vue'
 import type { Satellite } from '@/hooks/useWebSocket'
 
 interface Props {
   satellite: Satellite | null
 }
 
-defineProps<Props>()
+const props = defineProps<Props>()
+
+const emit = defineEmits<{
+  (e: 'showOrbit', points: Array<{ lat: number; lng: number; alt: number }>): void
+  (e: 'flyTo', position: { lat: number; lng: number; alt: number }): void
+  (e: 'clearOrbit', noradId: string): void
+}>()
+
+// 子组件引用
+const orbitPredictionRef = ref<InstanceType<typeof OrbitPrediction> | null>(null)
+const passPredictionRef = ref<InstanceType<typeof PassPrediction> | null>(null)
+
+// 监听卫星变化，清除预测数据
+watch(() => props.satellite, (newSat, oldSat) => {
+  if (newSat?.noradId !== oldSat?.noradId && oldSat?.noradId) {
+    orbitPredictionRef.value?.reset()
+    passPredictionRef.value?.reset()
+    emit('clearOrbit', oldSat.noradId)
+  }
+})
 
 const formatNumber = (num: number, decimals: number): string => {
   return num.toFixed(decimals)
@@ -168,6 +179,21 @@ const getOrbitClass = (alt: number): string => {
   if (alt < 2000) return 'leo'
   if (alt < 35000) return 'meo'
   return 'geo'
+}
+
+// 显示预测轨道
+const handleShowOrbit = (points: Array<{ lat: number; lng: number; alt: number }>) => {
+  emit('showOrbit', points)
+}
+
+// 飞到指定位置
+const handleFlyTo = (position: { lat: number; lng: number; alt: number }) => {
+  emit('flyTo', position)
+}
+
+// 清除预测轨道
+const handleClearOrbit = () => {
+  emit('clearOrbit', props.satellite?.noradId)
 }
 </script>
 
@@ -441,96 +467,19 @@ const getOrbitClass = (alt: number): string => {
   color: rgba(255, 255, 255, 0.4);
 }
 
-// 操作按钮
-.actions-section {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-bottom: 16px;
+// 轨道预测区块
+.prediction-section {
+  border-top: 1px solid rgba(0, 212, 255, 0.08);
+  padding-top: 16px;
+  margin-bottom: 0;
 }
 
-.action-btn {
-  height: 42px;
-  border-radius: 12px;
-  font-size: 13px;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  transition: all 0.3s ease;
-
-  &.primary {
-    background: linear-gradient(135deg, #00d4ff 0%, #00a8cc 100%);
-    border: none;
-
-    &:hover {
-      background: linear-gradient(135deg, #00e5ff 0%, #00b8e0 100%);
-      transform: translateY(-2px);
-      box-shadow: 0 8px 25px rgba(0, 212, 255, 0.3);
-    }
-  }
-
-  &:not(.primary) {
-    background: rgba(0, 212, 255, 0.06);
-    border: 1px solid rgba(0, 212, 255, 0.15);
-    color: rgba(255, 255, 255, 0.5);
-
-    .coming-soon {
-      margin-left: auto;
-      font-size: 10px;
-      color: rgba(255, 255, 255, 0.3);
-    }
-  }
-}
-
-// 升级卡片
-.upgrade-card {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 16px;
-  background: linear-gradient(135deg, rgba(255, 215, 0, 0.08) 0%, rgba(255, 170, 0, 0.04) 100%);
-  border: 1px solid rgba(255, 215, 0, 0.15);
-  border-radius: 14px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-
-  &:hover {
-    background: linear-gradient(135deg, rgba(255, 215, 0, 0.12) 0%, rgba(255, 170, 0, 0.08) 100%);
-    border-color: rgba(255, 215, 0, 0.25);
-    transform: translateY(-2px);
-  }
-
-  .upgrade-icon {
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 170, 0, 0.2) 100%);
-    border-radius: 12px;
-    font-size: 18px;
-    color: #ffd700;
-  }
-
-  .upgrade-content {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-
-    .upgrade-title {
-      font-size: 14px;
-      font-weight: 600;
-      color: #ffd700;
-    }
-
-    .upgrade-desc {
-      font-size: 11px;
-      color: rgba(255, 255, 255, 0.5);
-    }
-  }
+// 过境预测区块
+.pass-section {
+  border-top: 1px solid rgba(0, 212, 255, 0.08);
+  padding-top: 16px;
+  margin-bottom: 0;
+  margin-top: 16px;
 }
 
 // 空状态

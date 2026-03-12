@@ -70,6 +70,14 @@ nova-space/
 - [x] 卫星列表展示
 - [x] 卫星轨道计算与显示
 - [x] 卫星标签显示（点击卫星显示名称和轨道）
+- [x] 轨道位置预测（基于TLE计算未来轨道）
+- [x] 卫星过境预测（预测卫星经过观测点的时间、方位角、仰角）
+
+#### 空间天气
+- [x] 空间天气数据展示（太阳风、X射线通量、地磁指数）
+- [x] 空间天气预警列表
+- [x] X射线通量图表（ECharts）
+- [x] 预警详情弹窗（中文翻译）
 
 #### 航天科普
 - [x] 科普文章列表
@@ -108,9 +116,6 @@ nova-space/
 - [ ] 发射任务查询
 - [ ] 卫星数据关联分析
 - [ ] 数据对比功能
-- [ ] 轨道预测
-- [ ] 卫星过境预测
-- [ ] 空间预警
 
 #### 航天科普模块
 - [ ] 用户投稿功能
@@ -122,6 +127,9 @@ nova-space/
 #### 个人中心模块
 - [ ] 成就系统
 - [ ] 关注与动态
+
+#### 空间天气模块
+- [ ] 预警订阅推送
 
 ## 快速开始
 
@@ -185,6 +193,16 @@ pnpm run dev
 | GET | /api/satellites | 获取卫星列表 |
 | GET | /api/satellites/:noradId | 获取指定卫星 |
 | GET | /api/satellites/:noradId/orbit | 获取卫星轨道数据 |
+| GET | /api/satellites/:noradId/predict | 轨道位置预测 |
+| GET | /api/satellites/:noradId/position | 预测指定时间点位置 |
+| GET | /api/satellites/:noradId/passes | 卫星过境预测 |
+
+### 空间天气相关
+| 方法 | 路径 | 描述 |
+|------|------|------|
+| GET | /api/space-weather/current | 获取当前空间天气 |
+| GET | /api/space-weather/alerts | 获取预警列表 |
+| GET | /api/space-weather/xray-flux | 获取X射线通量数据 |
 
 ### 科普相关
 | 方法 | 路径 | 描述 |

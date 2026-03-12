@@ -15,6 +15,7 @@ import { EducationModule } from './modules/education/education.module';
 import { IntelligenceModule } from './modules/intelligence/intelligence.module';
 import { NotificationModule } from './modules/notification/notification.module';
 import { FeedbackModule } from './modules/feedback/feedback.module';
+import { SpaceWeatherModule } from './modules/space-weather/space-weather.module';
 import appConfig from './config/app.config';
 
 @Module({
@@ -47,6 +48,7 @@ import appConfig from './config/app.config';
     IntelligenceModule,
     NotificationModule,
     FeedbackModule,
+    SpaceWeatherModule,
   ],
   controllers: [AppController],
   providers: [

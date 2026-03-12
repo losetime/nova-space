@@ -264,20 +264,120 @@ export interface OrbitPoint {
   lng: number
   lat: number
   alt: number
+  timestamp?: string
+  velocity?: {
+    x: number
+    y: number
+    z: number
+  }
 }
 
 // 卫星轨道数据
 export interface SatelliteOrbit {
   noradId: string
   name: string
+  startTime?: string
+  duration?: number
+  steps?: number
   orbitPoints: OrbitPoint[]
+}
+
+// 轨道预测结果
+export interface OrbitPrediction {
+  noradId: string
+  name: string
+  startTime: string
+  endTime: string
+  duration: number
+  steps: number
+  orbit: OrbitPoint[]
+  orbitalPeriod?: number
+}
+
+// 位置预测结果
+export interface PositionPrediction {
+  noradId: string
+  name: string
+  timestamp: string
+  position: {
+    lat: number
+    lng: number
+    alt: number
+  }
+  velocity: {
+    x: number
+    y: number
+    z: number
+    total: number
+  }
+  orbitalInfo?: {
+    period: number
+    inclination: number
+    eccentricity: number
+  }
+}
+
+// 过境事件
+export interface PassEvent {
+  startTime: string
+  endTime: string
+  maxElevationTime: string
+  maxElevation: number
+  startAzimuth: number
+  endAzimuth: number
+  maxAzimuth: number
+  duration: number
+  visible: boolean
+}
+
+// 过境预测结果
+export interface PassPrediction {
+  noradId: string
+  name: string
+  observer: {
+    lat: number
+    lng: number
+    alt: number
+  }
+  passes: PassEvent[]
+  startDate: string
+  endDate: string
+  totalPasses: number
 }
 
 // 卫星 API
 export const satelliteApi = {
   // 获取卫星轨道数据
-  getOrbit: (noradId: string | number) =>
-    api.get<ApiResponse<SatelliteOrbit>>(`/satellites/${noradId}/orbit`),
+  getOrbit: (noradId: string | number, params?: {
+    steps?: number
+    startTime?: string
+    duration?: number
+  }) =>
+    api.get<ApiResponse<SatelliteOrbit>>(`/satellites/${noradId}/orbit`, { params }),
+
+  // 轨道预测（完整版）
+  predictOrbit: (noradId: string | number, params?: {
+    startTime?: string
+    duration?: number
+    steps?: number
+  }) =>
+    api.get<ApiResponse<OrbitPrediction>>(`/satellites/${noradId}/predict`, { params }),
+
+  // 预测指定时间点的位置
+  predictPosition: (noradId: string | number, time?: string) =>
+    api.get<ApiResponse<PositionPrediction>>(`/satellites/${noradId}/position`, {
+      params: time ? { time } : undefined,
+    }),
+
+  // 预测卫星过境
+  predictPasses: (noradId: string | number, params: {
+    lat: number
+    lng: number
+    alt?: number
+    days?: number
+    minElevation?: number
+  }) =>
+    api.get<ApiResponse<PassPrediction>>(`/satellites/${noradId}/passes`, { params }),
 }
 
 // 情报 API
@@ -337,6 +437,73 @@ export const notificationApi = {
   markAllRead: () => api.put<ApiResponse<void>>('/notifications/read-all'),
 
   getUnreadCount: () => api.get<ApiResponse<{ count: number }>>('/notifications/unread-count'),
+}
+
+// 空间天气状态
+export interface SpaceWeatherStatus {
+  dateStamp: string | null
+  timeStamp: string | null
+  radiation: {
+    scale: number
+    text: string
+    minorProb: number | null
+    majorProb: number | null
+  }
+  solarFlare: {
+    scale: number
+    text: string
+    minorProb: number | null
+    majorProb: number | null
+  }
+  geomagnetic: {
+    scale: number
+    text: string
+    minorProb: number | null
+    majorProb: number | null
+  }
+  solarWind: {
+    speed: number
+    timeStamp: string
+  }
+}
+
+// 空间天气预警
+export interface SpaceWeatherAlert {
+  id: string
+  issueTime: string
+  title: string
+  type: 'geomagnetic' | 'radiation' | 'radio_blackout' | 'xray_flux' | 'unknown'
+  level: number
+  message: string
+}
+
+// X射线通量数据
+export interface XrayFluxData {
+  data: Array<{
+    time: string
+    flux: number
+    observedFlux: number
+  }>
+  unit: string
+  description: string
+}
+
+// 空间天气 API
+export const spaceWeatherApi = {
+  // 获取当前空间天气状态
+  getCurrentStatus: () => api.get<ApiResponse<SpaceWeatherStatus>>('/space-weather/current'),
+
+  // 获取预警列表
+  getAlerts: (limit?: number) =>
+    api.get<ApiResponse<{ list: SpaceWeatherAlert[]; total: number }>>('/space-weather/alerts', {
+      params: { limit },
+    }),
+
+  // 获取X射线通量数据
+  getXrayFlux: (hours?: number) =>
+    api.get<ApiResponse<XrayFluxData>>('/space-weather/xray-flux', {
+      params: { hours },
+    }),
 }
 
 export default api

@@ -50,6 +50,11 @@ const router = createRouter({
           name: 'feedback',
           component: () => import('@/views/FeedbackView.vue'),
         },
+        {
+          path: 'space-weather',
+          name: 'space-weather',
+          component: () => import('@/views/SpaceWeatherView.vue'),
+        },
       ],
     },
     {

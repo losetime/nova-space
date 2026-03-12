@@ -124,7 +124,8 @@ import {
   DownOutlined,
   CrownOutlined,
   LogoutOutlined,
-  CommentOutlined
+  CommentOutlined,
+  ThunderboltOutlined
 } from '@ant-design/icons-vue'
 
 const route = useRoute()
@@ -144,6 +145,7 @@ const navItems = [
   { name: '卫星数据', path: '/satellite', icon: GlobalOutlined },
   { name: '航天科普', path: '/education', icon: BookOutlined },
   { name: '航天情报', path: '/intelligence', icon: FileTextOutlined },
+  { name: '空间天气', path: '/space-weather', icon: ThunderboltOutlined },
 ]
 
 const levelText = computed(() => {
@@ -436,6 +438,10 @@ const handleMenuClick = ({ key }: { key: string }) => {
   justify-content: space-between;
   color: rgba(255, 255, 255, 0.5);
   font-size: 13px;
+
+  p {
+    margin: 0;
+  }
 }
 
 .footer-links {

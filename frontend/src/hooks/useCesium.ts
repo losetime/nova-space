@@ -4,6 +4,7 @@ import * as Cesium from 'cesium'
 export function useCesium() {
   const viewer = ref(null)
   const satelliteEntities = new Map()
+  const predictedOrbitEntities = new Map() // 存储预测轨道实体
   const isInitialized = ref(false)
 
   // 初始化 Cesium 场景
@@ -123,6 +124,128 @@ export function useCesium() {
     })
   }
 
+  // 显示预测轨道
+  const showPredictedOrbit = (noradId: string, orbitPoints: Array<{ lat: number; lng: number; alt: number }>) => {
+    if (!viewer.value || !orbitPoints.length) return
+
+    // 清除该卫星之前的预测轨道
+    clearPredictedOrbit(noradId)
+
+    // 创建轨道点位置数组
+    const positions = orbitPoints.map(point =>
+      Cesium.Cartesian3.fromDegrees(point.lng, point.lat, point.alt)
+    )
+
+    // 创建预测轨道线（紫色渐变）
+    const orbitEntityId = `predicted_orbit_${noradId}`
+    const orbitEntity = viewer.value.entities.add({
+      id: orbitEntityId,
+      polyline: {
+        positions: positions,
+        width: 3,
+        material: new Cesium.PolylineGlowMaterialProperty({
+          glowPower: 0.3,
+          color: Cesium.Color.fromCssColorString('#a855f7'), // 紫色
+        }),
+        clampToGround: false
+      }
+    })
+
+    predictedOrbitEntities.set(noradId, orbitEntity)
+
+    // 添加轨道点标记（每隔一定间隔显示一个点）
+    const step = Math.max(1, Math.floor(orbitPoints.length / 20)) // 最多显示20个点
+    for (let i = 0; i < orbitPoints.length; i += step) {
+      const point = orbitPoints[i]
+      const pointEntityId = `predicted_point_${noradId}_${i}`
+      
+      viewer.value.entities.add({
+        id: pointEntityId,
+        position: Cesium.Cartesian3.fromDegrees(point.lng, point.lat, point.alt),
+        point: {
+          pixelSize: 3,
+          color: Cesium.Color.fromCssColorString('#a855f7').withAlpha(0.6),
+          outlineColor: Cesium.Color.WHITE.withAlpha(0.3),
+          outlineWidth: 1
+        }
+      })
+      
+      predictedOrbitEntities.set(pointEntityId, true)
+    }
+
+    // 飞到轨道中心位置
+    if (orbitPoints.length > 0) {
+      const centerIndex = Math.floor(orbitPoints.length / 2)
+      const centerPoint = orbitPoints[centerIndex]
+      flyToPosition(centerPoint, orbitPoints[0].alt + 5000000)
+    }
+  }
+
+  // 清除预测轨道
+  const clearPredictedOrbit = (noradId: string) => {
+    if (!viewer.value) return
+
+    // 删除预测轨道线
+    const orbitEntityId = `predicted_orbit_${noradId}`
+    const orbitEntity = viewer.value.entities.getById(orbitEntityId)
+    if (orbitEntity) {
+      viewer.value.entities.remove(orbitEntity)
+      predictedOrbitEntities.delete(orbitEntityId)
+    }
+
+    // 删除所有预测轨道点
+    const keysToRemove = []
+    predictedOrbitEntities.forEach((_, key) => {
+      if (key.toString().startsWith(`predicted_point_${noradId}_`)) {
+        const pointEntity = viewer.value.entities.getById(key)
+        if (pointEntity) {
+          viewer.value.entities.remove(pointEntity)
+        }
+        keysToRemove.push(key)
+      }
+    })
+    keysToRemove.forEach(key => predictedOrbitEntities.delete(key))
+  }
+
+  // 清除所有预测轨道
+  const clearAllPredictedOrbits = () => {
+    if (!viewer.value) return
+
+    const entitiesToRemove = []
+    viewer.value.entities.values.forEach(entity => {
+      if (entity.id && (
+        entity.id.toString().startsWith('predicted_orbit_') ||
+        entity.id.toString().startsWith('predicted_point_')
+      )) {
+        entitiesToRemove.push(entity)
+      }
+    })
+    
+    entitiesToRemove.forEach(entity => {
+      viewer.value.entities.remove(entity)
+    })
+    
+    predictedOrbitEntities.clear()
+  }
+
+  // 飞到指定位置
+  const flyToPosition = (position: { lat: number; lng: number; alt: number }, distance?: number) => {
+    if (!viewer.value) return
+
+    const { lat, lng, alt } = position
+    const flyDistance = distance || alt + 10000000
+
+    viewer.value.camera.flyTo({
+      destination: Cesium.Cartesian3.fromDegrees(lng, lat, flyDistance),
+      orientation: {
+        heading: Cesium.Math.toRadians(0),
+        pitch: Cesium.Math.toRadians(-60),
+        roll: 0
+      },
+      duration: 1.5
+    })
+  }
+
   // 隐藏所有卫星标签
   const hideAllLabels = () => {
     satelliteEntities.forEach((entity) => {
@@ -200,6 +323,7 @@ export function useCesium() {
       viewer.value = null
     }
     satelliteEntities.clear()
+    predictedOrbitEntities.clear()
     isInitialized.value = false
   }
 
@@ -218,6 +342,10 @@ export function useCesium() {
     hideAllLabels,
     showSatelliteLabel,
     cleanupSatellites,
+    showPredictedOrbit,
+    clearPredictedOrbit,
+    clearAllPredictedOrbits,
+    flyToPosition,
     destroyCesium
   }
 }

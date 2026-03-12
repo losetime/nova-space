@@ -118,7 +118,12 @@
               <RightOutlined />
             </a-button>
           </div>
-          <SatelliteDetail :satellite="selectedSatellite" />
+          <SatelliteDetail
+            :satellite="selectedSatellite"
+            @show-orbit="handleShowPredictedOrbit"
+            @fly-to="handleFlyToPosition"
+            @clear-orbit="handleClearOrbit"
+          />
         </aside>
       </transition>
     </div>
@@ -157,6 +162,27 @@ const { status, satellites, satelliteCount, lastUpdate } = websocket
 
 // 卫星选择逻辑
 const { selectedSatellite, handleSelectSatellite } = useSatellite(cesium, websocket)
+
+// 显示预测轨道
+const handleShowPredictedOrbit = (points: Array<{ lat: number; lng: number; alt: number }>) => {
+  if (cesium && selectedSatellite.value) {
+    cesium.showPredictedOrbit(selectedSatellite.value.noradId, points)
+  }
+}
+
+// 飞到指定位置
+const handleFlyToPosition = (position: { lat: number; lng: number; alt: number }) => {
+  if (cesium) {
+    cesium.flyToPosition(position)
+  }
+}
+
+// 清除预测轨道
+const handleClearOrbit = (noradId: string) => {
+  if (cesium && noradId) {
+    cesium.clearPredictedOrbit(noradId)
+  }
+}
 
 // 监听卫星数据变化，更新 Cesium
 watch(satellites, (newSatellites) => {
