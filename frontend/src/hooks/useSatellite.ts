@@ -12,18 +12,17 @@ export function useSatellite(
 
   const handleSelectSatellite = async (satellite: Satellite) => {
     selectedSatellite.value = satellite
-    
-    // 隐藏所有卫星标签，然后显示选中的卫星标签
+
+    // 取消之前的选中，然后选中当前卫星
     if (cesium) {
-      cesium.hideAllLabels()
-      cesium.showSatelliteLabel(satellite.noradId)
+      cesium.showSatelliteLabel(satellite.noradId, satellite.name)
       cesium.clearAllOrbits()
       cesium.flyToSatellite(satellite)
     }
-    
+
     // 显示右侧面板
     rightPanelVisible.value = true
-    
+
     // 请求轨道数据
     await requestOrbitData(satellite.noradId)
   }

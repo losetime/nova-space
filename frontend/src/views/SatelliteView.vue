@@ -74,53 +74,6 @@
             </a-button>
           </div>
           <div class="filter-content">
-            <!-- 轨道类型筛选 -->
-            <div class="filter-section">
-              <div class="filter-section-header" @click="toggleFilterSection('orbit')">
-                <span class="section-title">
-                  轨道类型
-                  <span class="selected-tag">{{ getOrbitTypeLabel(filterType) }}</span>
-                </span>
-                <DownOutlined :class="['expand-icon', { expanded: expandedSections.orbit }]" />
-              </div>
-              <transition name="collapse">
-                <div v-show="expandedSections.orbit" class="filter-options">
-                  <div
-                    class="filter-option"
-                    :class="{ active: filterType === 'all' }"
-                    @click="filterType = 'all'"
-                  >
-                    <GlobalOutlined class="option-icon" />
-                    <span>全部轨道</span>
-                  </div>
-                  <div
-                    class="filter-option"
-                    :class="{ active: filterType === 'leo' }"
-                    @click="filterType = 'leo'"
-                  >
-                    <RocketOutlined class="option-icon leo" />
-                    <span>低轨 (LEO)</span>
-                  </div>
-                  <div
-                    class="filter-option"
-                    :class="{ active: filterType === 'meo' }"
-                    @click="filterType = 'meo'"
-                  >
-                    <RocketOutlined class="option-icon meo" />
-                    <span>中轨 (MEO)</span>
-                  </div>
-                  <div
-                    class="filter-option"
-                    :class="{ active: filterType === 'geo' }"
-                    @click="filterType = 'geo'"
-                  >
-                    <RocketOutlined class="option-icon geo" />
-                    <span>地球同步 (GEO)</span>
-                  </div>
-                </div>
-              </transition>
-            </div>
-
             <!-- 国家筛选 -->
             <div class="filter-section">
               <div class="filter-section-header" @click="toggleFilterSection('country')">
@@ -164,6 +117,53 @@
                   </div>
                   <div v-if="countries.length === 0 && !countrySearch" class="no-result">
                     暂无国家数据
+                  </div>
+                </div>
+              </transition>
+            </div>
+
+            <!-- 轨道类型筛选 -->
+            <div class="filter-section">
+              <div class="filter-section-header" @click="toggleFilterSection('orbit')">
+                <span class="section-title">
+                  轨道类型
+                  <span class="selected-tag">{{ getOrbitTypeLabel(filterType) }}</span>
+                </span>
+                <DownOutlined :class="['expand-icon', { expanded: expandedSections.orbit }]" />
+              </div>
+              <transition name="collapse">
+                <div v-show="expandedSections.orbit" class="filter-options">
+                  <div
+                    class="filter-option"
+                    :class="{ active: filterType === 'all' }"
+                    @click="filterType = 'all'"
+                  >
+                    <GlobalOutlined class="option-icon" />
+                    <span>全部轨道</span>
+                  </div>
+                  <div
+                    class="filter-option"
+                    :class="{ active: filterType === 'leo' }"
+                    @click="filterType = 'leo'"
+                  >
+                    <RocketOutlined class="option-icon leo" />
+                    <span>低轨 (LEO)</span>
+                  </div>
+                  <div
+                    class="filter-option"
+                    :class="{ active: filterType === 'meo' }"
+                    @click="filterType = 'meo'"
+                  >
+                    <RocketOutlined class="option-icon meo" />
+                    <span>中轨 (MEO)</span>
+                  </div>
+                  <div
+                    class="filter-option"
+                    :class="{ active: filterType === 'geo' }"
+                    @click="filterType = 'geo'"
+                  >
+                    <RocketOutlined class="option-icon geo" />
+                    <span>地球同步 (GEO)</span>
                   </div>
                 </div>
               </transition>
@@ -302,8 +302,8 @@ const loading = ref(true)
 
 // 可折叠筛选区域状态
 const expandedSections = ref({
-  orbit: true,
-  country: true
+  country: false,
+  orbit: false
 })
 
 // 国家列表
@@ -574,16 +574,14 @@ const handleClearOrbit = (noradId: string) => {
   }
 }
 
-// 监听卫星数据变化，更新 Cesium
-watch(satellites, (newSatellites) => {
+// 监听筛选后的卫星数据变化，更新 Cesium（使用批量更新提高性能）
+watch(filteredSatellites, (newSatellites) => {
   if (newSatellites && newSatellites.length > 0) {
-    newSatellites.forEach(satellite => {
-      cesium.updateSatellitePosition(satellite)
-    })
-
-    // 清理不存在的卫星
-    const currentIds = newSatellites.map(s => s.noradId)
-    cesium.cleanupSatellites(currentIds)
+    // 使用批量更新替代逐个更新，大幅提升性能
+    cesium.updateSatellites(newSatellites)
+  } else {
+    // 当筛选结果为空时，清除所有卫星
+    cesium.clearAllSatellites?.()
   }
 }, { deep: true })
 
