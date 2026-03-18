@@ -378,6 +378,10 @@ export const satelliteApi = {
     minElevation?: number
   }) =>
     api.get<ApiResponse<PassPrediction>>(`/satellites/${noradId}/passes`, { params }),
+
+  // 获取国家列表
+  getCountries: () =>
+    api.get<ApiResponse<{ code: string; count: number }[]>>('/satellites/countries'),
 }
 
 // 情报 API

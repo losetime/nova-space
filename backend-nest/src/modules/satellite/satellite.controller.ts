@@ -1,16 +1,21 @@
 import { Controller, Get, Param, Query, Logger } from '@nestjs/common';
 import { OrbitCalculatorService } from './services/orbit-calculator.service';
+import { SpaceTrackService } from './services/space-track.service';
 import type { OrbitPoint, OrbitPrediction, PositionPrediction, ObserverPosition } from './interfaces/satellite.interface';
 
 /**
  * 卫星控制器
  * 提供卫星数据的 HTTP API
+ * 注意：具体路径必须在参数路径（:noradId）之前声明
  */
 @Controller('satellites')
 export class SatelliteController {
   private readonly logger = new Logger(SatelliteController.name);
 
-  constructor(private readonly orbitCalculator: OrbitCalculatorService) {}
+  constructor(
+    private readonly orbitCalculator: OrbitCalculatorService,
+    private readonly spaceTrackService: SpaceTrackService,
+  ) {}
 
   /**
    * 获取所有卫星的当前位置
@@ -32,6 +37,44 @@ export class SatelliteController {
   }
 
   /**
+   * 搜索卫星
+   * GET /api/satellites/search?name=xxx&limit=20
+   */
+  @Get('search')
+  searchSatellites(
+    @Query('name') name?: string,
+    @Query('limit') limit?: string,
+  ) {
+    const searchLimit = Math.min(Math.max(parseInt(limit || '50') || 50, 1), 500);
+    const allTLEs = this.spaceTrackService.getCachedTLEs();
+
+    let results = allTLEs;
+    if (name) {
+      const searchName = name.toLowerCase();
+      results = allTLEs.filter(tle =>
+        tle.name.toLowerCase().includes(searchName) ||
+        tle.noradId.includes(searchName)
+      );
+    }
+
+    const limitedResults = results.slice(0, searchLimit);
+
+    return {
+      code: 0,
+      data: {
+        satellites: limitedResults.map(tle => ({
+          noradId: tle.noradId,
+          name: tle.name,
+          metadata: this.spaceTrackService.getSatelliteMetadata(tle.noradId),
+        })),
+        total: results.length,
+        limit: searchLimit,
+      },
+      message: 'success',
+    };
+  }
+
+  /**
    * 获取卫星统计信息
    * GET /api/satellites/stats
    */
@@ -42,7 +85,109 @@ export class SatelliteController {
       data: {
         total: this.orbitCalculator.getSatelliteCount(),
         lastUpdate: new Date().toISOString(),
+        metadataCount: this.spaceTrackService.getAllMetadata().size,
       },
+      message: 'success',
+    };
+  }
+
+  /**
+   * 获取国家列表（含卫星数量）
+   * GET /api/satellites/countries
+   */
+  @Get('countries')
+  getCountries() {
+    this.logger.log('获取国家列表');
+
+    // 获取 TLE 数据中的 NORAD ID 集合
+    const tleData = this.spaceTrackService.getCachedTLEs();
+    const tleNoradIds = new Set(tleData.map(tle => tle.noradId));
+
+    const metadata = this.spaceTrackService.getAllMetadata();
+    const countryCount = new Map<string, number>();
+    let matchedCount = 0;
+    let noCountryCount = 0;
+    const unmatchedSamples: string[] = [];
+
+    metadata.forEach((meta, noradId) => {
+      // 只统计存在于 TLE 数据中的卫星
+      if (tleNoradIds.has(noradId)) {
+        matchedCount++;
+        if (meta.countryCode) {
+          const count = countryCount.get(meta.countryCode) || 0;
+          countryCount.set(meta.countryCode, count + 1);
+        } else {
+          noCountryCount++;
+        }
+      } else if (unmatchedSamples.length < 5) {
+        unmatchedSamples.push(noradId);
+      }
+    });
+
+    // 调试日志
+    this.logger.log(`TLE 数据: ${tleData.length} 条`);
+    this.logger.log(`元数据: ${metadata.size} 条`);
+    this.logger.log(`匹配成功: ${matchedCount} 条`);
+    this.logger.log(`无国家代码: ${noCountryCount} 条`);
+    this.logger.log(`TLE NORAD ID 示例: ${tleData.slice(0, 3).map(t => t.noradId).join(', ')}`);
+    this.logger.log(`元数据 NORAD ID 示例: ${Array.from(metadata.keys()).slice(0, 5).join(', ')}`);
+
+    // 转换为数组并排序
+    const countries = Array.from(countryCount.entries())
+      .map(([code, count]) => ({ code, count }))
+      .sort((a, b) => b.count - a.count);
+
+    this.logger.log(`返回 ${countries.length} 个国家，共 ${tleData.length} 颗卫星`);
+    return {
+      code: 0,
+      data: countries,
+      message: 'success',
+    };
+  }
+
+  /**
+   * 获取所有卫星元数据
+   * GET /api/satellites/metadata/all
+   */
+  @Get('metadata/all')
+  getAllMetadata() {
+    const metadata = this.spaceTrackService.getAllMetadata();
+    const result = Array.from(metadata.entries()).map(([noradId, meta]) => ({
+      noradId,
+      countryCode: meta.countryCode,
+      objectType: meta.objectType,
+      launchDate: meta.launchDate,
+    }));
+
+    return {
+      code: 0,
+      data: result,
+      message: 'success',
+    };
+  }
+
+  // ==================== 以下为参数路由 ====================
+
+  /**
+   * 获取卫星元数据
+   * GET /api/satellites/:noradId/metadata
+   */
+  @Get(':noradId/metadata')
+  getSatelliteMetadata(@Param('noradId') noradId: string) {
+    this.logger.log(`获取卫星 ${noradId} 的元数据`);
+
+    const metadata = this.spaceTrackService.getSatelliteMetadata(noradId);
+    if (!metadata) {
+      return {
+        code: -1,
+        data: null,
+        message: '卫星元数据不存在',
+      };
+    }
+
+    return {
+      code: 0,
+      data: metadata,
       message: 'success',
     };
   }

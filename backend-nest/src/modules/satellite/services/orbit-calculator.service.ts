@@ -16,9 +16,23 @@ export class OrbitCalculatorService implements OnModuleInit {
 
   async onModuleInit() {
     // 等待 SpaceTrackService 加载完数据后初始化
-    setTimeout(() => {
-      this.loadSatellites();
-    }, 2000);
+    // 使用轮询检查，最多等待 60 秒
+    const maxWaitMs = 60000;
+    const checkIntervalMs = 500;
+    let waited = 0;
+
+    while (waited < maxWaitMs) {
+      const tles = this.spaceTrackService.getCachedTLEs();
+      if (tles.length > 0) {
+        this.loadSatellites();
+        return;
+      }
+      await new Promise(resolve => setTimeout(resolve, checkIntervalMs));
+      waited += checkIntervalMs;
+    }
+
+    this.logger.warn('等待 SpaceTrackService 数据加载超时，尝试使用现有数据');
+    this.loadSatellites();
   }
 
   /**

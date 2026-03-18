@@ -9,6 +9,7 @@ export interface Satellite {
     alt: number
   }
   timestamp: string
+  countryCode?: string
 }
 
 export function useWebSocket() {

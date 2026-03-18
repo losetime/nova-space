@@ -88,22 +88,6 @@
         </div>
       </div>
     </div>
-
-    <!-- 轨道预测面板 -->
-    <div class="section prediction-section">
-      <OrbitPrediction
-        ref="orbitPredictionRef"
-        :satellite="satellite"
-        @show-orbit="handleShowOrbit"
-        @fly-to="handleFlyTo"
-        @clear-orbit="handleClearOrbit"
-      />
-    </div>
-
-    <!-- 过境预测面板 -->
-    <div class="section pass-section">
-      <PassPrediction ref="passPredictionRef" :satellite="satellite" />
-    </div>
   </div>
 
   <!-- 空状态 -->
@@ -120,7 +104,6 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
 import {
   GlobalOutlined,
   CompassOutlined,
@@ -128,8 +111,6 @@ import {
   RocketOutlined,
   DashboardOutlined,
 } from '@ant-design/icons-vue'
-import OrbitPrediction from './OrbitPrediction.vue'
-import PassPrediction from './PassPrediction.vue'
 import type { Satellite } from '@/hooks/useWebSocket'
 
 interface Props {
@@ -137,25 +118,6 @@ interface Props {
 }
 
 const props = defineProps<Props>()
-
-const emit = defineEmits<{
-  (e: 'showOrbit', points: Array<{ lat: number; lng: number; alt: number }>): void
-  (e: 'flyTo', position: { lat: number; lng: number; alt: number }): void
-  (e: 'clearOrbit', noradId: string): void
-}>()
-
-// 子组件引用
-const orbitPredictionRef = ref<InstanceType<typeof OrbitPrediction> | null>(null)
-const passPredictionRef = ref<InstanceType<typeof PassPrediction> | null>(null)
-
-// 监听卫星变化，清除预测数据
-watch(() => props.satellite, (newSat, oldSat) => {
-  if (newSat?.noradId !== oldSat?.noradId && oldSat?.noradId) {
-    orbitPredictionRef.value?.reset()
-    passPredictionRef.value?.reset()
-    emit('clearOrbit', oldSat.noradId)
-  }
-})
 
 const formatNumber = (num: number, decimals: number): string => {
   return num.toFixed(decimals)
@@ -179,21 +141,6 @@ const getOrbitClass = (alt: number): string => {
   if (alt < 2000) return 'leo'
   if (alt < 35000) return 'meo'
   return 'geo'
-}
-
-// 显示预测轨道
-const handleShowOrbit = (points: Array<{ lat: number; lng: number; alt: number }>) => {
-  emit('showOrbit', points)
-}
-
-// 飞到指定位置
-const handleFlyTo = (position: { lat: number; lng: number; alt: number }) => {
-  emit('flyTo', position)
-}
-
-// 清除预测轨道
-const handleClearOrbit = () => {
-  emit('clearOrbit', props.satellite?.noradId)
 }
 </script>
 
@@ -465,21 +412,6 @@ const handleClearOrbit = () => {
   justify-content: space-between;
   font-size: 11px;
   color: rgba(255, 255, 255, 0.4);
-}
-
-// 轨道预测区块
-.prediction-section {
-  border-top: 1px solid rgba(0, 212, 255, 0.08);
-  padding-top: 16px;
-  margin-bottom: 0;
-}
-
-// 过境预测区块
-.pass-section {
-  border-top: 1px solid rgba(0, 212, 255, 0.08);
-  padding-top: 16px;
-  margin-bottom: 0;
-  margin-top: 16px;
 }
 
 // 空状态

@@ -1,10 +1,5 @@
 <template>
   <div class="orbit-prediction">
-    <div class="prediction-header">
-      <RocketOutlined class="header-icon" />
-      <span>轨道预测</span>
-    </div>
-
     <div v-if="!satellite" class="no-satellite">
       <span>请先选择一颗卫星</span>
     </div>
@@ -294,21 +289,7 @@ $text-secondary: rgba(255, 255, 255, 0.6);
 $text-muted: rgba(255, 255, 255, 0.4);
 
 .orbit-prediction {
-  // padding 由父组件 SatelliteDetail 控制，保持与其他区块对齐
-}
-
-.prediction-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 16px;
-  font-size: 14px;
-  font-weight: 600;
-  color: $text-primary;
-
-  .header-icon {
-    color: $primary;
-  }
+  // padding 由父组件控制
 }
 
 .no-satellite {

@@ -88,9 +88,14 @@ import type { Satellite } from '@/hooks/useWebSocket'
 interface Props {
   satellites: Satellite[]
   selectedSatellite: Satellite | null
+  filterType?: string
+  filterCountry?: string
 }
 
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  filterType: 'all',
+  filterCountry: ''
+})
 const emit = defineEmits<{
   'select-satellite': [satellite: Satellite]
 }>()
@@ -99,15 +104,18 @@ const searchQuery = ref('')
 const listRef = ref<HTMLElement | null>(null)
 
 const filteredSatellites = computed(() => {
-  if (!searchQuery.value) {
-    return props.satellites.slice(0, 100)
+  let result = props.satellites
+
+  // 按搜索关键词过滤
+  if (searchQuery.value) {
+    const query = searchQuery.value.toLowerCase()
+    result = result.filter(sat =>
+      sat.name.toLowerCase().includes(query) ||
+      sat.noradId.toLowerCase().includes(query)
+    )
   }
 
-  const query = searchQuery.value.toLowerCase()
-  return props.satellites.filter(sat =>
-    sat.name.toLowerCase().includes(query) ||
-    sat.noradId.toLowerCase().includes(query)
-  ).slice(0, 100)
+  return result.slice(0, 100)
 })
 
 const getOrbitType = (alt: number): string => {

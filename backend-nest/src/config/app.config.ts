@@ -17,7 +17,13 @@ export default registerAs('app', () => ({
     url: process.env.FRONTEND_URL || 'http://localhost:5173',
   },
   satellite: {
-    maxSatellites: parseInt(process.env.SATELLITE_MAX_COUNT || '100', 10) || 100,
+    maxSatellites: parseInt(process.env.SATELLITE_MAX_COUNT || '10000', 10) || 10000,
     broadcastInterval: parseInt(process.env.SATELLITE_BROADCAST_INTERVAL || '5000', 10) || 5000,
+    dataGroup: process.env.SATELLITE_DATA_GROUP || 'active', // active, starlink, gps, beidou, etc.
+  },
+  spaceTrack: {
+    username: process.env.SPACE_TRACK_USERNAME || '',
+    password: process.env.SPACE_TRACK_PASSWORD || '',
+    baseUrl: 'https://www.space-track.org',
   },
 }));

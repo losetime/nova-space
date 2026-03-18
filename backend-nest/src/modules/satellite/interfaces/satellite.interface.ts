@@ -9,6 +9,24 @@ export interface TLEData {
 }
 
 /**
+ * 卫星元数据接口
+ */
+export interface SatelliteMetadata {
+  noradId: string;
+  name?: string;
+  objectId?: string;       // 国际编号（如 2023-001A）
+  objectType?: string;     // 对象类型（PAYLOAD/ROCKET BODY/DEBRIS）
+  countryCode?: string;    // 所有者/国家
+  launchDate?: string;     // 发射日期
+  launchSite?: string;     // 发射地点
+  decayDate?: string;      // 衰减日期
+  period?: number;         // 轨道周期（分钟）
+  inclination?: number;    // 轨道倾角（度）
+  apogee?: number;         // 远地点高度（km）
+  perigee?: number;        // 近地点高度（km）
+}
+
+/**
  * 卫星位置接口
  */
 export interface SatellitePosition {
