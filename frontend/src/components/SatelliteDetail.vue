@@ -211,36 +211,69 @@ interface Props {
 
 const props = defineProps<Props>()
 
-// 国家代码映射
+// 国家代码到中文名称的映射 (CelesTrak 格式)
 const COUNTRY_NAMES: Record<string, string> = {
-  US: '美国', CIS: '俄罗斯', PRC: '中国', CN: '中国', JP: '日本',
-  IN: '印度', FR: '法国', GB: '英国', UK: '英国', DE: '德国',
-  CA: '加拿大', IT: '意大利', AU: '澳大利亚', ES: '西班牙',
-  KR: '韩国', BR: '巴西', IL: '以色列', TW: '中国台湾',
-  AR: '阿根廷', MX: '墨西哥', SA: '沙特阿拉伯', ID: '印度尼西亚',
-  TR: '土耳其', NL: '荷兰', TH: '泰国', ZA: '南非',
-  UA: '乌克兰', SG: '新加坡', PL: '波兰', SE: '瑞典',
-  NO: '挪威', BEL: '比利时', MY: '马来西亚', PK: '巴基斯坦',
-  PHI: '菲律宾', VEN: '委内瑞拉', CHB: '瑞士', DEN: '丹麦',
-  EGY: '埃及', FIN: '芬兰', GRE: '希腊', IRA: '伊朗',
-  IRAQ: '伊拉克', KAZ: '哈萨克斯坦', KWT: '科威特',
-  MAL: '马来西亚', NIG: '尼日利亚', NZ: '新西兰',
-  POR: '葡萄牙', ROK: '韩国', SAF: '南非', UAE: '阿联酋',
+  // 标准代码
+  US: '美国', UK: '英国', FR: '法国', CA: '加拿大', IT: '意大利',
+  NZ: '新西兰', MA: '摩洛哥', IM: '马恩岛', AC: '阿森松岛', AB: '安提瓜和巴布达',
+  // CelesTrak 特殊格式
+  CIS: '俄罗斯', PRC: '中国', CN: '中国', TWN: '中国台湾',
+  JPN: '日本', IND: '印度', BRAZ: '巴西', ARGN: '阿根廷',
+  MEX: '墨西哥', SAUD: '沙特阿拉伯', INDO: '印度尼西亚', TURK: '土耳其',
+  NETH: '荷兰', THAI: '泰国', SAFR: '南非', UKR: '乌克兰',
+  SING: '新加坡', POL: '波兰', SWED: '瑞典', NOR: '挪威',
+  BEL: '比利时', MALA: '马来西亚', PAKI: '巴基斯坦', RP: '菲律宾',
+  VENZ: '委内瑞拉', SWTZ: '瑞士', DEN: '丹麦', EGYP: '埃及',
+  FIN: '芬兰', GREC: '希腊', IRAN: '伊朗', IRAQ: '伊拉克',
+  KAZ: '哈萨克斯坦', KWT: '科威特', NIG: '尼日利亚',
+  POR: '葡萄牙', SKOR: '韩国', UAE: '阿联酋', ISRA: '以色列',
+  SPN: '西班牙', GER: '德国', CZE: '捷克', EST: '爱沙尼亚',
+  HUN: '匈牙利', LTU: '立陶宛', BGR: '保加利亚', ROM: '罗马尼亚',
+  SVN: '斯洛文尼亚', SVK: '斯洛伐克', HRV: '克罗地亚', AZER: '阿塞拜疆',
+  MDA: '摩尔多瓦', MNG: '蒙古', NKOR: '朝鲜', LAOS: '老挝',
+  BGD: '孟加拉国', LKA: '斯里兰卡', MMR: '缅甸', NPL: '尼泊尔',
+  PER: '秘鲁', COL: '哥伦比亚', CHLE: '智利', BOL: '玻利维亚',
+  PRY: '巴拉圭', URY: '乌拉圭', ECU: '厄瓜多尔', CRI: '哥斯达黎加',
+  DJI: '吉布提', RWA: '卢旺达', UGA: '乌干达', GHA: '加纳',
+  ZWE: '津巴布韦', BWA: '博茨瓦纳', MUS: '毛里求斯', AGO: '安哥拉',
+  SDN: '苏丹', TUN: '突尼斯', ALG: '阿尔及利亚', QAT: '卡塔尔',
+  BHR: '巴林', JOR: '约旦', PRI: '波多黎各', SLB: '所罗门群岛',
+  MCO: '摩纳哥', KEN: '肯尼亚', VTNM: '越南',
+  CHBZ: '瑞士', BELA: '白俄罗斯', ASRA: '奥地利', FGER: '法国/德国',
+  FRIT: '法国/意大利', CZCH: '捷克', USBZ: '美国/巴西',
+  // 组织
+  ESA: '欧洲航天局', ESRO: '欧洲空间研究组织', EUTE: '欧洲通信卫星组织',
+  EUME: '欧洲气象卫星组织', NATO: '北约', ITSO: '国际通信卫星组织',
+  SES: 'SES公司', O3B: 'O3b网络', ORB: '轨道科学公司',
+  GLOB: '全球星', STCT: '空间通信', RASC: '俄罗斯航天局',
+  SEAL: '海射公司', TBD: '待定', ABS: 'ABS公司',
 }
 
-// 国旗 emoji 映射
+// 国旗 emoji 映射 (基于 CelesTrak 代码)
 const COUNTRY_FLAGS: Record<string, string> = {
-  US: '🇺🇸', CIS: '🇷🇺', PRC: '🇨🇳', CN: '🇨🇳', JP: '🇯🇵',
-  IN: '🇮🇳', FR: '🇫🇷', GB: '🇬🇧', UK: '🇬🇧', DE: '🇩🇪',
-  CA: '🇨🇦', IT: '🇮🇹', AU: '🇦🇺', ES: '🇪🇸', KR: '🇰🇷',
-  BR: '🇧🇷', IL: '🇮🇱', TW: '🇹🇼', AR: '🇦🇷', MX: '🇲🇽',
-  SA: '🇸🇦', ID: '🇮🇩', TR: '🇹🇷', NL: '🇳🇱', TH: '🇹🇭',
-  ZA: '🇿🇦', UA: '🇺🇦', SG: '🇸🇬', PL: '🇵🇱', SE: '🇸🇪',
-  NO: '🇳🇴', BEL: '🇧🇪', MY: '🇲🇾', PK: '🇵🇰', PHI: '🇵🇭',
-  VEN: '🇻🇪', CHB: '🇨🇭', DEN: '🇩🇰', EGY: '🇪🇬', FIN: '🇫🇮',
-  GRE: '🇬🇷', IRA: '🇮🇷', IRAQ: '🇮🇶', KAZ: '🇰🇿', KWT: '🇰🇼',
-  MAL: '🇲🇾', NIG: '🇳🇬', NZ: '🇳🇿', POR: '🇵🇹', ROK: '🇰🇷',
-  SAF: '🇿🇦', UAE: '🇦🇪',
+  // 主要国家
+  US: '🇺🇸', CIS: '🇷🇺', PRC: '🇨🇳', CN: '🇨🇳', TWN: '🇹🇼',
+  JPN: '🇯🇵', IND: '🇮🇳', FR: '🇫🇷', UK: '🇬🇧', GER: '🇩🇪',
+  CA: '🇨🇦', IT: '🇮🇹', AUS: '🇦🇺', SPN: '🇪🇸', SKOR: '🇰🇷',
+  BRAZ: '🇧🇷', ISRA: '🇮🇱', ARGN: '🇦🇷', MEX: '🇲🇽', SAUD: '🇸🇦',
+  INDO: '🇮🇩', TURK: '🇹🇷', NETH: '🇳🇱', THAI: '🇹🇭', SAFR: '🇿🇦',
+  UKR: '🇺🇦', SING: '🇸🇬', POL: '🇵🇱', SWED: '🇸🇪', NOR: '🇳🇴',
+  BEL: '🇧🇪', MALA: '🇲🇾', PAKI: '🇵🇰', RP: '🇵🇭', VENZ: '🇻🇪',
+  SWTZ: '🇨🇭', DEN: '🇩🇰', EGYP: '🇪🇬', FIN: '🇫🇮', GREC: '🇬🇷',
+  IRAN: '🇮🇷', IRAQ: '🇮🇶', KAZ: '🇰🇿', KWT: '🇰🇼', NIG: '🇳🇬',
+  NZ: '🇳🇿', POR: '🇵🇹', UAE: '🇦🇪', CZE: '🇨🇿', EST: '🇪🇪',
+  HUN: '🇭🇺', LTU: '🇱🇹', BGR: '🇧🇬', ROM: '🇷🇴', SVN: '🇸🇮',
+  SVK: '🇸🇰', HRV: '🇭🇷', AZER: '🇦🇿', MNG: '🇲🇳', NKOR: '🇰🇵',
+  LAOS: '🇱🇦', BGD: '🇧🇩', LKA: '🇱🇰', MMR: '🇲🇲', NPL: '🇳🇵',
+  PER: '🇵🇪', COL: '🇨🇴', CHLE: '🇨🇱', BOL: '🇧🇴', PRY: '🇵🇾',
+  URY: '🇺🇾', ECU: '🇪🇨', CRI: '🇨🇷', QAT: '🇶🇦', BHR: '🇧🇭',
+  JOR: '🇯🇴', TUN: '🇹🇳', ALG: '🇩🇿', KEN: '🇰🇪', VTNM: '🇻🇳',
+  BELA: '🇧🇾', ASRA: '🇦🇹', GHA: '🇬🇭', ZWE: '🇿🇼', MUS: '🇲🇺',
+  AGO: '🇦🇴', DJI: '🇩🇯', UGA: '🇺🇬', BWA: '🇧🇼', RWA: '🇷🇼',
+  MCO: '🇲🇨', SLB: '🇸🇧', SDN: '🇸🇩', PRI: '🇵🇷', MA: '🇲🇦',
+  // 组织/公司
+  ESA: '🇪🇺', EUTE: '🛰️', NATO: '🛡️', SES: '📡', GLOB: '🌍',
+  O3B: '🌐', ORB: '🚀', TBD: '❓',
 }
 
 // 发射场映射
