@@ -385,7 +385,20 @@ export const satelliteApi = {
 
   // 获取所有卫星元数据
   getAllMetadata: () =>
-    api.get<ApiResponse<{ noradId: string; countryCode?: string; objectType?: string; launchDate?: string }[]>>('/satellites/metadata/all'),
+    api.get<ApiResponse<{
+      noradId: string
+      name?: string
+      objectId?: string
+      objectType?: string
+      countryCode?: string
+      launchDate?: string
+      launchSite?: string
+      decayDate?: string
+      period?: number
+      inclination?: number
+      apogee?: number
+      perigee?: number
+    }[]>>('/satellites/metadata/all'),
 }
 
 // 情报 API

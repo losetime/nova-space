@@ -243,6 +243,7 @@
           <SatelliteDetail
             v-if="activeRightPanel === 'detail'"
             :satellite="selectedSatellite"
+            :metadata="selectedSatelliteMetadata"
           />
 
           <!-- 轨道预测 -->
@@ -483,8 +484,24 @@ const {
 // 解构 websocket 数据
 const { status, satellites, satelliteCount, lastUpdate } = websocket
 
+// 卫星元数据类型
+interface SatelliteMetadata {
+  noradId: string
+  name?: string
+  objectId?: string
+  objectType?: string
+  countryCode?: string
+  launchDate?: string
+  launchSite?: string
+  decayDate?: string
+  period?: number
+  inclination?: number
+  apogee?: number
+  perigee?: number
+}
+
 // 卫星元数据映射
-const satelliteMetadata = ref<Map<string, { countryCode?: string }>>(new Map())
+const satelliteMetadata = ref<Map<string, SatelliteMetadata>>(new Map())
 
 // 筛选后的卫星列表
 const filteredSatellites = computed(() => {
@@ -503,40 +520,10 @@ const filteredSatellites = computed(() => {
 
   // 按国家筛选
   if (selectedCountry.value) {
-    console.log('=== 国家筛选调试 ===')
-    console.log('选择的国家代码:', selectedCountry.value)
-    console.log('筛选前卫星数:', result.length)
-    console.log('元数据 Map 大小:', satelliteMetadata.value.size)
-
-    // 打印前3个卫星的 noradId
-    console.log('前3个卫星 noradId:', result.slice(0, 3).map(s => s.noradId))
-
-    // 打印元数据中的前3个 key
-    const metaKeys = Array.from(satelliteMetadata.value.keys()).slice(0, 3)
-    console.log('元数据前3个 key:', metaKeys)
-
-    let matchedCount = 0
-    let noMetadataCount = 0
-    let countryCodeMismatchCount = 0
-
     result = result.filter(sat => {
       const meta = satelliteMetadata.value.get(sat.noradId)
-      if (!meta) {
-        noMetadataCount++
-        return false
-      }
-      if (meta.countryCode === selectedCountry.value) {
-        matchedCount++
-        return true
-      }
-      countryCodeMismatchCount++
-      return false
+      return meta?.countryCode === selectedCountry.value
     })
-
-    console.log('匹配成功:', matchedCount)
-    console.log('无元数据:', noMetadataCount)
-    console.log('国家代码不匹配:', countryCodeMismatchCount)
-    console.log('筛选后卫星数:', result.length)
   }
 
   return result
@@ -544,6 +531,12 @@ const filteredSatellites = computed(() => {
 
 // 卫星选择逻辑
 const { selectedSatellite, handleSelectSatellite: baseHandleSelectSatellite } = useSatellite(cesium, websocket)
+
+// 当前选中卫星的元数据
+const selectedSatelliteMetadata = computed(() => {
+  if (!selectedSatellite.value) return null
+  return satelliteMetadata.value.get(selectedSatellite.value.noradId) || null
+})
 
 // 子组件引用
 const orbitPredictionRef = ref<InstanceType<typeof OrbitPrediction> | null>(null)
@@ -648,20 +641,13 @@ onMounted(async () => {
 
   // 加载卫星元数据
   try {
-    console.log('开始加载卫星元数据...')
     const metaRes = await satelliteApi.getAllMetadata()
-    console.log('元数据响应:', metaRes.data.code, '数据条数:', metaRes.data.data?.length)
     if (metaRes.data.code === 0 && metaRes.data.data) {
-      const map = new Map<string, { countryCode?: string }>()
-      metaRes.data.data.forEach((item: { noradId: string; countryCode?: string }) => {
-        map.set(item.noradId, { countryCode: item.countryCode })
+      const map = new Map<string, SatelliteMetadata>()
+      metaRes.data.data.forEach((item: SatelliteMetadata) => {
+        map.set(item.noradId, item)
       })
       satelliteMetadata.value = map
-      console.log('元数据加载成功，Map 大小:', map.size)
-      // 打印前3条数据
-      console.log('前3条元数据:', metaRes.data.data.slice(0, 3))
-    } else {
-      console.error('元数据响应异常:', metaRes.data)
     }
   } catch (err) {
     console.error('加载卫星元数据失败:', err)

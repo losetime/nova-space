@@ -13,11 +13,49 @@
       </div>
       <div class="sat-title">
         <h3>{{ satellite.name }}</h3>
-        <span class="norad-id">NORAD #{{ satellite.noradId }}</span>
+        <div class="sat-ids">
+          <span class="norad-id">NORAD #{{ satellite.noradId }}</span>
+          <span v-if="metadata?.objectId" class="object-id">{{ metadata.objectId }}</span>
+        </div>
       </div>
     </div>
 
-    <!-- 轨道参数卡片 -->
+    <!-- 基本信息 -->
+    <div class="section" v-if="metadata">
+      <div class="section-header">
+        <InfoCircleOutlined class="section-icon" />
+        <span>基本信息</span>
+      </div>
+      <div class="info-grid">
+        <div class="info-item" v-if="metadata.objectType">
+          <span class="info-label">对象类型</span>
+          <span :class="['info-value', 'type-badge', getObjectTypeClass(metadata.objectType)]">
+            {{ getObjectTypeLabel(metadata.objectType) }}
+          </span>
+        </div>
+        <div class="info-item" v-if="metadata.countryCode">
+          <span class="info-label">所属国家/组织</span>
+          <span class="info-value">
+            <span class="country-flag">{{ getCountryFlag(metadata.countryCode) }}</span>
+            {{ getCountryName(metadata.countryCode) }}
+          </span>
+        </div>
+        <div class="info-item" v-if="metadata.launchDate">
+          <span class="info-label">发射日期</span>
+          <span class="info-value">{{ formatDate(metadata.launchDate) }}</span>
+        </div>
+        <div class="info-item" v-if="metadata.launchSite">
+          <span class="info-label">发射地点</span>
+          <span class="info-value">{{ getLaunchSiteName(metadata.launchSite) }}</span>
+        </div>
+        <div class="info-item" v-if="metadata.decayDate">
+          <span class="info-label">衰减日期</span>
+          <span class="info-value decay">{{ formatDate(metadata.decayDate) }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 轨道参数 -->
     <div class="section">
       <div class="section-header">
         <CompassOutlined class="section-icon" />
@@ -63,6 +101,40 @@
           </div>
         </div>
       </div>
+      <!-- 轨道特征（来自元数据） -->
+      <div class="orbit-features" v-if="metadata">
+        <div class="feature-item" v-if="metadata.apogee || metadata.perigee">
+          <div class="feature-icon"><ThunderboltOutlined /></div>
+          <div class="feature-content">
+            <div class="feature-labels">
+              <span>近地点</span>
+              <span>远地点</span>
+            </div>
+            <div class="feature-values">
+              <span>{{ metadata.perigee ? `${metadata.perigee.toLocaleString()} km` : '-' }}</span>
+              <span>{{ metadata.apogee ? `${metadata.apogee.toLocaleString()} km` : '-' }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="feature-item" v-if="metadata.period">
+          <div class="feature-icon"><ClockCircleOutlined /></div>
+          <div class="feature-content">
+            <div class="feature-row">
+              <span class="feature-label">轨道周期</span>
+              <span class="feature-value">{{ metadata.period.toFixed(1) }} 分钟</span>
+            </div>
+          </div>
+        </div>
+        <div class="feature-item" v-if="metadata.inclination">
+          <div class="feature-icon"><AimOutlined /></div>
+          <div class="feature-content">
+            <div class="feature-row">
+              <span class="feature-label">轨道倾角</span>
+              <span class="feature-value">{{ metadata.inclination.toFixed(2) }}°</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- 状态信息 -->
@@ -72,19 +144,17 @@
         <span>运行状态</span>
       </div>
       <div class="status-panel">
-        <div class="status-row">
-          <div class="status-indicator active">
-            <span class="indicator-dot"></span>
-            <span class="indicator-text">运行中</span>
-          </div>
+        <div class="status-indicator" :class="{ active: !metadata?.decayDate, decayed: !!metadata?.decayDate }">
+          <span class="indicator-dot"></span>
+          <span class="indicator-text">{{ metadata?.decayDate ? '已衰减' : '运行中' }}</span>
+        </div>
+        <div class="status-time-row">
+          <span class="status-label">数据更新时间</span>
           <span class="status-time">{{ formatTime(satellite.timestamp) }}</span>
         </div>
-        <div class="status-bar">
-          <div class="bar-fill" style="width: 92%"></div>
-        </div>
-        <div class="status-meta">
-          <span>信号强度: 优秀</span>
-          <span>92%</span>
+        <div class="decay-warning" v-if="metadata?.decayDate">
+          <WarningOutlined />
+          <span>该卫星已于 {{ formatDate(metadata.decayDate) }} 坠落大气层</span>
         </div>
       </div>
     </div>
@@ -110,15 +180,97 @@ import {
   EnvironmentOutlined,
   RocketOutlined,
   DashboardOutlined,
+  InfoCircleOutlined,
+  ClockCircleOutlined,
+  AimOutlined,
+  ThunderboltOutlined,
+  WarningOutlined,
 } from '@ant-design/icons-vue'
 import type { Satellite } from '@/hooks/useWebSocket'
 
+// 元数据接口
+interface SatelliteMetadata {
+  noradId: string
+  name?: string
+  objectId?: string
+  objectType?: string
+  countryCode?: string
+  launchDate?: string
+  launchSite?: string
+  decayDate?: string
+  period?: number
+  inclination?: number
+  apogee?: number
+  perigee?: number
+}
+
 interface Props {
   satellite: Satellite | null
+  metadata: SatelliteMetadata | null
 }
 
 const props = defineProps<Props>()
 
+// 国家代码映射
+const COUNTRY_NAMES: Record<string, string> = {
+  US: '美国', CIS: '俄罗斯', PRC: '中国', CN: '中国', JP: '日本',
+  IN: '印度', FR: '法国', GB: '英国', UK: '英国', DE: '德国',
+  CA: '加拿大', IT: '意大利', AU: '澳大利亚', ES: '西班牙',
+  KR: '韩国', BR: '巴西', IL: '以色列', TW: '中国台湾',
+  AR: '阿根廷', MX: '墨西哥', SA: '沙特阿拉伯', ID: '印度尼西亚',
+  TR: '土耳其', NL: '荷兰', TH: '泰国', ZA: '南非',
+  UA: '乌克兰', SG: '新加坡', PL: '波兰', SE: '瑞典',
+  NO: '挪威', BEL: '比利时', MY: '马来西亚', PK: '巴基斯坦',
+  PHI: '菲律宾', VEN: '委内瑞拉', CHB: '瑞士', DEN: '丹麦',
+  EGY: '埃及', FIN: '芬兰', GRE: '希腊', IRA: '伊朗',
+  IRAQ: '伊拉克', KAZ: '哈萨克斯坦', KWT: '科威特',
+  MAL: '马来西亚', NIG: '尼日利亚', NZ: '新西兰',
+  POR: '葡萄牙', ROK: '韩国', SAF: '南非', UAE: '阿联酋',
+}
+
+// 国旗 emoji 映射
+const COUNTRY_FLAGS: Record<string, string> = {
+  US: '🇺🇸', CIS: '🇷🇺', PRC: '🇨🇳', CN: '🇨🇳', JP: '🇯🇵',
+  IN: '🇮🇳', FR: '🇫🇷', GB: '🇬🇧', UK: '🇬🇧', DE: '🇩🇪',
+  CA: '🇨🇦', IT: '🇮🇹', AU: '🇦🇺', ES: '🇪🇸', KR: '🇰🇷',
+  BR: '🇧🇷', IL: '🇮🇱', TW: '🇹🇼', AR: '🇦🇷', MX: '🇲🇽',
+  SA: '🇸🇦', ID: '🇮🇩', TR: '🇹🇷', NL: '🇳🇱', TH: '🇹🇭',
+  ZA: '🇿🇦', UA: '🇺🇦', SG: '🇸🇬', PL: '🇵🇱', SE: '🇸🇪',
+  NO: '🇳🇴', BEL: '🇧🇪', MY: '🇲🇾', PK: '🇵🇰', PHI: '🇵🇭',
+  VEN: '🇻🇪', CHB: '🇨🇭', DEN: '🇩🇰', EGY: '🇪🇬', FIN: '🇫🇮',
+  GRE: '🇬🇷', IRA: '🇮🇷', IRAQ: '🇮🇶', KAZ: '🇰🇿', KWT: '🇰🇼',
+  MAL: '🇲🇾', NIG: '🇳🇬', NZ: '🇳🇿', POR: '🇵🇹', ROK: '🇰🇷',
+  SAF: '🇿🇦', UAE: '🇦🇪',
+}
+
+// 发射场映射
+const LAUNCH_SITES: Record<string, string> = {
+  AFETR: '卡纳维拉尔角空军基地',
+  AFWTR: '范登堡空军基地',
+  KSC: '肯尼迪航天中心',
+  TTFFB: '太原卫星发射中心',
+  JSC: '酒泉卫星发射中心',
+  XSC: '西昌卫星发射中心',
+  WSC: '文昌航天发射场',
+  TTMTR: '拜科努尔航天发射场',
+  PLMSC: '普列谢茨克航天发射场',
+  SNMLP: '圣马科发射平台',
+  SEM: '种岛航天中心',
+  TNG: '种子岛航天中心',
+  KSCUT: '内之浦宇宙空间观测所',
+  YAVNE: '亚夫内发射场',
+  FRGUI: '圭亚那航天中心',
+  NSW: '新南威尔士发射场',
+}
+
+// 对象类型映射
+const OBJECT_TYPES: Record<string, { label: string; class: string }> = {
+  PAYLOAD: { label: '有效载荷', class: 'payload' },
+  'ROCKET BODY': { label: '火箭体', class: 'rocket' },
+  DEBRIS: { label: '碎片', class: 'debris' },
+}
+
+// 格式化函数
 const formatNumber = (num: number, decimals: number): string => {
   return num.toFixed(decimals)
 }
@@ -131,9 +283,17 @@ const formatTime = (timestamp: string): string => {
   })
 }
 
+const formatDate = (date: string): string => {
+  return new Date(date).toLocaleDateString('zh-CN', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  })
+}
+
 const getOrbitType = (alt: number): string => {
-  if (alt < 2000000) return '低轨 LEO'      // < 2000 km
-  if (alt < 35000000) return '中轨 MEO'     // < 35000 km
+  if (alt < 2000000) return '低轨 LEO'
+  if (alt < 35000000) return '中轨 MEO'
   return '地球同步 GEO'
 }
 
@@ -141,6 +301,26 @@ const getOrbitClass = (alt: number): string => {
   if (alt < 2000000) return 'leo'
   if (alt < 35000000) return 'meo'
   return 'geo'
+}
+
+const getCountryName = (code: string): string => {
+  return COUNTRY_NAMES[code] || code
+}
+
+const getCountryFlag = (code: string): string => {
+  return COUNTRY_FLAGS[code] || '🌍'
+}
+
+const getLaunchSiteName = (code: string): string => {
+  return LAUNCH_SITES[code] || code
+}
+
+const getObjectTypeLabel = (type: string): string => {
+  return OBJECT_TYPES[type]?.label || type
+}
+
+const getObjectTypeClass = (type: string): string => {
+  return OBJECT_TYPES[type]?.class || ''
 }
 </script>
 
@@ -243,18 +423,29 @@ const getOrbitClass = (alt: number): string => {
     font-size: 17px;
     font-weight: 600;
     color: #fff;
-    margin: 0 0 6px 0;
+    margin: 0 0 8px 0;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
 
-  .norad-id {
-    font-size: 12px;
+  .sat-ids {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .norad-id, .object-id {
+    font-size: 11px;
     color: rgba(255, 255, 255, 0.45);
     background: rgba(0, 212, 255, 0.08);
     padding: 3px 8px;
     border-radius: 6px;
+  }
+
+  .object-id {
+    background: rgba(123, 44, 191, 0.15);
+    color: rgba(255, 255, 255, 0.6);
   }
 }
 
@@ -275,6 +466,68 @@ const getOrbitClass = (alt: number): string => {
   .section-icon {
     font-size: 14px;
     color: #00d4ff;
+  }
+}
+
+// 基本信息网格
+.info-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  background: rgba(0, 212, 255, 0.04);
+  border: 1px solid rgba(0, 212, 255, 0.08);
+  border-radius: 10px;
+
+  .info-label {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  .info-value {
+    font-size: 13px;
+    font-weight: 500;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    &.decay {
+      color: #ff6b6b;
+    }
+  }
+
+  .country-flag {
+    font-size: 14px;
+  }
+}
+
+// 类型标签
+.type-badge {
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+
+  &.payload {
+    background: rgba(0, 255, 136, 0.15);
+    color: #00ff88;
+  }
+
+  &.rocket {
+    background: rgba(255, 170, 0, 0.15);
+    color: #ffaa00;
+  }
+
+  &.debris {
+    background: rgba(255, 107, 107, 0.15);
+    color: #ff6b6b;
   }
 }
 
@@ -342,6 +595,73 @@ const getOrbitClass = (alt: number): string => {
   }
 }
 
+// 轨道特征
+.orbit-features {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.feature-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: rgba(0, 212, 255, 0.04);
+  border: 1px solid rgba(0, 212, 255, 0.08);
+  border-radius: 12px;
+
+  .feature-icon {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    background: rgba(0, 212, 255, 0.12);
+    color: #00d4ff;
+    font-size: 14px;
+  }
+
+  .feature-content {
+    flex: 1;
+  }
+
+  .feature-labels, .feature-values {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+  }
+
+  .feature-labels {
+    color: rgba(255, 255, 255, 0.4);
+    margin-bottom: 4px;
+  }
+
+  .feature-values {
+    color: #fff;
+    font-weight: 500;
+  }
+
+  .feature-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .feature-label {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.4);
+  }
+
+  .feature-value {
+    font-size: 13px;
+    font-weight: 500;
+    color: #fff;
+  }
+}
+
 // 状态面板
 .status-panel {
   background: rgba(0, 212, 255, 0.04);
@@ -350,17 +670,11 @@ const getOrbitClass = (alt: number): string => {
   padding: 14px;
 }
 
-.status-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12px;
-}
-
 .status-indicator {
   display: flex;
   align-items: center;
   gap: 8px;
+  margin-bottom: 12px;
 
   .indicator-dot {
     width: 8px;
@@ -375,10 +689,34 @@ const getOrbitClass = (alt: number): string => {
     animation: pulse-dot 2s ease-in-out infinite;
   }
 
+  &.decayed .indicator-dot {
+    background: #ff6b6b;
+  }
+
   .indicator-text {
     font-size: 13px;
     font-weight: 500;
+    color: #ff6b6b;
+  }
+
+  &.active .indicator-text {
     color: #00ff88;
+  }
+}
+
+.status-time-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  .status-label {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  .status-time {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.7);
   }
 }
 
@@ -387,31 +725,15 @@ const getOrbitClass = (alt: number): string => {
   50% { transform: scale(1.3); opacity: 0.7; }
 }
 
-.status-time {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.5);
-}
-
-.status-bar {
-  height: 4px;
-  background: rgba(0, 212, 255, 0.1);
-  border-radius: 2px;
-  overflow: hidden;
-  margin-bottom: 10px;
-
-  .bar-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #00d4ff, #00ff88);
-    border-radius: 2px;
-    transition: width 0.5s ease;
-  }
-}
-
-.status-meta {
+.decay-warning {
   display: flex;
-  justify-content: space-between;
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.4);
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: rgba(255, 107, 107, 0.1);
+  border-radius: 8px;
+  color: #ff6b6b;
+  font-size: 12px;
 }
 
 // 空状态

@@ -154,9 +154,17 @@ export class SatelliteController {
     const metadata = this.spaceTrackService.getAllMetadata();
     const result = Array.from(metadata.entries()).map(([noradId, meta]) => ({
       noradId,
-      countryCode: meta.countryCode,
+      name: meta.name,
+      objectId: meta.objectId,
       objectType: meta.objectType,
+      countryCode: meta.countryCode,
       launchDate: meta.launchDate,
+      launchSite: meta.launchSite,
+      decayDate: meta.decayDate,
+      period: meta.period,
+      inclination: meta.inclination,
+      apogee: meta.apogee,
+      perigee: meta.perigee,
     }));
 
     return {
