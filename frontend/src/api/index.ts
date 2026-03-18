@@ -382,6 +382,10 @@ export const satelliteApi = {
   // 获取国家列表
   getCountries: () =>
     api.get<ApiResponse<{ code: string; count: number }[]>>('/satellites/countries'),
+
+  // 获取所有卫星元数据
+  getAllMetadata: () =>
+    api.get<ApiResponse<{ noradId: string; countryCode?: string; objectType?: string; launchDate?: string }[]>>('/satellites/metadata/all'),
 }
 
 // 情报 API

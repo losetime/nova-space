@@ -493,9 +493,9 @@ export class SpaceTrackService implements OnModuleInit {
         const line1 = lines[i + 1].trim();
         const line2 = lines[i + 2].trim();
 
-        // 提取 NORAD ID
+        // 提取 NORAD ID（格式化为 5 位补零，与元数据保持一致）
         const noradIdMatch = line1.match(/^1 (\d{5})/);
-        const noradId = noradIdMatch ? noradIdMatch[1] : null;
+        const noradId = noradIdMatch ? this.formatNoradId(noradIdMatch[1]) : null;
 
         if (noradId) {
           tles.push({
