@@ -98,7 +98,7 @@ export class OrbitCalculatorService implements OnModuleInit {
         const gdPos = satellite.eciToGeodetic(eci.position, gmst);
         const latitude = satellite.radiansToDegrees(gdPos.latitude);
         const longitude = satellite.radiansToDegrees(gdPos.longitude);
-        const altitude = gdPos.height * 1000; // 转换为米
+        const altitude = gdPos.height * 1000; // 米（Cesium 需要米作为高度单位）
 
         return {
           noradId: sat.noradId,
@@ -163,7 +163,7 @@ export class OrbitCalculatorService implements OnModuleInit {
         const gdPos = satellite.eciToGeodetic(eci.position, gmst);
         const latitude = satellite.radiansToDegrees(gdPos.latitude);
         const longitude = satellite.radiansToDegrees(gdPos.longitude);
-        const altitude = gdPos.height * 1000; // 米
+        const altitude = gdPos.height * 1000; // 米（Cesium 需要米作为高度单位）
 
         const point: OrbitPoint = {
           lat: latitude,
@@ -253,7 +253,7 @@ export class OrbitCalculatorService implements OnModuleInit {
         const gdPos = satellite.eciToGeodetic(eci.position, gmst);
         const latitude = satellite.radiansToDegrees(gdPos.latitude);
         const longitude = satellite.radiansToDegrees(gdPos.longitude);
-        const altitude = gdPos.height * 1000; // 米
+        const altitude = gdPos.height * 1000; // 米（Cesium 需要米作为高度单位）
 
         // 计算总速度
         const totalVelocity = Math.sqrt(

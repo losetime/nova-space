@@ -490,13 +490,13 @@ const satelliteMetadata = ref<Map<string, { countryCode?: string }>>(new Map())
 const filteredSatellites = computed(() => {
   let result = satellites.value
 
-  // 按轨道类型筛选
+  // 按轨道类型筛选（alt 单位是米）
   if (filterType.value !== 'all') {
     result = result.filter(sat => {
       const alt = sat.position.alt
-      if (filterType.value === 'leo') return alt < 2000
-      if (filterType.value === 'meo') return alt >= 2000 && alt < 35000
-      if (filterType.value === 'geo') return alt >= 35000
+      if (filterType.value === 'leo') return alt < 2000000      // < 2000 km
+      if (filterType.value === 'meo') return alt >= 2000000 && alt < 35000000  // 2000-35000 km
+      if (filterType.value === 'geo') return alt >= 35000000    // >= 35000 km
       return true
     })
   }

@@ -119,19 +119,19 @@ const filteredSatellites = computed(() => {
 })
 
 const getOrbitType = (alt: number): string => {
-  if (alt < 2000) return 'LEO'
-  if (alt < 35000) return 'MEO'
+  if (alt < 2000000) return 'LEO'           // < 2000 km
+  if (alt < 35000000) return 'MEO'          // < 35000 km
   return 'GEO'
 }
 
 const getOrbitClass = (alt: number): string => {
-  if (alt < 2000) return 'leo'
-  if (alt < 35000) return 'meo'
+  if (alt < 2000000) return 'leo'
+  if (alt < 35000000) return 'meo'
   return 'geo'
 }
 
 const formatAlt = (alt: number): string => {
-  return alt.toFixed(0)
+  return (alt / 1000).toFixed(0)            // 转换为公里
 }
 </script>
 

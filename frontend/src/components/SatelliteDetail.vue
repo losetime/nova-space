@@ -48,7 +48,7 @@
           </div>
           <div class="param-content">
             <label>轨道高度</label>
-            <span class="param-value">{{ formatNumber(satellite.position.alt, 0) }} km</span>
+            <span class="param-value">{{ formatNumber(satellite.position.alt / 1000, 0) }} km</span>
           </div>
         </div>
         <div class="param-card">
@@ -132,14 +132,14 @@ const formatTime = (timestamp: string): string => {
 }
 
 const getOrbitType = (alt: number): string => {
-  if (alt < 2000) return '低轨 LEO'
-  if (alt < 35000) return '中轨 MEO'
+  if (alt < 2000000) return '低轨 LEO'      // < 2000 km
+  if (alt < 35000000) return '中轨 MEO'     // < 35000 km
   return '地球同步 GEO'
 }
 
 const getOrbitClass = (alt: number): string => {
-  if (alt < 2000) return 'leo'
-  if (alt < 35000) return 'meo'
+  if (alt < 2000000) return 'leo'
+  if (alt < 35000000) return 'meo'
   return 'geo'
 }
 </script>
