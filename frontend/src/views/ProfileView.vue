@@ -35,50 +35,130 @@
 
       <!-- 内容区域 -->
       <div class="profile-content">
-        <div class="section-header">
-          <h2>我的收藏</h2>
-        </div>
-        <div class="collects-section">
-          <a-spin :spinning="collectLoading">
-            <div v-if="collectList.length === 0 && !collectLoading" class="empty-collects">
-              <BookOutlined class="empty-icon" />
-              <p>暂无收藏内容</p>
-              <a-button type="primary" @click="router.push('/intelligence')">
-                去收藏情报
-              </a-button>
+        <a-tabs v-model:activeKey="activeTab" class="profile-tabs">
+          <!-- 我的收藏 -->
+          <a-tab-pane key="collects" tab="我的收藏">
+            <div class="collects-section">
+              <a-spin :spinning="collectLoading">
+                <div v-if="collectList.length === 0 && !collectLoading" class="empty-collects">
+                  <BookOutlined class="empty-icon" />
+                  <p>暂无收藏内容</p>
+                  <a-button type="primary" @click="router.push('/intelligence')">
+                    去收藏情报
+                  </a-button>
+                </div>
+                <div v-else class="collect-list">
+                  <div
+                    v-for="item in collectList"
+                    :key="item.id"
+                    class="collect-item"
+                    @click="goToDetail(item.id)"
+                  >
+                    <div class="collect-tag" :class="item.category">
+                      {{ getCategoryLabel(item.category) }}
+                    </div>
+                    <div class="collect-content">
+                      <h4>{{ item.title }}</h4>
+                      <p>{{ item.summary }}</p>
+                    </div>
+                    <div class="collect-meta">
+                      <span>{{ formatCollectDate(item.collectedAt) }}</span>
+                    </div>
+                  </div>
+                </div>
+              </a-spin>
             </div>
-            <div v-else class="collect-list">
-              <div
-                v-for="item in collectList"
-                :key="item.id"
-                class="collect-item"
-                @click="goToDetail(item.id)"
-              >
-                <div class="collect-tag" :class="item.category">
-                  {{ getCategoryLabel(item.category) }}
-                </div>
-                <div class="collect-content">
-                  <h4>{{ item.title }}</h4>
-                  <p>{{ item.summary }}</p>
-                </div>
-                <div class="collect-meta">
-                  <span>{{ formatCollectDate(item.collectedAt) }}</span>
+          </a-tab-pane>
+
+          <!-- 设置 -->
+          <a-tab-pane key="settings" tab="设置">
+            <div class="settings-section">
+              <div class="settings-group">
+                <h3>账号信息</h3>
+                <div class="settings-form">
+                  <div class="form-row">
+                    <div class="form-item">
+                      <label>用户名</label>
+                      <input type="text" :value="userStore.user?.username" disabled />
+                    </div>
+                    <div class="form-item">
+                      <label>邮箱</label>
+                      <input type="email" :value="userStore.user?.email" disabled />
+                    </div>
+                  </div>
+                  <div class="form-item">
+                    <label>昵称</label>
+                    <input type="text" v-model="editForm.nickname" placeholder="设置一个昵称" />
+                  </div>
+                  <button class="save-btn" :disabled="updateLoading" @click="handleUpdateProfile">
+                    <template v-if="updateLoading">
+                      <LoadingOutlined class="spin" />
+                      <span>保存中...</span>
+                    </template>
+                    <template v-else>
+                      <SaveOutlined />
+                      <span>保存修改</span>
+                    </template>
+                  </button>
                 </div>
               </div>
+
+              <div class="settings-group">
+                <h3>修改密码</h3>
+                <div class="settings-form">
+                  <div class="form-item">
+                    <label>当前密码</label>
+                    <input type="password" v-model="passwordForm.oldPassword" placeholder="请输入当前密码" />
+                  </div>
+                  <div class="form-row">
+                    <div class="form-item">
+                      <label>新密码</label>
+                      <input type="password" v-model="passwordForm.newPassword" placeholder="请输入新密码" />
+                    </div>
+                    <div class="form-item">
+                      <label>确认密码</label>
+                      <input type="password" v-model="passwordForm.confirmPassword" placeholder="再次输入新密码" />
+                    </div>
+                  </div>
+                  <button class="save-btn" :disabled="passwordLoading" @click="handleChangePassword">
+                    <template v-if="passwordLoading">
+                      <LoadingOutlined class="spin" />
+                      <span>修改中...</span>
+                    </template>
+                    <template v-else>
+                      <LockOutlined />
+                      <span>修改密码</span>
+                    </template>
+                  </button>
+                </div>
+              </div>
+
+              <div class="settings-group danger">
+                <h3>账号操作</h3>
+                <button class="logout-btn" @click="handleLogout">
+                  <LogoutOutlined />
+                  <span>退出登录</span>
+                </button>
+              </div>
             </div>
-          </a-spin>
-        </div>
+          </a-tab-pane>
+        </a-tabs>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { message } from 'ant-design-vue'
 import {
   UserOutlined,
   BookOutlined,
+  LoadingOutlined,
+  SaveOutlined,
+  LockOutlined,
+  LogoutOutlined,
 } from '@ant-design/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { intelligenceApi, type Intelligence } from '@/api'
@@ -93,9 +173,25 @@ declare module '@/api' {
 const router = useRouter()
 const userStore = useUserStore()
 
+const activeTab = ref('collects')
+
 // 我的收藏
 const collectList = ref<Intelligence[]>([])
 const collectLoading = ref(false)
+
+// 编辑资料
+const editForm = reactive({
+  nickname: '',
+})
+const updateLoading = ref(false)
+
+// 修改密码
+const passwordForm = reactive({
+  oldPassword: '',
+  newPassword: '',
+  confirmPassword: '',
+})
+const passwordLoading = ref(false)
 
 // 获取收藏列表
 async function fetchCollects() {
@@ -137,10 +233,58 @@ function goToDetail(id: number) {
   router.push(`/intelligence/${id}`)
 }
 
+// 更新资料
+async function handleUpdateProfile() {
+  updateLoading.value = true
+  try {
+    const result = await userStore.updateUser({ nickname: editForm.nickname })
+    if (result.success) {
+      message.success('更新成功')
+    } else {
+      message.error(result.message || '更新失败')
+    }
+  } finally {
+    updateLoading.value = false
+  }
+}
+
+// 修改密码
+async function handleChangePassword() {
+  if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+    message.error('两次输入的密码不一致')
+    return
+  }
+  if (passwordForm.newPassword.length < 6) {
+    message.error('密码至少6个字符')
+    return
+  }
+
+  passwordLoading.value = true
+  try {
+    const result = await userStore.changePassword(passwordForm.oldPassword, passwordForm.newPassword)
+    if (result.success) {
+      message.success('密码修改成功，请重新登录')
+      handleLogout()
+    } else {
+      message.error(result.message || '修改密码失败')
+    }
+  } finally {
+    passwordLoading.value = false
+  }
+}
+
+// 退出登录
+function handleLogout() {
+  userStore.logout()
+  message.success('已退出登录')
+  router.push('/login')
+}
+
 onMounted(async () => {
   if (!userStore.user) {
     await userStore.fetchUser()
   }
+  editForm.nickname = userStore.user?.nickname || ''
   await fetchCollects()
 })
 </script>
@@ -313,14 +457,21 @@ $text-muted: rgba(255, 255, 255, 0.4);
   backdrop-filter: blur(20px);
 }
 
-.section-header {
-  margin-bottom: 20px;
+.profile-tabs {
+  :deep(.ant-tabs-nav) {
+    margin-bottom: 24px;
 
-  h2 {
-    font-size: 18px;
-    font-weight: 600;
-    color: $text-primary;
-    margin: 0;
+    .ant-tabs-tab {
+      color: $text-secondary;
+
+      &.ant-tabs-tab-active .ant-tabs-tab-btn {
+        color: $primary;
+      }
+    }
+
+    .ant-tabs-ink-bar {
+      background: $primary;
+    }
   }
 }
 
@@ -431,6 +582,135 @@ $text-muted: rgba(255, 255, 255, 0.4);
   color: $text-muted;
 }
 
+// 设置区域
+.settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.settings-group {
+  padding: 24px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+
+  h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: $text-primary;
+    margin: 0 0 20px;
+  }
+
+  &.danger {
+    border-color: rgba(239, 68, 68, 0.2);
+  }
+}
+
+.settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.form-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  label {
+    font-size: 13px;
+    color: $text-secondary;
+  }
+
+  input {
+    padding: 10px 14px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: $text-primary;
+    font-size: 14px;
+    transition: all 0.3s;
+
+    &:focus {
+      outline: none;
+      border-color: $primary;
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    &::placeholder {
+      color: $text-muted;
+    }
+  }
+}
+
+.save-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: linear-gradient(135deg, $primary 0%, $accent 100%);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+  align-self: flex-start;
+
+  &:hover:not(:disabled) {
+    opacity: 0.9;
+    transform: translateY(-1px);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .spin {
+    animation: spin 1s linear infinite;
+  }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.logout-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 8px;
+  color: #ef4444;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+
+  &:hover {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: rgba(239, 68, 68, 0.5);
+  }
+}
+
 // 响应式
 @media (max-width: 768px) {
   .user-hero {
@@ -451,6 +731,10 @@ $text-muted: rgba(255, 255, 255, 0.4);
 
   .collect-meta {
     align-self: flex-end;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
   }
 }
 </style>
