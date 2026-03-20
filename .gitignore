@@ -49,3 +49,7 @@ cache/
 
 # Claude local settings
 .claude/settings.local.json
+
+
+nova-frontend.tar
+nova-images.tar
