@@ -51,6 +51,12 @@ const router = createRouter({
           component: () => import('@/views/FeedbackView.vue'),
         },
         {
+          path: 'push-subscription',
+          name: 'push-subscription',
+          component: () => import('@/views/PushSubscriptionView.vue'),
+          meta: { requiresAuth: true },
+        },
+        {
           path: 'space-weather',
           name: 'space-weather',
           component: () => import('@/views/SpaceWeatherView.vue'),

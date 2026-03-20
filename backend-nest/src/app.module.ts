@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ScheduleModule } from '@nestjs/schedule';
 import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -16,6 +17,7 @@ import { IntelligenceModule } from './modules/intelligence/intelligence.module';
 import { NotificationModule } from './modules/notification/notification.module';
 import { FeedbackModule } from './modules/feedback/feedback.module';
 import { SpaceWeatherModule } from './modules/space-weather/space-weather.module';
+import { PushModule } from './modules/push/push.module';
 import appConfig from './config/app.config';
 
 @Module({
@@ -24,6 +26,7 @@ import appConfig from './config/app.config';
       isGlobal: true,
       load: [appConfig],
     }),
+    ScheduleModule.forRoot(),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
@@ -49,6 +52,7 @@ import appConfig from './config/app.config';
     NotificationModule,
     FeedbackModule,
     SpaceWeatherModule,
+    PushModule,
   ],
   controllers: [AppController],
   providers: [

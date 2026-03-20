@@ -56,6 +56,10 @@
                     <UserOutlined />
                     个人中心
                   </a-menu-item>
+                  <a-menu-item key="push-subscription">
+                    <BellOutlined />
+                    订阅推送
+                  </a-menu-item>
                   <a-menu-item key="feedback">
                     <CommentOutlined />
                     意见反馈
@@ -108,6 +112,7 @@ import {
   LogoutOutlined,
   CommentOutlined,
   ThunderboltOutlined,
+  BellOutlined,
 } from "@ant-design/icons-vue";
 
 const route = useRoute();
@@ -138,6 +143,9 @@ const handleMenuClick = ({ key }: { key: string }) => {
   switch (key) {
     case "profile":
       router.push("/profile");
+      break;
+    case "push-subscription":
+      router.push("/push-subscription");
       break;
     case "feedback":
       router.push("/feedback");

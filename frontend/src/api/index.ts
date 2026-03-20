@@ -527,4 +527,46 @@ export const spaceWeatherApi = {
     }),
 }
 
+// 推送订阅
+export interface PushSubscription {
+  id: string
+  email: string
+  subscribeSpaceWeather: boolean
+  subscribeSatellitePass: boolean
+  enabled: boolean
+  status: 'active' | 'paused' | 'cancelled'
+  lastPushAt: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+// 推送订阅 API
+export const pushApi = {
+  // 获取订阅配置
+  getSubscription: () => api.get<ApiResponse<PushSubscription | null>>('/push/subscription'),
+
+  // 创建订阅
+  createSubscription: (data: {
+    email: string
+    subscribeSpaceWeather?: boolean
+    subscribeSatellitePass?: boolean
+  }) => api.post<ApiResponse<PushSubscription>>('/push/subscription', data),
+
+  // 更新订阅配置
+  updateSubscription: (data: {
+    email?: string
+    subscribeSpaceWeather?: boolean
+    subscribeSatellitePass?: boolean
+  }) => api.put<ApiResponse<PushSubscription>>('/push/subscription', data),
+
+  // 暂停推送
+  pauseSubscription: () => api.post<ApiResponse<PushSubscription>>('/push/subscription/pause'),
+
+  // 恢复推送
+  resumeSubscription: () => api.post<ApiResponse<PushSubscription>>('/push/subscription/resume'),
+
+  // 取消订阅
+  cancelSubscription: () => api.delete<ApiResponse<{ success: boolean }>>('/push/subscription'),
+}
+
 export default api
