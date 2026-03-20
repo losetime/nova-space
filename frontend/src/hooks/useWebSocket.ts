@@ -20,9 +20,9 @@ export function useWebSocket() {
   const lastUpdate = ref('--')
   const isInitialized = ref(false)
 
-  // 后端地址
-  const wsUrl = 'ws://localhost:3001/ws/satellites'
-  const apiUrl = 'http://localhost:3001/api/satellites'
+  // 动态获取地址（开发环境通过 vite proxy，生产环境通过 nginx）
+  const wsUrl = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws/satellites`
+  const apiUrl = `${window.location.origin}/api/satellites`
 
   const initWebSocket = () => {
     if (isInitialized.value) return
