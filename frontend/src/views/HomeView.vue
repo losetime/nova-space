@@ -3,7 +3,9 @@
     <!-- Hero Section -->
     <section class="hero-section">
       <div class="hero-bg">
-        <div class="stars"></div>
+        <div class="stars stars-layer-1"></div>
+        <div class="stars stars-layer-2"></div>
+        <div class="stars stars-layer-3"></div>
         <div class="planet"></div>
       </div>
       <div class="hero-content">
@@ -189,15 +191,42 @@ const latestIntelligence = [
   .stars {
     position: absolute;
     inset: 0;
-    background-image: 
-      radial-gradient(2px 2px at 20px 30px, #eee, rgba(0,0,0,0)),
-      radial-gradient(2px 2px at 40px 70px, #fff, rgba(0,0,0,0)),
-      radial-gradient(2px 2px at 50px 160px, #ddd, rgba(0,0,0,0)),
-      radial-gradient(2px 2px at 90px 40px, #fff, rgba(0,0,0,0)),
-      radial-gradient(2px 2px at 130px 80px, #fff, rgba(0,0,0,0));
     background-repeat: repeat;
+  }
+
+  // 第一层星星 - 小而密集，缓慢漂移
+  .stars-layer-1 {
+    background-image:
+      radial-gradient(1px 1px at 10px 20px, rgba(255,255,255,0.8), rgba(0,0,0,0)),
+      radial-gradient(1px 1px at 50px 80px, rgba(255,255,255,0.6), rgba(0,0,0,0)),
+      radial-gradient(1px 1px at 90px 40px, rgba(255,255,255,0.7), rgba(0,0,0,0)),
+      radial-gradient(1px 1px at 130px 120px, rgba(255,255,255,0.5), rgba(0,0,0,0)),
+      radial-gradient(1px 1px at 170px 60px, rgba(255,255,255,0.6), rgba(0,0,0,0));
     background-size: 200px 200px;
-    animation: twinkle 5s ease-in-out infinite;
+    animation: starDrift1 60s linear infinite, twinkle1 3s ease-in-out infinite;
+  }
+
+  // 第二层星星 - 中等大小，反向漂移
+  .stars-layer-2 {
+    background-image:
+      radial-gradient(2px 2px at 20px 30px, #fff, rgba(0,0,0,0)),
+      radial-gradient(2px 2px at 60px 90px, #eee, rgba(0,0,0,0)),
+      radial-gradient(2px 2px at 100px 50px, #fff, rgba(0,0,0,0)),
+      radial-gradient(2px 2px at 140px 130px, #ddd, rgba(0,0,0,0)),
+      radial-gradient(2px 2px at 180px 70px, #fff, rgba(0,0,0,0));
+    background-size: 250px 250px;
+    animation: starDrift2 80s linear infinite, twinkle2 4s ease-in-out infinite;
+  }
+
+  // 第三层星星 - 大而稀疏，缓慢闪烁
+  .stars-layer-3 {
+    background-image:
+      radial-gradient(3px 3px at 30px 60px, #00d4ff, rgba(0,0,0,0)),
+      radial-gradient(2px 2px at 80px 150px, #fff, rgba(0,0,0,0)),
+      radial-gradient(3px 3px at 150px 30px, #7b2cbf, rgba(0,0,0,0)),
+      radial-gradient(2px 2px at 200px 100px, #fff, rgba(0,0,0,0));
+    background-size: 300px 300px;
+    animation: starDrift3 100s linear infinite, twinkle3 5s ease-in-out infinite;
   }
 
   .planet {
@@ -214,9 +243,39 @@ const latestIntelligence = [
   }
 }
 
-@keyframes twinkle {
+// 星星漂移动画
+@keyframes starDrift1 {
+  from { transform: translateX(0) translateY(0); }
+  to { transform: translateX(-200px) translateY(-200px); }
+}
+
+@keyframes starDrift2 {
+  from { transform: translateX(0) translateY(0); }
+  to { transform: translateX(250px) translateY(-250px); }
+}
+
+@keyframes starDrift3 {
+  from { transform: translateX(0) translateY(0); }
+  to { transform: translateX(-150px) translateY(-150px); }
+}
+
+// 闪烁动画 - 不同频率
+@keyframes twinkle1 {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+@keyframes twinkle2 {
   0%, 100% { opacity: 0.5; }
+  30% { opacity: 1; }
+  70% { opacity: 0.3; }
+}
+
+@keyframes twinkle3 {
+  0%, 100% { opacity: 0.6; }
+  25% { opacity: 0.2; }
   50% { opacity: 1; }
+  75% { opacity: 0.4; }
 }
 
 .hero-content {

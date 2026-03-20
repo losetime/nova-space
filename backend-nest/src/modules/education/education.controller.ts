@@ -25,7 +25,7 @@ export class EducationController {
     @Query('limit') limit?: string,
   ) {
     const pageNum = parseInt(page || '1', 10);
-    const limitNum = parseInt(limit || '10', 10);
+    const limitNum = parseInt(limit || '12', 10);
     return this.educationService.getArticles(category, pageNum, limitNum);
   }
 

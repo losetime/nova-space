@@ -65,6 +65,16 @@
         <p>暂无内容</p>
       </div>
 
+      <!-- 分页 -->
+      <div class="pagination-wrapper" v-if="total > pageSize">
+        <a-pagination
+          v-model:current="currentPage"
+          :total="total"
+          :pageSize="pageSize"
+          @change="handlePageChange"
+        />
+      </div>
+
       <!-- 每日问答 -->
       <div class="daily-quiz">
         <div class="quiz-header">
@@ -167,6 +177,9 @@ const isLoggedIn = computed(() => userStore.isLoggedIn)
 const activeCategory = ref('all')
 const loading = ref(false)
 const articles = ref<Article[]>([])
+const currentPage = ref(1)
+const pageSize = 12
+const total = ref(0)
 
 const quizLoading = ref(false)
 const currentQuiz = ref<Quiz | null>(null)
@@ -181,9 +194,10 @@ const loadArticles = async () => {
   loading.value = true
   try {
     const category = activeCategory.value === 'all' ? undefined : activeCategory.value
-    const res = await educationApi.getArticles({ category, limit: 20 })
-    // 后端返回格式: { code, data: Article[], timestamp }
-    articles.value = res.data.data || []
+    const res = await educationApi.getArticles({ category, page: currentPage.value, limit: pageSize })
+    // 后端返回格式: { code, data: { list: Article[], total: number }, timestamp }
+    articles.value = res.data.data?.list || []
+    total.value = res.data.data?.total || 0
   } catch (error) {
     console.error('加载文章失败:', error)
   } finally {
@@ -212,7 +226,16 @@ const loadDailyQuiz = async () => {
 
 // 切换分类
 const handleCategoryChange = () => {
+  currentPage.value = 1
   loadArticles()
+}
+
+// 分页变化
+const handlePageChange = (page: number) => {
+  currentPage.value = page
+  loadArticles()
+  // 滚动到顶部
+  window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
 // 选择答案
@@ -440,6 +463,37 @@ onMounted(() => {
   text-align: center;
   padding: 80px 0;
   color: rgba(255, 255, 255, 0.5);
+}
+
+.pagination-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 40px;
+
+  :deep(.ant-pagination) {
+    .ant-pagination-item {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(0, 212, 255, 0.2);
+
+      a {
+        color: #fff;
+      }
+
+      &.ant-pagination-item-active {
+        background: linear-gradient(135deg, #00d4ff 0%, #7b2cbf 100%);
+        border-color: transparent;
+      }
+    }
+
+    .ant-pagination-prev,
+    .ant-pagination-next {
+      .ant-pagination-item-link {
+        background: rgba(255, 255, 255, 0.05);
+        border-color: rgba(0, 212, 255, 0.2);
+        color: #fff;
+      }
+    }
+  }
 }
 
 .daily-quiz {

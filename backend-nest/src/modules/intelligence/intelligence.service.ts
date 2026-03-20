@@ -279,7 +279,7 @@ export class IntelligenceService implements OnModuleInit {
 
   // 获取情报列表
   async findAll(query: QueryIntelligenceDto, userLevel?: string) {
-    const { category, page = 1, pageSize = 10 } = query;
+    const { category, page = 1, pageSize = 12 } = query;
     
     const qb = this.intelligenceRepository.createQueryBuilder('intel');
     

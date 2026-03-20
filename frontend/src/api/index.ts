@@ -217,7 +217,7 @@ export interface QuizStats {
 export const educationApi = {
   // 获取文章列表
   getArticles: (params?: { category?: string; page?: number; limit?: number }) =>
-    api.get<ApiResponse<{ data: Article[]; total: number }>>('/education/articles', { params }),
+    api.get<ApiResponse<{ list: Article[]; total: number }>>('/education/articles', { params }),
 
   // 获取文章详情
   getArticle: (id: string | number) => api.get<ApiResponse<Article>>(`/education/articles/${id}`),

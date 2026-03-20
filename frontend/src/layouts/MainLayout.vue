@@ -5,19 +5,7 @@
       <div class="nav-container">
         <!-- Logo -->
         <div class="logo" @click="router.push('/')">
-          <div class="logo-icon">
-            <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <!-- 外圈轨道 -->
-              <circle cx="16" cy="16" r="14" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 2" opacity="0.4"/>
-              <!-- 中圈轨道 -->
-              <circle cx="16" cy="16" r="9" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
-              <!-- 内核 -->
-              <circle cx="16" cy="16" r="4" fill="currentColor" opacity="0.9"/>
-              <!-- 卫星点 -->
-              <circle cx="16" cy="2" r="2" fill="#00ff88"/>
-              <circle cx="25" cy="22" r="1.5" fill="#00d4ff"/>
-            </svg>
-          </div>
+          <img src="/favicon.svg?v=2" alt="Nova Space" class="logo-icon" />
           <span class="logo-text">NOVA SPACE</span>
         </div>
 
@@ -39,12 +27,10 @@
         <div class="nav-actions">
           <!-- 通知图标 -->
           <NotificationIcon v-if="userStore.isLoggedIn" />
-          
+
           <!-- 未登录状态 -->
           <template v-if="!userStore.isLoggedIn">
-            <a-button type="link" class="login-btn" @click="router.push('/login')">
-              登录
-            </a-button>
+            <a-button type="link" class="login-btn" @click="router.push('/login')"> 登录 </a-button>
             <a-button type="primary" class="register-btn" @click="router.push('/login')">
               注册
             </a-button>
@@ -55,10 +41,12 @@
             <a-dropdown :trigger="['click']">
               <div class="user-wrapper">
                 <div class="user-avatar">
-                  <span>{{ userStore.user?.username?.charAt(0).toUpperCase() || 'U' }}</span>
+                  <span>{{ userStore.user?.username?.charAt(0).toUpperCase() || "U" }}</span>
                 </div>
                 <div class="user-info">
-                  <span class="user-name">{{ userStore.user?.nickname || userStore.user?.username }}</span>
+                  <span class="user-name">{{
+                    userStore.user?.nickname || userStore.user?.username
+                  }}</span>
                   <span class="user-level">{{ levelText }}</span>
                 </div>
                 <DownOutlined class="user-arrow" />
@@ -110,11 +98,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { message } from 'ant-design-vue'
-import { useUserStore } from '@/stores/user'
-import NotificationIcon from '@/components/NotificationIcon.vue'
+import { computed, onMounted } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import { message } from "ant-design-vue";
+import { useUserStore } from "@/stores/user";
+import NotificationIcon from "@/components/NotificationIcon.vue";
 import {
   UserOutlined,
   GlobalOutlined,
@@ -125,59 +113,63 @@ import {
   CrownOutlined,
   LogoutOutlined,
   CommentOutlined,
-  ThunderboltOutlined
-} from '@ant-design/icons-vue'
+  ThunderboltOutlined,
+} from "@ant-design/icons-vue";
 
-const route = useRoute()
-const router = useRouter()
-const userStore = useUserStore()
+const route = useRoute();
+const router = useRouter();
+const userStore = useUserStore();
 
 // 页面加载时获取用户信息
 onMounted(() => {
-  console.log('MainLayout mounted:', { token: userStore.token, user: userStore.user, isLoggedIn: userStore.isLoggedIn })
+  console.log("MainLayout mounted:", {
+    token: userStore.token,
+    user: userStore.user,
+    isLoggedIn: userStore.isLoggedIn,
+  });
   if (userStore.token && !userStore.user) {
-    userStore.fetchUser()
+    userStore.fetchUser();
   }
-})
+});
 
 const navItems = [
-  { name: '首页', path: '/', icon: HomeOutlined },
-  { name: '卫星数据', path: '/satellite', icon: GlobalOutlined },
-  { name: '航天科普', path: '/education', icon: BookOutlined },
-  { name: '航天情报', path: '/intelligence', icon: FileTextOutlined },
-  { name: '空间天气', path: '/space-weather', icon: ThunderboltOutlined },
-]
+  { name: "首页", path: "/", icon: HomeOutlined },
+  { name: "卫星数据", path: "/satellite", icon: GlobalOutlined },
+  { name: "空间天气", path: "/space-weather", icon: ThunderboltOutlined },
+  { name: "航天科普", path: "/education", icon: BookOutlined },
+  { name: "航天情报", path: "/intelligence", icon: FileTextOutlined },
+];
 
 const levelText = computed(() => {
-  const level = userStore.user?.level
+  const level = userStore.user?.level;
   switch (level) {
-    case 'professional':
-      return '专业会员'
-    case 'advanced':
-      return '进阶会员'
+    case "professional":
+      return "专业会员";
+    case "advanced":
+      return "进阶会员";
     default:
-      return '普通用户'
+      return "普通用户";
   }
-})
+});
 
 const handleMenuClick = ({ key }: { key: string }) => {
   switch (key) {
-    case 'profile':
-      router.push('/profile')
-      break
-    case 'feedback':
-      router.push('/feedback')
-      break
-    case 'vip':
-      router.push('/profile')
-      break
-    case 'logout':
-      userStore.logout()
-      message.success('已退出登录')
-      router.push('/')
-      break
+    case "profile":
+      router.push("/profile");
+      break;
+    case "feedback":
+      router.push("/feedback");
+      break;
+    case "vip":
+      router.push("/profile");
+      break;
+    case "logout":
+      userStore.logout();
+      message.success("已退出登录");
+      router.push("/");
+      break;
   }
-}
+};
 </script>
 
 <style scoped lang="scss">
@@ -198,8 +190,9 @@ const handleMenuClick = ({ key }: { key: string }) => {
   background: rgba(10, 10, 15, 0.9);
   backdrop-filter: blur(20px);
   border-bottom: 1px solid rgba(0, 212, 255, 0.15);
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5),
-              0 0 100px rgba(0, 212, 255, 0.05);
+  box-shadow:
+    0 4px 30px rgba(0, 0, 0, 0.5),
+    0 0 100px rgba(0, 212, 255, 0.05);
 }
 
 .nav-container {
@@ -227,15 +220,9 @@ const handleMenuClick = ({ key }: { key: string }) => {
   }
 
   .logo-icon {
-    width: 38px;
-    height: 38px;
-    color: #00d4ff;
-
-    svg {
-      width: 100%;
-      height: 100%;
-      filter: drop-shadow(0 0 8px rgba(0, 212, 255, 0.5));
-    }
+    width: 32px;
+    height: 32px;
+    filter: drop-shadow(0 0 8px rgba(0, 212, 255, 0.5));
   }
 
   .logo-text {
@@ -250,7 +237,9 @@ const handleMenuClick = ({ key }: { key: string }) => {
     animation: shine 4s linear infinite;
 
     @keyframes shine {
-      to { background-position: 200% center; }
+      to {
+        background-position: 200% center;
+      }
     }
   }
 }
@@ -291,8 +280,9 @@ const handleMenuClick = ({ key }: { key: string }) => {
   &.active {
     color: #00d4ff;
     background: rgba(0, 212, 255, 0.12);
-    box-shadow: 0 0 25px rgba(0, 212, 255, 0.2),
-                inset 0 0 10px rgba(0, 212, 255, 0.05);
+    box-shadow:
+      0 0 25px rgba(0, 212, 255, 0.2),
+      inset 0 0 10px rgba(0, 212, 255, 0.05);
 
     .nav-icon {
       filter: drop-shadow(0 0 5px rgba(0, 212, 255, 0.5));
@@ -390,8 +380,9 @@ const handleMenuClick = ({ key }: { key: string }) => {
   border: 1px solid rgba(0, 212, 255, 0.15) !important;
   border-radius: 12px !important;
   min-width: 180px !important;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5),
-              0 0 60px rgba(0, 212, 255, 0.1) !important;
+  box-shadow:
+    0 10px 40px rgba(0, 0, 0, 0.5),
+    0 0 60px rgba(0, 212, 255, 0.1) !important;
 
   :deep(.ant-menu-item) {
     color: rgba(255, 255, 255, 0.7) !important;
@@ -411,7 +402,11 @@ const handleMenuClick = ({ key }: { key: string }) => {
   }
 
   .vip-item {
-    background: linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(255, 170, 0, 0.1) 100%) !important;
+    background: linear-gradient(
+      135deg,
+      rgba(255, 215, 0, 0.1) 0%,
+      rgba(255, 170, 0, 0.1) 100%
+    ) !important;
     color: #ffd700 !important;
   }
 }
@@ -455,7 +450,7 @@ const handleMenuClick = ({ key }: { key: string }) => {
     position: relative;
 
     &::after {
-      content: '';
+      content: "";
       position: absolute;
       bottom: -4px;
       left: 0;

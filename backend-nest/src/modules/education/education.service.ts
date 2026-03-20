@@ -198,8 +198,8 @@ export class EducationService implements OnModuleInit {
   async getArticles(
     category?: string,
     page = 1,
-    limit = 10,
-  ): Promise<{ data: Article[]; total: number }> {
+    limit = 12,
+  ): Promise<{ list: Article[]; total: number }> {
     const queryBuilder = this.articleRepository
       .createQueryBuilder('article')
       .where('article.isPublished = :isPublished', { isPublished: true })
@@ -209,12 +209,12 @@ export class EducationService implements OnModuleInit {
       queryBuilder.andWhere('article.category = :category', { category });
     }
 
-    const [data, total] = await queryBuilder
+    const [list, total] = await queryBuilder
       .skip((page - 1) * limit)
       .take(limit)
       .getManyAndCount();
 
-    return { data, total };
+    return { list, total };
   }
 
   // 获取文章详情
