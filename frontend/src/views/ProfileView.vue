@@ -22,7 +22,9 @@
           </div>
           <div class="user-basic">
             <div class="user-name-row">
-              <h1 class="username">{{ userStore.user?.nickname || userStore.user?.username || '用户' }}</h1>
+              <h1 class="username">
+                {{ userStore.user?.nickname || userStore.user?.username || "用户" }}
+              </h1>
             </div>
             <p class="user-meta">
               <span class="user-id">@{{ userStore.user?.username }}</span>
@@ -108,19 +110,37 @@
                 <div class="settings-form">
                   <div class="form-item">
                     <label>当前密码</label>
-                    <input type="password" v-model="passwordForm.oldPassword" placeholder="请输入当前密码" />
+                    <input
+                      type="password"
+                      v-model="passwordForm.oldPassword"
+                      placeholder="请输入当前密码"
+                    />
                   </div>
                   <div class="form-row">
                     <div class="form-item">
                       <label>新密码</label>
-                      <input type="password" v-model="passwordForm.newPassword" placeholder="请输入新密码" />
+                      <input
+                        type="password"
+                        v-model="passwordForm.newPassword"
+                        placeholder="请输入新密码"
+                        autocomplete="new-password"
+                      />
                     </div>
                     <div class="form-item">
                       <label>确认密码</label>
-                      <input type="password" v-model="passwordForm.confirmPassword" placeholder="再次输入新密码" />
+                      <input
+                        type="password"
+                        v-model="passwordForm.confirmPassword"
+                        placeholder="再次输入新密码"
+                        autocomplete="new-password"
+                      />
                     </div>
                   </div>
-                  <button class="save-btn" :disabled="passwordLoading" @click="handleChangePassword">
+                  <button
+                    class="save-btn"
+                    :disabled="passwordLoading"
+                    @click="handleChangePassword"
+                  >
                     <template v-if="passwordLoading">
                       <LoadingOutlined class="spin" />
                       <span>修改中...</span>
@@ -149,9 +169,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { message } from 'ant-design-vue'
+import { ref, reactive, onMounted } from "vue";
+import { useRouter } from "vue-router";
+import { message } from "ant-design-vue";
 import {
   UserOutlined,
   BookOutlined,
@@ -159,134 +179,137 @@ import {
   SaveOutlined,
   LockOutlined,
   LogoutOutlined,
-} from '@ant-design/icons-vue'
-import { useUserStore } from '@/stores/user'
-import { intelligenceApi, type Intelligence } from '@/api'
+} from "@ant-design/icons-vue";
+import { useUserStore } from "@/stores/user";
+import { intelligenceApi, type Intelligence } from "@/api";
 
 // Intelligence 类型扩展
-declare module '@/api' {
+declare module "@/api" {
   interface Intelligence {
-    collectedAt?: string
+    collectedAt?: string;
   }
 }
 
-const router = useRouter()
-const userStore = useUserStore()
+const router = useRouter();
+const userStore = useUserStore();
 
-const activeTab = ref('collects')
+const activeTab = ref("collects");
 
 // 我的收藏
-const collectList = ref<Intelligence[]>([])
-const collectLoading = ref(false)
+const collectList = ref<Intelligence[]>([]);
+const collectLoading = ref(false);
 
 // 编辑资料
 const editForm = reactive({
-  nickname: '',
-})
-const updateLoading = ref(false)
+  nickname: "",
+});
+const updateLoading = ref(false);
 
 // 修改密码
 const passwordForm = reactive({
-  oldPassword: '',
-  newPassword: '',
-  confirmPassword: '',
-})
-const passwordLoading = ref(false)
+  oldPassword: "",
+  newPassword: "",
+  confirmPassword: "",
+});
+const passwordLoading = ref(false);
 
 // 获取收藏列表
 async function fetchCollects() {
-  collectLoading.value = true
+  collectLoading.value = true;
   try {
-    const response = await intelligenceApi.getUserCollects()
-    collectList.value = response.data.data || []
+    const response = await intelligenceApi.getUserCollects();
+    collectList.value = response.data.data || [];
   } catch {
     // 忽略错误
   } finally {
-    collectLoading.value = false
+    collectLoading.value = false;
   }
 }
 
 // 分类标签
 function getCategoryLabel(category: string) {
   const labels: Record<string, string> = {
-    launch: '发射任务',
-    satellite: '卫星运行',
-    industry: '行业动态',
-    research: '科研成果',
-    environment: '空间环境',
-  }
-  return labels[category] || category
+    launch: "发射任务",
+    satellite: "卫星运行",
+    industry: "行业动态",
+    research: "科研成果",
+    environment: "空间环境",
+  };
+  return labels[category] || category;
 }
 
 // 格式化日期
 function formatCollectDate(dateStr?: string) {
-  if (!dateStr) return ''
-  return new Date(dateStr).toLocaleDateString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  })
+  if (!dateStr) return "";
+  return new Date(dateStr).toLocaleDateString("zh-CN", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
 }
 
 // 跳转详情
 function goToDetail(id: number) {
-  router.push(`/intelligence/${id}`)
+  router.push(`/intelligence/${id}`);
 }
 
 // 更新资料
 async function handleUpdateProfile() {
-  updateLoading.value = true
+  updateLoading.value = true;
   try {
-    const result = await userStore.updateUser({ nickname: editForm.nickname })
+    const result = await userStore.updateUser({ nickname: editForm.nickname });
     if (result.success) {
-      message.success('更新成功')
+      message.success("更新成功");
     } else {
-      message.error(result.message || '更新失败')
+      message.error(result.message || "更新失败");
     }
   } finally {
-    updateLoading.value = false
+    updateLoading.value = false;
   }
 }
 
 // 修改密码
 async function handleChangePassword() {
   if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-    message.error('两次输入的密码不一致')
-    return
+    message.error("两次输入的密码不一致");
+    return;
   }
   if (passwordForm.newPassword.length < 6) {
-    message.error('密码至少6个字符')
-    return
+    message.error("密码至少6个字符");
+    return;
   }
 
-  passwordLoading.value = true
+  passwordLoading.value = true;
   try {
-    const result = await userStore.changePassword(passwordForm.oldPassword, passwordForm.newPassword)
+    const result = await userStore.changePassword(
+      passwordForm.oldPassword,
+      passwordForm.newPassword,
+    );
     if (result.success) {
-      message.success('密码修改成功，请重新登录')
-      handleLogout()
+      message.success("密码修改成功，请重新登录");
+      handleLogout();
     } else {
-      message.error(result.message || '修改密码失败')
+      message.error(result.message || "修改密码失败");
     }
   } finally {
-    passwordLoading.value = false
+    passwordLoading.value = false;
   }
 }
 
 // 退出登录
 function handleLogout() {
-  userStore.logout()
-  message.success('已退出登录')
-  router.push('/login')
+  userStore.logout();
+  message.success("已退出登录");
+  router.push("/login");
 }
 
 onMounted(async () => {
   if (!userStore.user) {
-    await userStore.fetchUser()
+    await userStore.fetchUser();
   }
-  editForm.nickname = userStore.user?.nickname || ''
-  await fetchCollects()
-})
+  editForm.nickname = userStore.user?.nickname || "";
+  await fetchCollects();
+});
 </script>
 
 <style scoped lang="scss">
@@ -412,8 +435,15 @@ $text-muted: rgba(255, 255, 255, 0.4);
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 0.3; transform: scale(1); }
-  50% { opacity: 0.5; transform: scale(1.05); }
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.05);
+  }
 }
 
 .user-basic {
@@ -631,7 +661,7 @@ $text-muted: rgba(255, 255, 255, 0.4);
 
   input {
     padding: 10px 14px;
-    background: rgba(255, 255, 255, 0.04);
+    background: rgba(255, 255, 255, 0.04) !important;
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 8px;
     color: $text-primary;
@@ -641,7 +671,7 @@ $text-muted: rgba(255, 255, 255, 0.4);
     &:focus {
       outline: none;
       border-color: $primary;
-      background: rgba(255, 255, 255, 0.06);
+      background: rgba(255, 255, 255, 0.06) !important;
     }
 
     &:disabled {
@@ -687,8 +717,12 @@ $text-muted: rgba(255, 255, 255, 0.4);
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .logout-btn {
