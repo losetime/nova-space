@@ -8,6 +8,9 @@ import router from './router'
 // 导入 Cesium 样式
 import 'cesium/Build/Cesium/Widgets/widgets.css'
 
+// 导入国旗图标样式
+import 'flag-icons/css/flag-icons.min.css'
+
 const app = createApp(App)
 
 app.use(createPinia())

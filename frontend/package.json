@@ -19,6 +19,7 @@
     "ant-design-vue": "^4.2.6",
     "axios": "^1.13.6",
     "cesium": "^1.139.0",
+    "flag-icons": "^7.5.0",
     "marked": "^17.0.4",
     "pinia": "^3.0.4",
     "vite-plugin-cesium": "^1.2.23",

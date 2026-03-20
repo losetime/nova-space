@@ -79,7 +79,12 @@
               <div class="filter-section-header" @click="toggleFilterSection('country')">
                 <span class="section-title">
                   国家/地区
-                  <span class="selected-tag">{{ getCountryLabel(selectedCountry) }}</span>
+                  <span class="selected-tag">
+                    <template v-if="selectedCountry">
+                      <FlagIcon :code="selectedCountry" :country-name="getCountryName(selectedCountry)" class="tag-flag" />
+                    </template>
+                    {{ getCountryLabel(selectedCountry) }}
+                  </span>
                 </span>
                 <DownOutlined :class="['expand-icon', { expanded: expandedSections.country }]" />
               </div>
@@ -108,7 +113,7 @@
                     :class="{ active: selectedCountry === country.code }"
                     @click="selectedCountry = country.code"
                   >
-                    <FlagOutlined class="option-icon" />
+                    <FlagIcon :code="country.code" :country-name="getCountryName(country.code)" class="country-flag" />
                     <span class="country-name">{{ getCountryName(country.code) }}({{ country.code }})</span>
                     <span class="country-count">{{ country.count }}</span>
                   </div>
@@ -291,11 +296,13 @@ import SatelliteList from '@/components/SatelliteList.vue'
 import SatelliteDetail from '@/components/SatelliteDetail.vue'
 import OrbitPrediction from '@/components/OrbitPrediction.vue'
 import PassPrediction from '@/components/PassPrediction.vue'
+import FlagIcon from '@/components/FlagIcon.vue'
 import { useCesium } from '@/hooks/useCesium'
 import { useWebSocket } from '@/hooks/useWebSocket'
 import { usePanel } from '@/hooks/usePanel'
 import { useSatellite } from '@/hooks/useSatellite'
 import { satelliteApi } from '@/api'
+import { getFlagClass } from '@/utils/countryFlags'
 
 const filterType = ref('all')
 const selectedCountry = ref('')
@@ -376,12 +383,12 @@ const getOrbitTypeLabel = (type: string): string => {
   return labels[type] || ''
 }
 
-// 获取国家选择标签（格式与列表一致，包含卫星数量）
+// 获取国家选择标签文本（不含国旗）
 const getCountryLabel = (code: string): string => {
   if (!code) return '全部'
   const country = countries.value.find(c => c.code === code)
   const count = country ? country.count : 0
-  return `${getCountryName(code)}(${code})  ${count}`
+  return `${getCountryName(code)}(${code}) ${count}`
 }
 
 // 切换筛选区域展开/折叠（同时关闭其他区域）
@@ -978,6 +985,14 @@ const handleRefresh = () => {
         background: rgba(0, 212, 255, 0.15);
         padding: 2px 8px;
         border-radius: 6px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+
+        .tag-flag {
+          width: 14px;
+          height: 10px;
+        }
       }
     }
 
@@ -1030,6 +1045,13 @@ const handleRefresh = () => {
       &.leo { color: #00ff88; }
       &.meo { color: #00d4ff; }
       &.geo { color: #b366e8; }
+    }
+
+    .country-flag {
+      width: 20px;
+      height: 15px;
+      margin-right: 4px;
+      flex-shrink: 0;
     }
 
     .country-name {

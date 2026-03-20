@@ -36,7 +36,7 @@
         <div class="info-item" v-if="metadata.countryCode">
           <span class="info-label">所属国家/组织</span>
           <span class="info-value">
-            <span class="country-flag">{{ getCountryFlag(metadata.countryCode) }}</span>
+            <FlagIcon :code="metadata.countryCode" :country-name="getCountryName(metadata.countryCode)" class="country-flag" />
             {{ getCountryName(metadata.countryCode) }}
           </span>
         </div>
@@ -187,6 +187,7 @@ import {
   WarningOutlined,
 } from '@ant-design/icons-vue'
 import type { Satellite } from '@/hooks/useWebSocket'
+import FlagIcon from '@/components/FlagIcon.vue'
 
 // 元数据接口
 interface SatelliteMetadata {
@@ -247,33 +248,6 @@ const COUNTRY_NAMES: Record<string, string> = {
   SES: 'SES公司', O3B: 'O3b网络', ORB: '轨道科学公司',
   GLOB: '全球星', STCT: '空间通信', RASC: '俄罗斯航天局',
   SEAL: '海射公司', TBD: '待定', ABS: 'ABS公司',
-}
-
-// 国旗 emoji 映射 (基于 CelesTrak 代码)
-const COUNTRY_FLAGS: Record<string, string> = {
-  // 主要国家
-  US: '🇺🇸', CIS: '🇷🇺', PRC: '🇨🇳', CN: '🇨🇳', TWN: '🇹🇼',
-  JPN: '🇯🇵', IND: '🇮🇳', FR: '🇫🇷', UK: '🇬🇧', GER: '🇩🇪',
-  CA: '🇨🇦', IT: '🇮🇹', AUS: '🇦🇺', SPN: '🇪🇸', SKOR: '🇰🇷',
-  BRAZ: '🇧🇷', ISRA: '🇮🇱', ARGN: '🇦🇷', MEX: '🇲🇽', SAUD: '🇸🇦',
-  INDO: '🇮🇩', TURK: '🇹🇷', NETH: '🇳🇱', THAI: '🇹🇭', SAFR: '🇿🇦',
-  UKR: '🇺🇦', SING: '🇸🇬', POL: '🇵🇱', SWED: '🇸🇪', NOR: '🇳🇴',
-  BEL: '🇧🇪', MALA: '🇲🇾', PAKI: '🇵🇰', RP: '🇵🇭', VENZ: '🇻🇪',
-  SWTZ: '🇨🇭', DEN: '🇩🇰', EGYP: '🇪🇬', FIN: '🇫🇮', GREC: '🇬🇷',
-  IRAN: '🇮🇷', IRAQ: '🇮🇶', KAZ: '🇰🇿', KWT: '🇰🇼', NIG: '🇳🇬',
-  NZ: '🇳🇿', POR: '🇵🇹', UAE: '🇦🇪', CZE: '🇨🇿', EST: '🇪🇪',
-  HUN: '🇭🇺', LTU: '🇱🇹', BGR: '🇧🇬', ROM: '🇷🇴', SVN: '🇸🇮',
-  SVK: '🇸🇰', HRV: '🇭🇷', AZER: '🇦🇿', MNG: '🇲🇳', NKOR: '🇰🇵',
-  LAOS: '🇱🇦', BGD: '🇧🇩', LKA: '🇱🇰', MMR: '🇲🇲', NPL: '🇳🇵',
-  PER: '🇵🇪', COL: '🇨🇴', CHLE: '🇨🇱', BOL: '🇧🇴', PRY: '🇵🇾',
-  URY: '🇺🇾', ECU: '🇪🇨', CRI: '🇨🇷', QAT: '🇶🇦', BHR: '🇧🇭',
-  JOR: '🇯🇴', TUN: '🇹🇳', ALG: '🇩🇿', KEN: '🇰🇪', VTNM: '🇻🇳',
-  BELA: '🇧🇾', ASRA: '🇦🇹', GHA: '🇬🇭', ZWE: '🇿🇼', MUS: '🇲🇺',
-  AGO: '🇦🇴', DJI: '🇩🇯', UGA: '🇺🇬', BWA: '🇧🇼', RWA: '🇷🇼',
-  MCO: '🇲🇨', SLB: '🇸🇧', SDN: '🇸🇩', PRI: '🇵🇷', MA: '🇲🇦',
-  // 组织/公司
-  ESA: '🇪🇺', EUTE: '🛰️', NATO: '🛡️', SES: '📡', GLOB: '🌍',
-  O3B: '🌐', ORB: '🚀', TBD: '❓',
 }
 
 // 发射场映射
@@ -338,10 +312,6 @@ const getOrbitClass = (alt: number): string => {
 
 const getCountryName = (code: string): string => {
   return COUNTRY_NAMES[code] || code
-}
-
-const getCountryFlag = (code: string): string => {
-  return COUNTRY_FLAGS[code] || '🌍'
 }
 
 const getLaunchSiteName = (code: string): string => {
@@ -537,7 +507,11 @@ const getObjectTypeClass = (type: string): string => {
   }
 
   .country-flag {
-    font-size: 14px;
+    width: 20px;
+    height: 15px;
+    margin-right: 6px;
+    display: inline-block;
+    vertical-align: middle;
   }
 }
 
