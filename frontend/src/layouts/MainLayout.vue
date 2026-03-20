@@ -47,7 +47,6 @@
                   <span class="user-name">{{
                     userStore.user?.nickname || userStore.user?.username
                   }}</span>
-                  <span class="user-level">{{ levelText }}</span>
                 </div>
                 <DownOutlined class="user-arrow" />
               </div>
@@ -60,10 +59,6 @@
                   <a-menu-item key="feedback">
                     <CommentOutlined />
                     意见反馈
-                  </a-menu-item>
-                  <a-menu-item key="vip" class="vip-item">
-                    <CrownOutlined />
-                    升级会员
                   </a-menu-item>
                   <a-menu-divider />
                   <a-menu-item key="logout">
@@ -110,7 +105,6 @@ import {
   FileTextOutlined,
   HomeOutlined,
   DownOutlined,
-  CrownOutlined,
   LogoutOutlined,
   CommentOutlined,
   ThunderboltOutlined,
@@ -140,18 +134,6 @@ const navItems = [
   { name: "航天情报", path: "/intelligence", icon: FileTextOutlined },
 ];
 
-const levelText = computed(() => {
-  const level = userStore.user?.level;
-  switch (level) {
-    case "professional":
-      return "专业会员";
-    case "advanced":
-      return "进阶会员";
-    default:
-      return "普通用户";
-  }
-});
-
 const handleMenuClick = ({ key }: { key: string }) => {
   switch (key) {
     case "profile":
@@ -159,9 +141,6 @@ const handleMenuClick = ({ key }: { key: string }) => {
       break;
     case "feedback":
       router.push("/feedback");
-      break;
-    case "vip":
-      router.push("/profile");
       break;
     case "logout":
       userStore.logout();
@@ -355,11 +334,6 @@ const handleMenuClick = ({ key }: { key: string }) => {
         font-weight: 600;
         color: #fff;
       }
-
-      .user-level {
-        font-size: 11px;
-        color: rgba(255, 255, 255, 0.4);
-      }
     }
 
     .user-arrow {
@@ -399,15 +373,6 @@ const handleMenuClick = ({ key }: { key: string }) => {
     .anticon {
       font-size: 14px;
     }
-  }
-
-  .vip-item {
-    background: linear-gradient(
-      135deg,
-      rgba(255, 215, 0, 0.1) 0%,
-      rgba(255, 170, 0, 0.1) 100%
-    ) !important;
-    color: #ffd700 !important;
   }
 }
 

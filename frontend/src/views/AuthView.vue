@@ -227,7 +227,7 @@ async function handleRegister() {
       registerForm.password
     )
     if (result.success) {
-      message.success('注册成功，已获得100积分奖励！')
+      message.success('注册成功！')
       router.push('/')
     } else {
       message.error(result.message || '注册失败')

@@ -84,7 +84,7 @@
 
         <!-- 未登录提示 -->
         <div v-if="!isLoggedIn" class="quiz-login-prompt">
-          <p>登录后参与每日问答，赢取积分奖励</p>
+          <p>登录后参与每日问答</p>
           <a-button type="primary" @click="$router.push('/login')">立即登录</a-button>
         </div>
 
@@ -130,7 +130,6 @@
               <CheckCircleOutlined v-if="quizResult.isCorrect" />
               <CloseCircleOutlined v-else />
               <span>{{ quizResult.isCorrect ? '回答正确！' : '回答错误' }}</span>
-              <span v-if="quizResult.pointsEarned > 0" class="points">+{{ quizResult.pointsEarned }} 积分</span>
             </div>
             <p class="explanation">{{ quizResult.explanation }}</p>
           </div>
@@ -257,11 +256,6 @@ const submitAnswer = async () => {
     })
     quizResult.value = res.data.data
     showResult.value = true
-
-    // 更新积分
-    if (quizResult.value.pointsEarned > 0) {
-      userStore.fetchUser()
-    }
   } catch (error: any) {
     message.error(error.response?.data?.message || '提交失败')
   } finally {
@@ -641,11 +635,6 @@ onMounted(() => {
 
         &.error {
           color: #ff4d4f;
-        }
-
-        .points {
-          margin-left: auto;
-          color: #faad14;
         }
       }
 

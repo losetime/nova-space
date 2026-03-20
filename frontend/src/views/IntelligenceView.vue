@@ -45,16 +45,7 @@
               </div>
             </div>
             <div class="article-action">
-              <a-button 
-                v-if="item.isLocked" 
-                type="primary" 
-                class="unlock-btn"
-                @click.stop="handleUpgrade"
-              >
-                <LockOutlined />
-                升级解锁
-              </a-button>
-              <a-button v-else type="primary" ghost>
+              <a-button v-if="!item.isLocked" type="primary" ghost>
                 阅读全文
               </a-button>
             </div>
@@ -105,23 +96,6 @@
             @search="handleSubscribe"
           />
         </div>
-
-        <!-- 会员推广 -->
-        <div class="vip-promo">
-          <div class="promo-content">
-            <CrownOutlined class="promo-icon" />
-            <h4>升级进阶会员</h4>
-            <ul>
-              <li><CheckOutlined /> 全量情报阅读</li>
-              <li><CheckOutlined /> 深度解读报告</li>
-              <li><CheckOutlined /> 个性化推送</li>
-              <li><CheckOutlined /> 专属客服支持</li>
-            </ul>
-            <a-button type="primary" block size="large" @click="handleUpgrade">
-              立即升级
-            </a-button>
-          </div>
-        </div>
       </aside>
     </div>
   </div>
@@ -135,11 +109,8 @@ import {
   ClockCircleOutlined,
   UserOutlined,
   EyeOutlined,
-  LockOutlined,
   FireOutlined,
   BellOutlined,
-  CrownOutlined,
-  CheckOutlined,
 } from '@ant-design/icons-vue'
 import { intelligenceApi, type Intelligence } from '@/api'
 
@@ -237,7 +208,6 @@ const handlePageChange = (page: number) => {
 
 const handleCardClick = (item: Intelligence) => {
   if (item.isLocked) {
-    handleUpgrade()
     return
   }
   router.push(`/intelligence/${item.id}`)
@@ -254,10 +224,6 @@ const handleSubscribe = () => {
   }
   message.success('订阅成功！')
   subscribeEmail.value = ''
-}
-
-const handleUpgrade = () => {
-  message.info('会员功能开发中，敬请期待')
 }
 
 onMounted(() => {
@@ -563,47 +529,6 @@ onMounted(() => {
     .ant-input-search-button {
       background: linear-gradient(135deg, #00d4ff 0%, #7b2cbf 100%);
       border: none;
-    }
-  }
-}
-
-.vip-promo {
-  background: linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(255, 170, 0, 0.1) 100%);
-  border: 1px solid rgba(255, 215, 0, 0.3);
-  border-radius: 12px;
-  padding: 24px;
-
-  .promo-content {
-    .promo-icon {
-      font-size: 40px;
-      color: #ffd700;
-      margin-bottom: 16px;
-      display: block;
-    }
-
-    h4 {
-      font-size: 18px;
-      font-weight: 600;
-      color: #ffd700;
-      margin-bottom: 16px;
-    }
-
-    ul {
-      list-style: none;
-      margin-bottom: 20px;
-
-      li {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 14px;
-        color: rgba(255, 255, 255, 0.8);
-        margin-bottom: 8px;
-
-        .anticon {
-          color: #ffd700;
-        }
-      }
     }
   }
 }
