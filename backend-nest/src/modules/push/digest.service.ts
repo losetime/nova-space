@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { SpaceWeatherService } from '../space-weather/space-weather.service';
+import { IntelligenceService } from '../intelligence/intelligence.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UserFavorite } from '../../common/entities';
@@ -9,6 +10,7 @@ import { PushSubscription } from '../../common/entities/push-subscription.entity
 interface DigestContent {
   weatherAlerts: any[];
   satellitePasses: any[];
+  intelligence: any[];
   date: string;
 }
 
@@ -18,6 +20,7 @@ export class DigestService {
 
   constructor(
     private spaceWeatherService: SpaceWeatherService,
+    private intelligenceService: IntelligenceService,
     @InjectRepository(UserFavorite)
     private favoriteRepository: Repository<UserFavorite>,
   ) {}
@@ -32,6 +35,7 @@ export class DigestService {
     const content: DigestContent = {
       weatherAlerts: [],
       satellitePasses: [],
+      intelligence: [],
       date,
     };
 
@@ -72,6 +76,22 @@ export class DigestService {
         }
       } catch (error) {
         this.logger.error('Failed to fetch satellite passes', error);
+      }
+    }
+
+    // 获取航天情报
+    if (subscription.subscribeIntelligence) {
+      try {
+        const result = await this.intelligenceService.findAll({ page: 1, pageSize: 5 }, 'basic');
+        content.intelligence = result.list.map((item: any) => ({
+          id: item.id,
+          title: item.title,
+          summary: item.summary,
+          category: item.category,
+          publishedAt: item.publishedAt,
+        }));
+      } catch (error) {
+        this.logger.error('Failed to fetch intelligence', error);
       }
     }
 

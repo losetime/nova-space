@@ -6,6 +6,7 @@ import { Transporter } from 'nodemailer';
 interface DigestData {
   weatherAlerts?: any[];
   satellitePasses?: any[];
+  intelligence?: any[];
   date: string;
 }
 
@@ -151,12 +152,29 @@ export class EmailService {
       content += `</div>`;
     }
 
-    if (!data.weatherAlerts?.length && !data.satellitePasses?.length) {
+    if (!data.weatherAlerts?.length && !data.satellitePasses?.length && !data.intelligence?.length) {
       content += `
         <div style="text-align: center; padding: 40px 20px;">
           <p style="color: #888; font-size: 16px;">今日暂无重要太空资讯</p>
         </div>
       `;
+    }
+
+    // 航天情报部分
+    if (data.intelligence && data.intelligence.length > 0) {
+      content += `
+        <div style="background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 8px; padding: 20px; margin-top: 20px;">
+          <h2 style="color: #a855f7; margin-top: 0;">📰 航天情报</h2>
+      `;
+      data.intelligence.forEach((item: any) => {
+        content += `
+          <div style="background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 6px; margin-bottom: 10px;">
+            <h4 style="color: #fff; margin: 0 0 8px 0;">${item.title}</h4>
+            <p style="color: #aaa; margin: 0; font-size: 14px; line-height: 1.5;">${item.summary || ''}</p>
+          </div>
+        `;
+      });
+      content += `</div>`;
     }
 
     content += `
@@ -185,6 +203,14 @@ export class EmailService {
       content += `🛰️ 今日卫星过境\n`;
       data.satellitePasses.forEach((pass: any) => {
         content += `- ${pass.name}: ${pass.time}, 最大仰角: ${pass.maxElevation}°\n`;
+      });
+      content += '\n';
+    }
+
+    if (data.intelligence && data.intelligence.length > 0) {
+      content += `📰 航天情报\n`;
+      data.intelligence.forEach((item: any) => {
+        content += `- ${item.title}\n  ${item.summary || ''}\n`;
       });
     }
 

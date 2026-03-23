@@ -7,11 +7,13 @@ import { DigestService } from './digest.service';
 import { PushSchedulerService } from './push-scheduler.service';
 import { PushSubscription, PushRecord, UserFavorite } from '../../common/entities';
 import { SpaceWeatherModule } from '../space-weather/space-weather.module';
+import { IntelligenceModule } from '../intelligence/intelligence.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([PushSubscription, PushRecord, UserFavorite]),
     SpaceWeatherModule,
+    IntelligenceModule,
   ],
   controllers: [PushController],
   providers: [

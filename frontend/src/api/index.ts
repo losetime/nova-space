@@ -533,6 +533,7 @@ export interface PushSubscription {
   email: string
   subscribeSpaceWeather: boolean
   subscribeSatellitePass: boolean
+  subscribeIntelligence: boolean
   enabled: boolean
   status: 'active' | 'paused' | 'cancelled'
   lastPushAt: string | null
@@ -550,6 +551,7 @@ export const pushApi = {
     email: string
     subscribeSpaceWeather?: boolean
     subscribeSatellitePass?: boolean
+    subscribeIntelligence?: boolean
   }) => api.post<ApiResponse<PushSubscription>>('/push/subscription', data),
 
   // 更新订阅配置
@@ -557,6 +559,7 @@ export const pushApi = {
     email?: string
     subscribeSpaceWeather?: boolean
     subscribeSatellitePass?: boolean
+    subscribeIntelligence?: boolean
   }) => api.put<ApiResponse<PushSubscription>>('/push/subscription', data),
 
   // 暂停推送

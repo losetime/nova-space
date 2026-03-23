@@ -32,6 +32,9 @@ export class PushSubscription {
   @Column({ default: false })
   subscribeSatellitePass: boolean;
 
+  @Column({ default: false })
+  subscribeIntelligence: boolean;
+
   // 推送状态
   @Column({ default: true })
   enabled: boolean;

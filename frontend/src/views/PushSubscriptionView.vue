@@ -79,6 +79,23 @@
                     <CheckOutlined v-if="form.subscribeSatellitePass" />
                   </div>
                 </div>
+
+                <div
+                  class="option-card"
+                  :class="{ active: form.subscribeIntelligence }"
+                  @click="form.subscribeIntelligence = !form.subscribeIntelligence"
+                >
+                  <div class="option-icon">
+                    <ReadOutlined />
+                  </div>
+                  <div class="option-content">
+                    <h4>航天情报</h4>
+                    <p>接收最新航天资讯和行业动态</p>
+                  </div>
+                  <div class="option-check">
+                    <CheckOutlined v-if="form.subscribeIntelligence" />
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -178,6 +195,7 @@ import {
   SettingOutlined,
   ThunderboltOutlined,
   GlobalOutlined,
+  ReadOutlined,
   CheckOutlined,
   LoadingOutlined,
   SaveOutlined,
@@ -197,6 +215,7 @@ const form = reactive({
   email: "",
   subscribeSpaceWeather: true,
   subscribeSatellitePass: false,
+  subscribeIntelligence: false,
 });
 
 async function fetchSubscription() {
@@ -209,6 +228,7 @@ async function fetchSubscription() {
       form.email = subscription.value.email;
       form.subscribeSpaceWeather = subscription.value.subscribeSpaceWeather;
       form.subscribeSatellitePass = subscription.value.subscribeSatellitePass;
+      form.subscribeIntelligence = subscription.value.subscribeIntelligence ?? false;
     }
   } catch {
     // 忽略错误
@@ -223,7 +243,7 @@ async function handleSubscribe() {
     return;
   }
 
-  if (!form.subscribeSpaceWeather && !form.subscribeSatellitePass) {
+  if (!form.subscribeSpaceWeather && !form.subscribeSatellitePass && !form.subscribeIntelligence) {
     message.error("请至少选择一项订阅内容");
     return;
   }
@@ -234,6 +254,7 @@ async function handleSubscribe() {
       email: form.email,
       subscribeSpaceWeather: form.subscribeSpaceWeather,
       subscribeSatellitePass: form.subscribeSatellitePass,
+      subscribeIntelligence: form.subscribeIntelligence,
     });
     subscription.value = response.data.data;
     message.success("订阅成功");
@@ -250,6 +271,7 @@ async function handleUpdate() {
     const response = await pushApi.updateSubscription({
       subscribeSpaceWeather: form.subscribeSpaceWeather,
       subscribeSatellitePass: form.subscribeSatellitePass,
+      subscribeIntelligence: form.subscribeIntelligence,
     });
     subscription.value = response.data.data;
     message.success("设置已保存");

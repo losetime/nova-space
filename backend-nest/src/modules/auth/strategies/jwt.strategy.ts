@@ -10,10 +10,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     private authService: AuthService,
     configService: ConfigService,
   ) {
+    const secret = configService.get<string>('app.jwtSecret') || 'nova-space-secret-key-2024';
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: configService.get<string>('app.jwtSecret'),
+      secretOrKey: secret,
     });
   }
 

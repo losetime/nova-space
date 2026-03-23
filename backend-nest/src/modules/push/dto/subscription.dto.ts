@@ -11,6 +11,10 @@ export class CreatePushSubscriptionDto {
   @IsOptional()
   @IsBoolean()
   subscribeSatellitePass?: boolean = false;
+
+  @IsOptional()
+  @IsBoolean()
+  subscribeIntelligence?: boolean = false;
 }
 
 export class UpdatePushSubscriptionDto {
@@ -25,6 +29,10 @@ export class UpdatePushSubscriptionDto {
   @IsOptional()
   @IsBoolean()
   subscribeSatellitePass?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  subscribeIntelligence?: boolean;
 }
 
 export class PushSubscriptionResponseDto {
@@ -32,6 +40,7 @@ export class PushSubscriptionResponseDto {
   email: string;
   subscribeSpaceWeather: boolean;
   subscribeSatellitePass: boolean;
+  subscribeIntelligence: boolean;
   enabled: boolean;
   status: string;
   lastPushAt: Date | null;

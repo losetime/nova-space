@@ -31,6 +31,7 @@ export class PushSubscriptionService {
         existing.email = dto.email;
         existing.subscribeSpaceWeather = dto.subscribeSpaceWeather ?? true;
         existing.subscribeSatellitePass = dto.subscribeSatellitePass ?? false;
+        existing.subscribeIntelligence = dto.subscribeIntelligence ?? false;
         return this.subscriptionRepository.save(existing);
       }
       return existing;
@@ -41,6 +42,7 @@ export class PushSubscriptionService {
       email: dto.email,
       subscribeSpaceWeather: dto.subscribeSpaceWeather ?? true,
       subscribeSatellitePass: dto.subscribeSatellitePass ?? false,
+      subscribeIntelligence: dto.subscribeIntelligence ?? false,
       status: PushSubscriptionStatus.ACTIVE,
       enabled: true,
     });
@@ -62,6 +64,9 @@ export class PushSubscriptionService {
     }
     if (dto.subscribeSatellitePass !== undefined) {
       subscription.subscribeSatellitePass = dto.subscribeSatellitePass;
+    }
+    if (dto.subscribeIntelligence !== undefined) {
+      subscription.subscribeIntelligence = dto.subscribeIntelligence;
     }
 
     return this.subscriptionRepository.save(subscription);
