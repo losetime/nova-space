@@ -9,6 +9,7 @@ import {
   Request,
 } from '@nestjs/common';
 import { PushSubscriptionService } from './push-subscription.service';
+import { PushSchedulerService } from './push-scheduler.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CreatePushSubscriptionDto, UpdatePushSubscriptionDto } from './dto/subscription.dto';
 import { PushSubscription } from '../../common/entities/push-subscription.entity';
@@ -20,7 +21,10 @@ interface RequestWithUser {
 @Controller('push')
 @UseGuards(JwtAuthGuard)
 export class PushController {
-  constructor(private readonly subscriptionService: PushSubscriptionService) {}
+  constructor(
+    private readonly subscriptionService: PushSubscriptionService,
+    private readonly schedulerService: PushSchedulerService,
+  ) {}
 
   @Get('subscription')
   async getSubscription(@Request() req: RequestWithUser): Promise<PushSubscription | null> {
@@ -57,5 +61,19 @@ export class PushController {
   async cancelSubscription(@Request() req: RequestWithUser): Promise<{ success: boolean }> {
     await this.subscriptionService.cancel(req.user.id);
     return { success: true };
+  }
+
+  @Post('test')
+  async testPush(@Request() req: RequestWithUser): Promise<{ success: boolean; message: string }> {
+    const subscription = await this.subscriptionService.findByUserId(req.user.id);
+    if (!subscription) {
+      return { success: false, message: '请先订阅推送服务' };
+    }
+
+    const sent = await this.schedulerService.triggerManualPush(req.user.id);
+    if (sent) {
+      return { success: true, message: '测试推送已发送，请检查邮箱' };
+    }
+    return { success: false, message: '推送发送失败，请稍后重试' };
   }
 }

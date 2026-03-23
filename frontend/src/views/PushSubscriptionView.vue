@@ -100,6 +100,16 @@
 
               <!-- 已订阅状态 -->
               <template v-else-if="subscription.status === 'active'">
+                <button class="primary-btn" :disabled="submitting" @click="handleTestPush">
+                  <template v-if="testSending">
+                    <LoadingOutlined class="spin" />
+                    <span>发送中...</span>
+                  </template>
+                  <template v-else>
+                    <SendOutlined />
+                    <span>测试推送</span>
+                  </template>
+                </button>
                 <button class="secondary-btn" :disabled="submitting" @click="handleUpdate">
                   <template v-if="submitting">
                     <LoadingOutlined class="spin" />
@@ -174,11 +184,13 @@ import {
   PauseCircleOutlined,
   CloseCircleOutlined,
   PlayCircleOutlined,
+  SendOutlined,
 } from "@ant-design/icons-vue";
 import { pushApi, type PushSubscription } from "@/api";
 
 const loading = ref(true);
 const submitting = ref(false);
+const testSending = ref(false);
 const subscription = ref<PushSubscription | null>(null);
 
 const form = reactive({
@@ -284,6 +296,24 @@ async function handleCancel() {
     message.error("操作失败，请稍后重试");
   } finally {
     submitting.value = false;
+  }
+}
+
+async function handleTestPush() {
+  testSending.value = true;
+  try {
+    const response = await pushApi.testPush();
+    if (response.data.data.success) {
+      message.success(response.data.data.message);
+      // 刷新订阅信息以更新 lastPushAt
+      await fetchSubscription();
+    } else {
+      message.warning(response.data.data.message);
+    }
+  } catch {
+    message.error("测试推送失败，请稍后重试");
+  } finally {
+    testSending.value = false;
   }
 }
 

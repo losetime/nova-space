@@ -17,7 +17,8 @@ export class EmailService {
 
   constructor(private configService: ConfigService) {
     this.initializeTransporter();
-    this.fromEmail = this.configService.get<string>('app.email.from') || 'noreply@nova-space.com';
+    // 使用SMTP_USER作为发件人，因为很多邮件服务商要求发件人与认证用户相同
+    this.fromEmail = this.configService.get<string>('app.email.user') || 'noreply@nova-space.com';
   }
 
   private initializeTransporter() {

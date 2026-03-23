@@ -567,6 +567,9 @@ export const pushApi = {
 
   // 取消订阅
   cancelSubscription: () => api.delete<ApiResponse<{ success: boolean }>>('/push/subscription'),
+
+  // 测试推送
+  testPush: () => api.post<ApiResponse<{ success: boolean; message: string }>>('/push/test'),
 }
 
 export default api
