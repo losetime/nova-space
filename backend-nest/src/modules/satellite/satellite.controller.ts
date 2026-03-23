@@ -1,6 +1,8 @@
-import { Controller, Get, Param, Query, Logger } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Param, Query, Logger, UseGuards, Req } from '@nestjs/common';
 import { OrbitCalculatorService } from './services/orbit-calculator.service';
 import { SpaceTrackService } from './services/space-track.service';
+import { SatelliteFavoriteService } from './services/satellite-favorite.service';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import type { OrbitPoint, OrbitPrediction, PositionPrediction, ObserverPosition } from './interfaces/satellite.interface';
 
 /**
@@ -15,6 +17,7 @@ export class SatelliteController {
   constructor(
     private readonly orbitCalculator: OrbitCalculatorService,
     private readonly spaceTrackService: SpaceTrackService,
+    private readonly favoriteService: SatelliteFavoriteService,
   ) {}
 
   /**
@@ -166,6 +169,34 @@ export class SatelliteController {
       apogee: meta.apogee,
       perigee: meta.perigee,
     }));
+
+    return {
+      code: 0,
+      data: result,
+      message: 'success',
+    };
+  }
+
+  /**
+   * 获取用户关注的卫星列表
+   * GET /api/satellites/favorites
+   */
+  @Get('favorites')
+  @UseGuards(JwtAuthGuard)
+  async getUserFavorites(@Req() req: any) {
+    const userId = req.user.id;
+    const favorites = await this.favoriteService.getUserFavorites(userId);
+
+    // 获取卫星元数据
+    const result = favorites.map((fav) => {
+      const metadata = this.spaceTrackService.getSatelliteMetadata(fav.targetId);
+      return {
+        noradId: fav.targetId,
+        name: metadata?.name || `卫星 ${fav.targetId}`,
+        followedAt: fav.createdAt,
+        metadata,
+      };
+    });
 
     return {
       code: 0,
@@ -470,6 +501,48 @@ export class SatelliteController {
       code: 0,
       data: position || null,
       message: position ? 'success' : '无法计算卫星位置',
+    };
+  }
+
+  // ==================== 关注功能 ====================
+
+  /**
+   * 关注/取消关注卫星
+   * POST /api/satellites/:noradId/favorite
+   */
+  @Post(':noradId/favorite')
+  @UseGuards(JwtAuthGuard)
+  async toggleFavorite(
+    @Param('noradId') noradId: string,
+    @Req() req: any,
+  ) {
+    const userId = req.user.id;
+    const result = await this.favoriteService.toggleFavorite(userId, noradId);
+
+    return {
+      code: 0,
+      data: result,
+      message: result.favorited ? '关注成功' : '已取消关注',
+    };
+  }
+
+  /**
+   * 检查是否关注了卫星
+   * GET /api/satellites/:noradId/favorite
+   */
+  @Get(':noradId/favorite')
+  @UseGuards(JwtAuthGuard)
+  async checkFavorite(
+    @Param('noradId') noradId: string,
+    @Req() req: any,
+  ) {
+    const userId = req.user.id;
+    const favorited = await this.favoriteService.isFavorited(userId, noradId);
+
+    return {
+      code: 0,
+      data: { favorited },
+      message: 'success',
     };
   }
 }

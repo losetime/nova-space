@@ -7,7 +7,7 @@ import {
   ManyToOne,
   Index,
 } from 'typeorm';
-import { PushSubscriptionStatus } from '../enums/push.enum';
+import { PushSubscriptionStatus, SubscriptionType } from '../enums/push.enum';
 import { User } from './user.entity';
 
 @Entity('push_subscriptions')
@@ -25,15 +25,12 @@ export class PushSubscription {
   @Column()
   email: string;
 
-  // 订阅配置
-  @Column({ default: true })
-  subscribeSpaceWeather: boolean;
-
-  @Column({ default: false })
-  subscribeSatellitePass: boolean;
-
-  @Column({ default: false })
-  subscribeIntelligence: boolean;
+  // 订阅内容类型
+  @Column({
+    type: 'simple-array',
+    default: [SubscriptionType.SPACE_WEATHER],
+  })
+  subscriptionTypes: SubscriptionType[];
 
   // 推送状态
   @Column({ default: true })

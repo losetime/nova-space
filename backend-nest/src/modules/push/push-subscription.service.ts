@@ -2,7 +2,7 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PushSubscription } from '../../common/entities/push-subscription.entity';
-import { PushSubscriptionStatus } from '../../common/enums';
+import { PushSubscriptionStatus, SubscriptionType } from '../../common/enums';
 import { CreatePushSubscriptionDto, UpdatePushSubscriptionDto } from './dto/subscription.dto';
 
 @Injectable()
@@ -29,9 +29,7 @@ export class PushSubscriptionService {
         existing.status = PushSubscriptionStatus.ACTIVE;
         existing.enabled = true;
         existing.email = dto.email;
-        existing.subscribeSpaceWeather = dto.subscribeSpaceWeather ?? true;
-        existing.subscribeSatellitePass = dto.subscribeSatellitePass ?? false;
-        existing.subscribeIntelligence = dto.subscribeIntelligence ?? false;
+        existing.subscriptionTypes = dto.subscriptionTypes ?? [SubscriptionType.SPACE_WEATHER];
         return this.subscriptionRepository.save(existing);
       }
       return existing;
@@ -40,9 +38,7 @@ export class PushSubscriptionService {
     const subscription = this.subscriptionRepository.create({
       userId,
       email: dto.email,
-      subscribeSpaceWeather: dto.subscribeSpaceWeather ?? true,
-      subscribeSatellitePass: dto.subscribeSatellitePass ?? false,
-      subscribeIntelligence: dto.subscribeIntelligence ?? false,
+      subscriptionTypes: dto.subscriptionTypes ?? [SubscriptionType.SPACE_WEATHER],
       status: PushSubscriptionStatus.ACTIVE,
       enabled: true,
     });
@@ -59,14 +55,8 @@ export class PushSubscriptionService {
     if (dto.email !== undefined) {
       subscription.email = dto.email;
     }
-    if (dto.subscribeSpaceWeather !== undefined) {
-      subscription.subscribeSpaceWeather = dto.subscribeSpaceWeather;
-    }
-    if (dto.subscribeSatellitePass !== undefined) {
-      subscription.subscribeSatellitePass = dto.subscribeSatellitePass;
-    }
-    if (dto.subscribeIntelligence !== undefined) {
-      subscription.subscribeIntelligence = dto.subscribeIntelligence;
+    if (dto.subscriptionTypes !== undefined) {
+      subscription.subscriptionTypes = dto.subscriptionTypes;
     }
 
     return this.subscriptionRepository.save(subscription);
@@ -122,5 +112,10 @@ export class PushSubscriptionService {
         enabled: true,
       },
     });
+  }
+
+  // 检查是否订阅了指定类型
+  hasSubscriptionType(subscription: PushSubscription, type: SubscriptionType): boolean {
+    return subscription.subscriptionTypes.includes(type);
   }
 }

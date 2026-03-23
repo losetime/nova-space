@@ -72,6 +72,40 @@
             </div>
           </a-tab-pane>
 
+          <!-- 关注的卫星 -->
+          <a-tab-pane key="satellites" tab="关注的卫星">
+            <div class="satellites-section">
+              <a-spin :spinning="satelliteLoading">
+                <div v-if="satelliteList.length === 0 && !satelliteLoading" class="empty-satellites">
+                  <GlobalOutlined class="empty-icon" />
+                  <p>暂无关注的卫星</p>
+                  <a-button type="primary" @click="router.push('/satellite')">
+                    去关注卫星
+                  </a-button>
+                </div>
+                <div v-else class="satellite-list">
+                  <div
+                    v-for="item in satelliteList"
+                    :key="item.noradId"
+                    class="satellite-item"
+                    @click="router.push('/satellite')"
+                  >
+                    <div class="satellite-icon">
+                      <RocketOutlined />
+                    </div>
+                    <div class="satellite-content">
+                      <h4>{{ item.name }}</h4>
+                      <p>NORAD #{{ item.noradId }}</p>
+                    </div>
+                    <div class="satellite-meta">
+                      <span>{{ formatFollowDate(item.followedAt) }}</span>
+                    </div>
+                  </div>
+                </div>
+              </a-spin>
+            </div>
+          </a-tab-pane>
+
           <!-- 设置 -->
           <a-tab-pane key="settings" tab="设置">
             <div class="settings-section">
@@ -179,9 +213,11 @@ import {
   SaveOutlined,
   LockOutlined,
   LogoutOutlined,
+  GlobalOutlined,
+  RocketOutlined,
 } from "@ant-design/icons-vue";
 import { useUserStore } from "@/stores/user";
-import { intelligenceApi, type Intelligence } from "@/api";
+import { intelligenceApi, satelliteApi, type Intelligence, type SatelliteFavorite } from "@/api";
 
 // Intelligence 类型扩展
 declare module "@/api" {
@@ -198,6 +234,10 @@ const activeTab = ref("collects");
 // 我的收藏
 const collectList = ref<Intelligence[]>([]);
 const collectLoading = ref(false);
+
+// 关注的卫星
+const satelliteList = ref<SatelliteFavorite[]>([]);
+const satelliteLoading = ref(false);
 
 // 编辑资料
 const editForm = reactive({
@@ -251,6 +291,29 @@ function formatCollectDate(dateStr?: string) {
 // 跳转详情
 function goToDetail(id: number) {
   router.push(`/intelligence/${id}`);
+}
+
+// 获取关注的卫星列表
+async function fetchSatellites() {
+  satelliteLoading.value = true;
+  try {
+    const response = await satelliteApi.getFavorites();
+    satelliteList.value = response.data.data || [];
+  } catch {
+    // 忽略错误
+  } finally {
+    satelliteLoading.value = false;
+  }
+}
+
+// 格式化关注日期
+function formatFollowDate(dateStr?: string) {
+  if (!dateStr) return "";
+  return new Date(dateStr).toLocaleDateString("zh-CN", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
 }
 
 // 更新资料
@@ -308,7 +371,7 @@ onMounted(async () => {
     await userStore.fetchUser();
   }
   editForm.nickname = userStore.user?.nickname || "";
-  await fetchCollects();
+  await Promise.all([fetchCollects(), fetchSatellites()]);
 });
 </script>
 
@@ -745,6 +808,89 @@ $text-muted: rgba(255, 255, 255, 0.4);
   }
 }
 
+// 关注的卫星
+.satellites-section {
+  min-height: 200px;
+}
+
+.empty-satellites {
+  text-align: center;
+  padding: 60px 20px;
+
+  .empty-icon {
+    font-size: 48px;
+    color: $text-muted;
+    margin-bottom: 16px;
+  }
+
+  p {
+    color: $text-secondary;
+    margin-bottom: 20px;
+  }
+}
+
+.satellite-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.satellite-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(0, 212, 255, 0.2);
+  }
+}
+
+.satellite-icon {
+  width: 44px;
+  height: 44px;
+  background: linear-gradient(135deg, rgba(0, 212, 255, 0.15) 0%, rgba(168, 85, 247, 0.15) 100%);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: $primary;
+}
+
+.satellite-content {
+  flex: 1;
+  min-width: 0;
+
+  h4 {
+    font-size: 15px;
+    font-weight: 500;
+    color: $text-primary;
+    margin: 0 0 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  p {
+    font-size: 13px;
+    color: $text-muted;
+    margin: 0;
+  }
+}
+
+.satellite-meta {
+  flex-shrink: 0;
+  font-size: 12px;
+  color: $text-muted;
+}
+
 // 响应式
 @media (max-width: 768px) {
   .user-hero {
@@ -763,7 +909,17 @@ $text-muted: rgba(255, 255, 255, 0.4);
     gap: 8px;
   }
 
+  .satellite-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
   .collect-meta {
+    align-self: flex-end;
+  }
+
+  .satellite-meta {
     align-self: flex-end;
   }
 

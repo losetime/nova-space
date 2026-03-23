@@ -5,7 +5,6 @@ import { Transporter } from 'nodemailer';
 
 interface DigestData {
   weatherAlerts?: any[];
-  satellitePasses?: any[];
   intelligence?: any[];
   date: string;
 }
@@ -18,8 +17,9 @@ export class EmailService {
 
   constructor(private configService: ConfigService) {
     this.initializeTransporter();
-    // 使用SMTP_USER作为发件人，因为很多邮件服务商要求发件人与认证用户相同
-    this.fromEmail = this.configService.get<string>('app.email.user') || 'noreply@nova-space.com';
+    this.fromEmail =
+      this.configService.get<string>('app.email.user') ||
+      'noreply@nova-space.com';
   }
 
   private initializeTransporter() {
@@ -29,7 +29,9 @@ export class EmailService {
     const pass = this.configService.get<string>('app.email.pass');
 
     if (!host || !user || !pass) {
-      this.logger.warn('Email configuration not complete. Email sending will be disabled.');
+      this.logger.warn(
+        'Email configuration not complete. Email sending will be disabled.',
+      );
       return;
     }
 
@@ -46,7 +48,9 @@ export class EmailService {
 
   async sendDailyDigest(email: string, data: DigestData): Promise<boolean> {
     if (!this.transporter) {
-      this.logger.warn('Email transporter not configured. Skipping email send.');
+      this.logger.warn(
+        'Email transporter not configured. Skipping email send.',
+      );
       return false;
     }
 
@@ -57,7 +61,7 @@ export class EmailService {
       await this.transporter.sendMail({
         from: this.fromEmail,
         to: email,
-        subject: `Nova Space 每日太空资讯 - ${data.date}`,
+        subject: `Nova Space 每日资讯 - ${data.date}`,
         html,
         text,
       });
@@ -71,7 +75,9 @@ export class EmailService {
 
   async sendWeatherAlert(email: string, alert: any): Promise<boolean> {
     if (!this.transporter) {
-      this.logger.warn('Email transporter not configured. Skipping email send.');
+      this.logger.warn(
+        'Email transporter not configured. Skipping email send.',
+      );
       return false;
     }
 
@@ -111,7 +117,7 @@ export class EmailService {
   private generateDigestHtml(data: DigestData): string {
     let content = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0a0a0f; padding: 30px; border-radius: 12px;">
-        <h1 style="color: #00d4ff; text-align: center; margin-bottom: 30px;">🚀 Nova Space 每日太空资讯</h1>
+        <h1 style="color: #00d4ff; text-align: center; margin-bottom: 30px;">🚀 Nova Space 每日资讯</h1>
         <p style="color: #888; text-align: center; margin-bottom: 30px;">${data.date}</p>
     `;
 
@@ -132,38 +138,10 @@ export class EmailService {
       content += `</div>`;
     }
 
-    // 卫星过境部分
-    if (data.satellitePasses && data.satellitePasses.length > 0) {
-      content += `
-        <div style="background: rgba(0, 212, 255, 0.1); border: 1px solid rgba(0, 212, 255, 0.3); border-radius: 8px; padding: 20px;">
-          <h2 style="color: #00d4ff; margin-top: 0;">🛰️ 今日卫星过境</h2>
-      `;
-      data.satellitePasses.forEach((pass: any) => {
-        content += `
-          <div style="background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 6px; margin-bottom: 10px;">
-            <h4 style="color: #fff; margin: 0 0 10px 0;">${pass.name}</h4>
-            <p style="color: #aaa; margin: 0; font-size: 14px;">
-              过境时间: ${pass.time}<br>
-              最大仰角: ${pass.maxElevation}°
-            </p>
-          </div>
-        `;
-      });
-      content += `</div>`;
-    }
-
-    if (!data.weatherAlerts?.length && !data.satellitePasses?.length && !data.intelligence?.length) {
-      content += `
-        <div style="text-align: center; padding: 40px 20px;">
-          <p style="color: #888; font-size: 16px;">今日暂无重要太空资讯</p>
-        </div>
-      `;
-    }
-
     // 航天情报部分
     if (data.intelligence && data.intelligence.length > 0) {
       content += `
-        <div style="background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 8px; padding: 20px; margin-top: 20px;">
+        <div style="background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 8px; padding: 20px;">
           <h2 style="color: #a855f7; margin-top: 0;">📰 航天情报</h2>
       `;
       data.intelligence.forEach((item: any) => {
@@ -175,6 +153,14 @@ export class EmailService {
         `;
       });
       content += `</div>`;
+    }
+
+    if (!data.weatherAlerts?.length && !data.intelligence?.length) {
+      content += `
+        <div style="text-align: center; padding: 40px 20px;">
+          <p style="color: #888; font-size: 16px;">今日暂无重要资讯</p>
+        </div>
+      `;
     }
 
     content += `
@@ -189,20 +175,12 @@ export class EmailService {
   }
 
   private generateDigestText(data: DigestData): string {
-    let content = `Nova Space 每日太空资讯 - ${data.date}\n\n`;
+    let content = `Nova Space 每日资讯 - ${data.date}\n\n`;
 
     if (data.weatherAlerts && data.weatherAlerts.length > 0) {
       content += `⚠️ 空间天气预警\n`;
       data.weatherAlerts.forEach((alert: any) => {
         content += `- ${alert.title} (类型: ${this.getAlertTypeText(alert.type)}, 等级: G${alert.level || '-'})\n`;
-      });
-      content += '\n';
-    }
-
-    if (data.satellitePasses && data.satellitePasses.length > 0) {
-      content += `🛰️ 今日卫星过境\n`;
-      data.satellitePasses.forEach((pass: any) => {
-        content += `- ${pass.name}: ${pass.time}, 最大仰角: ${pass.maxElevation}°\n`;
       });
       content += '\n';
     }

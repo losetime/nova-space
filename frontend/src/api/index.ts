@@ -399,6 +399,38 @@ export const satelliteApi = {
       apogee?: number
       perigee?: number
     }[]>>('/satellites/metadata/all'),
+
+  // 关注/取消关注卫星
+  toggleFavorite: (noradId: string | number) =>
+    api.post<ApiResponse<{ favorited: boolean }>>(`/satellites/${noradId}/favorite`),
+
+  // 检查是否关注
+  checkFavorite: (noradId: string | number) =>
+    api.get<ApiResponse<{ favorited: boolean }>>(`/satellites/${noradId}/favorite`),
+
+  // 获取用户关注的卫星列表
+  getFavorites: () =>
+    api.get<ApiResponse<SatelliteFavorite[]>>('/satellites/favorites'),
+}
+
+// 关注的卫星
+export interface SatelliteFavorite {
+  noradId: string
+  name: string
+  followedAt: string
+  metadata?: {
+    name?: string
+    objectId?: string
+    objectType?: string
+    countryCode?: string
+    launchDate?: string
+    launchSite?: string
+    decayDate?: string
+    period?: number
+    inclination?: number
+    apogee?: number
+    perigee?: number
+  }
 }
 
 // 情报 API
@@ -531,9 +563,7 @@ export const spaceWeatherApi = {
 export interface PushSubscription {
   id: string
   email: string
-  subscribeSpaceWeather: boolean
-  subscribeSatellitePass: boolean
-  subscribeIntelligence: boolean
+  subscriptionTypes: string[]
   enabled: boolean
   status: 'active' | 'paused' | 'cancelled'
   lastPushAt: string | null
@@ -549,17 +579,13 @@ export const pushApi = {
   // 创建订阅
   createSubscription: (data: {
     email: string
-    subscribeSpaceWeather?: boolean
-    subscribeSatellitePass?: boolean
-    subscribeIntelligence?: boolean
+    subscriptionTypes?: string[]
   }) => api.post<ApiResponse<PushSubscription>>('/push/subscription', data),
 
   // 更新订阅配置
   updateSubscription: (data: {
     email?: string
-    subscribeSpaceWeather?: boolean
-    subscribeSatellitePass?: boolean
-    subscribeIntelligence?: boolean
+    subscriptionTypes?: string[]
   }) => api.put<ApiResponse<PushSubscription>>('/push/subscription', data),
 
   // 暂停推送

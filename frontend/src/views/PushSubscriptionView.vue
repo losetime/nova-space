@@ -65,23 +65,6 @@
 
                 <div
                   class="option-card"
-                  :class="{ active: form.subscribeSatellitePass }"
-                  @click="form.subscribeSatellitePass = !form.subscribeSatellitePass"
-                >
-                  <div class="option-icon">
-                    <GlobalOutlined />
-                  </div>
-                  <div class="option-content">
-                    <h4>卫星过境提醒</h4>
-                    <p>关注的卫星过境时收到通知</p>
-                  </div>
-                  <div class="option-check">
-                    <CheckOutlined v-if="form.subscribeSatellitePass" />
-                  </div>
-                </div>
-
-                <div
-                  class="option-card"
                   :class="{ active: form.subscribeIntelligence }"
                   @click="form.subscribeIntelligence = !form.subscribeIntelligence"
                 >
@@ -194,7 +177,6 @@ import {
   MailOutlined,
   SettingOutlined,
   ThunderboltOutlined,
-  GlobalOutlined,
   ReadOutlined,
   CheckOutlined,
   LoadingOutlined,
@@ -214,9 +196,13 @@ const subscription = ref<PushSubscription | null>(null);
 const form = reactive({
   email: "",
   subscribeSpaceWeather: true,
-  subscribeSatellitePass: false,
   subscribeIntelligence: false,
 });
+
+const SUBSCRIPTION_TYPES = {
+  SPACE_WEATHER: 'space_weather',
+  INTELLIGENCE: 'intelligence',
+} as const;
 
 async function fetchSubscription() {
   loading.value = true;
@@ -226,9 +212,8 @@ async function fetchSubscription() {
 
     if (subscription.value) {
       form.email = subscription.value.email;
-      form.subscribeSpaceWeather = subscription.value.subscribeSpaceWeather;
-      form.subscribeSatellitePass = subscription.value.subscribeSatellitePass;
-      form.subscribeIntelligence = subscription.value.subscribeIntelligence ?? false;
+      form.subscribeSpaceWeather = subscription.value.subscriptionTypes.includes(SUBSCRIPTION_TYPES.SPACE_WEATHER);
+      form.subscribeIntelligence = subscription.value.subscriptionTypes.includes(SUBSCRIPTION_TYPES.INTELLIGENCE);
     }
   } catch {
     // 忽略错误
@@ -237,13 +222,20 @@ async function fetchSubscription() {
   }
 }
 
+function getSubscriptionTypes(): string[] {
+  const types: string[] = [];
+  if (form.subscribeSpaceWeather) types.push(SUBSCRIPTION_TYPES.SPACE_WEATHER);
+  if (form.subscribeIntelligence) types.push(SUBSCRIPTION_TYPES.INTELLIGENCE);
+  return types;
+}
+
 async function handleSubscribe() {
   if (!form.email) {
     message.error("请输入邮箱地址");
     return;
   }
 
-  if (!form.subscribeSpaceWeather && !form.subscribeSatellitePass && !form.subscribeIntelligence) {
+  if (!form.subscribeSpaceWeather && !form.subscribeIntelligence) {
     message.error("请至少选择一项订阅内容");
     return;
   }
@@ -252,9 +244,7 @@ async function handleSubscribe() {
   try {
     const response = await pushApi.createSubscription({
       email: form.email,
-      subscribeSpaceWeather: form.subscribeSpaceWeather,
-      subscribeSatellitePass: form.subscribeSatellitePass,
-      subscribeIntelligence: form.subscribeIntelligence,
+      subscriptionTypes: getSubscriptionTypes(),
     });
     subscription.value = response.data.data;
     message.success("订阅成功");
@@ -269,9 +259,7 @@ async function handleUpdate() {
   submitting.value = true;
   try {
     const response = await pushApi.updateSubscription({
-      subscribeSpaceWeather: form.subscribeSpaceWeather,
-      subscribeSatellitePass: form.subscribeSatellitePass,
-      subscribeIntelligence: form.subscribeIntelligence,
+      subscriptionTypes: getSubscriptionTypes(),
     });
     subscription.value = response.data.data;
     message.success("设置已保存");

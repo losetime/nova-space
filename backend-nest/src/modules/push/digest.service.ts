@@ -1,15 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { SpaceWeatherService } from '../space-weather/space-weather.service';
 import { IntelligenceService } from '../intelligence/intelligence.service';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { UserFavorite } from '../../common/entities';
-import { FavoriteType } from '../../common/enums';
 import { PushSubscription } from '../../common/entities/push-subscription.entity';
+import { SubscriptionType } from '../../common/enums';
 
 interface DigestContent {
   weatherAlerts: any[];
-  satellitePasses: any[];
   intelligence: any[];
   date: string;
 }
@@ -21,8 +17,6 @@ export class DigestService {
   constructor(
     private spaceWeatherService: SpaceWeatherService,
     private intelligenceService: IntelligenceService,
-    @InjectRepository(UserFavorite)
-    private favoriteRepository: Repository<UserFavorite>,
   ) {}
 
   async generateDigestContent(subscription: PushSubscription): Promise<DigestContent> {
@@ -34,13 +28,12 @@ export class DigestService {
 
     const content: DigestContent = {
       weatherAlerts: [],
-      satellitePasses: [],
       intelligence: [],
       date,
     };
 
     // 获取空间天气预警
-    if (subscription.subscribeSpaceWeather) {
+    if (subscription.subscriptionTypes.includes(SubscriptionType.SPACE_WEATHER)) {
       try {
         const alerts = await this.spaceWeatherService.getAlerts(5);
         // 只保留高等级预警
@@ -50,37 +43,8 @@ export class DigestService {
       }
     }
 
-    // 获取用户关注的卫星过境信息
-    if (subscription.subscribeSatellitePass) {
-      try {
-        const favorites = await this.favoriteRepository.find({
-          where: {
-            userId: subscription.userId,
-            type: FavoriteType.SATELLITE,
-          },
-        });
-
-        if (favorites.length > 0) {
-          // TODO: 实现卫星过境计算
-          // 这里需要根据卫星TLE数据和用户位置计算今日过境
-          // 目前使用模拟数据
-          content.satellitePasses = favorites.slice(0, 5).map((fav, index) => ({
-            id: fav.targetId,
-            name: `卫星 #${fav.targetId.slice(0, 8)}`,
-            time: new Date(Date.now() + index * 3600000).toLocaleTimeString('zh-CN', {
-              hour: '2-digit',
-              minute: '2-digit',
-            }),
-            maxElevation: Math.floor(Math.random() * 60 + 30),
-          }));
-        }
-      } catch (error) {
-        this.logger.error('Failed to fetch satellite passes', error);
-      }
-    }
-
     // 获取航天情报
-    if (subscription.subscribeIntelligence) {
+    if (subscription.subscriptionTypes.includes(SubscriptionType.INTELLIGENCE)) {
       try {
         const result = await this.intelligenceService.findAll({ page: 1, pageSize: 5 }, 'basic');
         content.intelligence = result.list.map((item: any) => ({

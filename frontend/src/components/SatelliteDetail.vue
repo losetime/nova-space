@@ -18,6 +18,21 @@
           <span v-if="metadata?.objectId" class="object-id">{{ metadata.objectId }}</span>
         </div>
       </div>
+      <!-- 关注按钮 -->
+      <button
+        class="follow-btn"
+        :class="{ followed: isFavorited }"
+        :disabled="followLoading"
+        @click="handleToggleFavorite"
+      >
+        <template v-if="followLoading">
+          <LoadingOutlined class="spin" />
+        </template>
+        <template v-else>
+          <StarFilled v-if="isFavorited" />
+          <StarOutlined v-else />
+        </template>
+      </button>
     </div>
 
     <!-- 基本信息 -->
@@ -174,6 +189,8 @@
 </template>
 
 <script setup lang="ts">
+import { ref, watch } from 'vue'
+import { message } from 'ant-design-vue'
 import {
   GlobalOutlined,
   CompassOutlined,
@@ -185,9 +202,14 @@ import {
   AimOutlined,
   ThunderboltOutlined,
   WarningOutlined,
+  StarOutlined,
+  StarFilled,
+  LoadingOutlined,
 } from '@ant-design/icons-vue'
 import type { Satellite } from '@/hooks/useWebSocket'
 import FlagIcon from '@/components/FlagIcon.vue'
+import { satelliteApi } from '@/api'
+import { useUserStore } from '@/stores/user'
 
 // 元数据接口
 interface SatelliteMetadata {
@@ -211,6 +233,52 @@ interface Props {
 }
 
 const props = defineProps<Props>()
+
+const emit = defineEmits<{
+  (e: 'favorite-change', noradId: string, favorited: boolean): void
+}>()
+
+const userStore = useUserStore()
+const isFavorited = ref(false)
+const followLoading = ref(false)
+
+// 检查是否已关注
+async function checkFavorite() {
+  if (!props.satellite || !userStore.isLoggedIn) return
+  try {
+    const res = await satelliteApi.checkFavorite(props.satellite.noradId)
+    isFavorited.value = res.data.data.favorited
+  } catch {
+    // 忽略错误
+  }
+}
+
+// 切换关注状态
+async function handleToggleFavorite() {
+  if (!userStore.isLoggedIn) {
+    message.warning('请先登录')
+    return
+  }
+  if (!props.satellite) return
+
+  followLoading.value = true
+  try {
+    const res = await satelliteApi.toggleFavorite(props.satellite.noradId)
+    isFavorited.value = res.data.data.favorited
+    message.success(res.data.message)
+    // 通知父组件收藏状态变化
+    emit('favorite-change', props.satellite.noradId, isFavorited.value)
+  } catch {
+    message.error('操作失败')
+  } finally {
+    followLoading.value = false
+  }
+}
+
+// 监听卫星变化
+watch(() => props.satellite, () => {
+  checkFavorite()
+}, { immediate: true })
 
 // 国家代码到中文名称的映射 (CelesTrak 格式)
 const COUNTRY_NAMES: Record<string, string> = {
@@ -804,5 +872,48 @@ const getObjectTypeClass = (type: string): string => {
 .empty-state span {
   font-size: 13px;
   color: rgba(255, 255, 255, 0.4);
+}
+
+// 关注按钮
+.follow-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 212, 255, 0.2);
+  background: rgba(0, 212, 255, 0.08);
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  &:hover:not(:disabled) {
+    background: rgba(0, 212, 255, 0.15);
+    border-color: rgba(0, 212, 255, 0.3);
+    color: #00d4ff;
+  }
+
+  &.followed {
+    background: rgba(255, 193, 7, 0.15);
+    border-color: rgba(255, 193, 7, 0.3);
+    color: #ffc107;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .spin {
+    animation: spin 1s linear infinite;
+  }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 </style>

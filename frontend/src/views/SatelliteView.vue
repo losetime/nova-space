@@ -173,6 +173,45 @@
                 </div>
               </transition>
             </div>
+
+            <!-- 收藏筛选 -->
+            <div class="filter-section">
+              <div class="filter-section-header" @click="toggleFilterSection('favorite')">
+                <span class="section-title">
+                  收藏状态
+                  <span class="selected-tag">{{ getFavoriteLabel(favoriteFilter) }}</span>
+                </span>
+                <DownOutlined :class="['expand-icon', { expanded: expandedSections.favorite }]" />
+              </div>
+              <transition name="collapse">
+                <div v-show="expandedSections.favorite" class="filter-options">
+                  <div
+                    class="filter-option"
+                    :class="{ active: favoriteFilter === 'all' }"
+                    @click="favoriteFilter = 'all'"
+                  >
+                    <GlobalOutlined class="option-icon" />
+                    <span>全部</span>
+                  </div>
+                  <div
+                    class="filter-option"
+                    :class="{ active: favoriteFilter === 'favorited' }"
+                    @click="favoriteFilter = 'favorited'"
+                  >
+                    <StarFilled class="option-icon favorited" />
+                    <span>已收藏</span>
+                  </div>
+                  <div
+                    class="filter-option"
+                    :class="{ active: favoriteFilter === 'unfavorited' }"
+                    @click="favoriteFilter = 'unfavorited'"
+                  >
+                    <StarOutlined class="option-icon unfavorited" />
+                    <span>未收藏</span>
+                  </div>
+                </div>
+              </transition>
+            </div>
           </div>
         </aside>
       </transition>
@@ -249,6 +288,7 @@
             v-if="activeRightPanel === 'detail'"
             :satellite="selectedSatellite"
             :metadata="selectedSatelliteMetadata"
+            @favorite-change="handleFavoriteChange"
           />
 
           <!-- 轨道预测 -->
@@ -290,7 +330,8 @@ import {
   FilterOutlined,
   InfoCircleOutlined,
   DownOutlined,
-  FlagOutlined
+  StarFilled,
+  StarOutlined,
 } from '@ant-design/icons-vue'
 import SatelliteList from '@/components/SatelliteList.vue'
 import SatelliteDetail from '@/components/SatelliteDetail.vue'
@@ -302,16 +343,23 @@ import { useWebSocket } from '@/hooks/useWebSocket'
 import { usePanel } from '@/hooks/usePanel'
 import { useSatellite } from '@/hooks/useSatellite'
 import { satelliteApi } from '@/api'
+import { useUserStore } from '@/stores/user'
 import { getFlagClass } from '@/utils/countryFlags'
 
 const filterType = ref('all')
 const selectedCountry = ref('')
+const favoriteFilter = ref<'all' | 'favorited' | 'unfavorited'>('all')
 const loading = ref(true)
+const userStore = useUserStore()
+
+// 收藏的卫星 ID 集合
+const favoritedIds = ref<Set<string>>(new Set())
 
 // 可折叠筛选区域状态
 const expandedSections = ref({
   country: false,
-  orbit: false
+  orbit: false,
+  favorite: false
 })
 
 // 国家列表
@@ -383,6 +431,16 @@ const getOrbitTypeLabel = (type: string): string => {
   return labels[type] || ''
 }
 
+// 收藏筛选标签
+const getFavoriteLabel = (type: string): string => {
+  const labels: Record<string, string> = {
+    all: '全部',
+    favorited: '已收藏',
+    unfavorited: '未收藏'
+  }
+  return labels[type] || ''
+}
+
 // 获取国家选择标签文本（不含国旗）
 const getCountryLabel = (code: string): string => {
   if (!code) return '全部'
@@ -392,11 +450,12 @@ const getCountryLabel = (code: string): string => {
 }
 
 // 切换筛选区域展开/折叠（同时关闭其他区域）
-const toggleFilterSection = (section: 'orbit' | 'country') => {
+const toggleFilterSection = (section: 'orbit' | 'country' | 'favorite') => {
   // 如果当前区域是折叠状态，则展开它并关闭其他区域
   if (!expandedSections.value[section]) {
     expandedSections.value.orbit = section === 'orbit'
     expandedSections.value.country = section === 'country'
+    expandedSections.value.favorite = section === 'favorite'
   } else {
     // 如果当前区域是展开状态，则折叠它
     expandedSections.value[section] = false
@@ -457,6 +516,13 @@ const filteredSatellites = computed(() => {
       const meta = satelliteMetadata.value.get(sat.noradId)
       return meta?.countryCode === selectedCountry.value
     })
+  }
+
+  // 按收藏筛选
+  if (favoriteFilter.value === 'favorited') {
+    result = result.filter(sat => favoritedIds.value.has(sat.noradId))
+  } else if (favoriteFilter.value === 'unfavorited') {
+    result = result.filter(sat => !favoritedIds.value.has(sat.noradId))
   }
 
   return result
@@ -541,6 +607,30 @@ watch(filteredSatellites, (newSatellites) => {
   }
 }, { deep: true })
 
+// 获取用户收藏的卫星
+async function fetchFavorites() {
+  if (!userStore.isLoggedIn) return
+  try {
+    const res = await satelliteApi.getFavorites()
+    if (res.data.code === 0 && res.data.data) {
+      favoritedIds.value = new Set(res.data.data.map((fav: { noradId: string }) => fav.noradId))
+    }
+  } catch {
+    // 忽略错误
+  }
+}
+
+// 处理收藏状态变化
+function handleFavoriteChange(noradId: string, favorited: boolean) {
+  if (favorited) {
+    favoritedIds.value.add(noradId)
+  } else {
+    favoritedIds.value.delete(noradId)
+  }
+  // 触发响应式更新
+  favoritedIds.value = new Set(favoritedIds.value)
+}
+
 // 延迟初始化 - 先渲染页面，再加载数据
 onMounted(async () => {
   // 使用 requestAnimationFrame 确保 DOM 已渲染
@@ -585,6 +675,9 @@ onMounted(async () => {
   } catch (err) {
     console.error('加载卫星元数据失败:', err)
   }
+
+  // 加载收藏列表
+  await fetchFavorites()
 })
 
 const handleRefresh = () => {
@@ -1045,6 +1138,8 @@ const handleRefresh = () => {
       &.leo { color: #00ff88; }
       &.meo { color: #00d4ff; }
       &.geo { color: #b366e8; }
+      &.favorited { color: #ffc107; }
+      &.unfavorited { color: rgba(255, 255, 255, 0.4); }
     }
 
     .country-flag {

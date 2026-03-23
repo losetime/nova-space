@@ -5,16 +5,20 @@ export enum PushSubscriptionStatus {
   CANCELLED = 'cancelled', // 已取消
 }
 
-// 推送类型
-export enum PushType {
-  DAILY_DIGEST = 'daily_digest',       // 每日汇总
-  WEATHER_ALERT = 'weather_alert',     // 空间天气预警
-  SATELLITE_PASS = 'satellite_pass',   // 卫星过境提醒
+// 推送触发类型
+export enum PushTriggerType {
+  SCHEDULED = 'scheduled', // 定时推送
+  MANUAL = 'manual',       // 手动推送
+}
+
+// 订阅内容类型
+export enum SubscriptionType {
+  SPACE_WEATHER = 'space_weather', // 空间天气预警
+  INTELLIGENCE = 'intelligence',   // 航天情报
 }
 
 // 推送记录状态
 export enum PushRecordStatus {
-  PENDING = 'pending',   // 待发送
-  SENT = 'sent',         // 已发送
-  FAILED = 'failed',     // 发送失败
+  SENT = 'sent',     // 已发送
+  FAILED = 'failed', // 发送失败
 }

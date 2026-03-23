@@ -6,7 +6,7 @@ import {
   ManyToOne,
   Index,
 } from 'typeorm';
-import { PushType, PushRecordStatus } from '../enums/push.enum';
+import { PushTriggerType, PushRecordStatus } from '../enums/push.enum';
 import { User } from './user.entity';
 
 @Entity('push_records')
@@ -23,9 +23,10 @@ export class PushRecord {
 
   @Column({
     type: 'simple-enum',
-    enum: PushType,
+    enum: PushTriggerType,
+    default: PushTriggerType.MANUAL,
   })
-  type: PushType;
+  triggerType: PushTriggerType;
 
   @Column()
   subject: string;
@@ -33,17 +34,12 @@ export class PushRecord {
   @Column({ type: 'text' })
   content: string;
 
-  // 关联的内容ID
-  @Column({ type: 'simple-array', nullable: true })
-  relatedIds: string[];
-
   @Column()
   sentAt: Date;
 
   @Column({
     type: 'simple-enum',
     enum: PushRecordStatus,
-    default: PushRecordStatus.PENDING,
   })
   status: PushRecordStatus;
 

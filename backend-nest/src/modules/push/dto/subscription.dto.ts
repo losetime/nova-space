@@ -1,20 +1,14 @@
-import { IsBoolean, IsEmail, IsOptional, IsUUID } from 'class-validator';
+import { IsEmail, IsOptional, IsArray, ArrayNotEmpty } from 'class-validator';
+import { SubscriptionType } from '../../../common/enums';
 
 export class CreatePushSubscriptionDto {
   @IsEmail()
   email: string;
 
   @IsOptional()
-  @IsBoolean()
-  subscribeSpaceWeather?: boolean = true;
-
-  @IsOptional()
-  @IsBoolean()
-  subscribeSatellitePass?: boolean = false;
-
-  @IsOptional()
-  @IsBoolean()
-  subscribeIntelligence?: boolean = false;
+  @IsArray()
+  @ArrayNotEmpty()
+  subscriptionTypes?: SubscriptionType[];
 }
 
 export class UpdatePushSubscriptionDto {
@@ -23,24 +17,14 @@ export class UpdatePushSubscriptionDto {
   email?: string;
 
   @IsOptional()
-  @IsBoolean()
-  subscribeSpaceWeather?: boolean;
-
-  @IsOptional()
-  @IsBoolean()
-  subscribeSatellitePass?: boolean;
-
-  @IsOptional()
-  @IsBoolean()
-  subscribeIntelligence?: boolean;
+  @IsArray()
+  subscriptionTypes?: SubscriptionType[];
 }
 
 export class PushSubscriptionResponseDto {
   id: string;
   email: string;
-  subscribeSpaceWeather: boolean;
-  subscribeSatellitePass: boolean;
-  subscribeIntelligence: boolean;
+  subscriptionTypes: SubscriptionType[];
   enabled: boolean;
   status: string;
   lastPushAt: Date | null;

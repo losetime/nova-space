@@ -1,12 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
+import { Cron } from '@nestjs/schedule';
 import { PushSubscriptionService } from './push-subscription.service';
 import { EmailService } from './email.service';
 import { DigestService } from './digest.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PushRecord } from '../../common/entities';
-import { PushType, PushRecordStatus } from '../../common/enums';
+import { PushTriggerType, PushRecordStatus } from '../../common/enums';
 
 @Injectable()
 export class PushSchedulerService {
@@ -35,7 +35,8 @@ export class PushSchedulerService {
     this.logger.log('Starting daily digest push...');
 
     try {
-      const subscriptions = await this.subscriptionService.getActiveSubscriptions();
+      const subscriptions =
+        await this.subscriptionService.getActiveSubscriptions();
       this.logger.log(`Found ${subscriptions.length} active subscriptions`);
 
       for (const subscription of subscriptions) {
@@ -47,27 +48,33 @@ export class PushSchedulerService {
           const existingRecord = await this.pushRecordRepository.findOne({
             where: {
               userId: subscription.userId,
-              type: PushType.DAILY_DIGEST,
+              triggerType: PushTriggerType.SCHEDULED,
               createdAt: { $gte: today } as any,
             },
           });
 
           if (existingRecord) {
-            this.logger.debug(`User ${subscription.userId} already received digest today`);
+            this.logger.debug(
+              `User ${subscription.userId} already received digest today`,
+            );
             continue;
           }
 
           // 生成汇总内容
-          const content = await this.digestService.generateDigestContent(subscription);
+          const content =
+            await this.digestService.generateDigestContent(subscription);
 
           // 发送邮件
-          const sent = await this.emailService.sendDailyDigest(subscription.email, content);
+          const sent = await this.emailService.sendDailyDigest(
+            subscription.email,
+            content,
+          );
 
           // 记录推送结果
           const record = this.pushRecordRepository.create({
             userId: subscription.userId,
-            type: PushType.DAILY_DIGEST,
-            subject: `Nova Space 每日太空资讯 - ${content.date}`,
+            triggerType: PushTriggerType.SCHEDULED,
+            subject: `Nova Space 每日资讯 - ${content.date}`,
             content: JSON.stringify(content),
             sentAt: new Date(),
             status: sent ? PushRecordStatus.SENT : PushRecordStatus.FAILED,
@@ -76,10 +83,15 @@ export class PushSchedulerService {
           await this.pushRecordRepository.save(record);
 
           if (sent) {
-            await this.subscriptionService.updateLastPushAt(subscription.userId);
+            await this.subscriptionService.updateLastPushAt(
+              subscription.userId,
+            );
           }
         } catch (error) {
-          this.logger.error(`Failed to send digest to user ${subscription.userId}`, error);
+          this.logger.error(
+            `Failed to send digest to user ${subscription.userId}`,
+            error,
+          );
         }
       }
 
@@ -98,8 +110,24 @@ export class PushSchedulerService {
     }
 
     try {
-      const content = await this.digestService.generateDigestContent(subscription);
-      const sent = await this.emailService.sendDailyDigest(subscription.email, content);
+      const content =
+        await this.digestService.generateDigestContent(subscription);
+      const sent = await this.emailService.sendDailyDigest(
+        subscription.email,
+        content,
+      );
+
+      // 记录推送结果
+      const record = this.pushRecordRepository.create({
+        userId,
+        triggerType: PushTriggerType.MANUAL,
+        subject: `Nova Space 测试推送 - ${content.date}`,
+        content: JSON.stringify(content),
+        sentAt: new Date(),
+        status: sent ? PushRecordStatus.SENT : PushRecordStatus.FAILED,
+      });
+
+      await this.pushRecordRepository.save(record);
 
       if (sent) {
         await this.subscriptionService.updateLastPushAt(userId);
