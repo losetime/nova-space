@@ -48,6 +48,8 @@ export class SpaceTrackService implements OnModuleInit {
     } catch (err) {
       this.logger.error(`加载卫星元数据失败: ${err.message}`);
     }
+    // 合并TLE轨道参数到元数据
+    this.mergeTLEParamsToMetadata();
   }
 
   /**
@@ -164,6 +166,35 @@ export class SpaceTrackService implements OnModuleInit {
   }
 
   /**
+   * 合并TLE轨道参数到元数据
+   * 从TLE数据中提取偏心率、RAAN、近地点幅角等参数，并计算TLE数据年龄
+   */
+  private mergeTLEParamsToMetadata(): void {
+    const now = new Date();
+    let mergedCount = 0;
+
+    for (const tle of this.cachedTLEs) {
+      const metadata = this.satelliteMetadata.get(tle.noradId);
+      if (metadata && tle.epoch) {
+        // 合并TLE解析的轨道参数
+        metadata.eccentricity = tle.eccentricity;
+        metadata.raan = tle.raan;
+        metadata.argOfPerigee = tle.argOfPerigee;
+        metadata.tleEpoch = tle.epoch;
+
+        // 计算TLE数据年龄（天）
+        const epochDate = new Date(tle.epoch);
+        const ageMs = now.getTime() - epochDate.getTime();
+        metadata.tleAge = Math.floor(ageMs / (1000 * 60 * 60 * 24));
+
+        mergedCount++;
+      }
+    }
+
+    this.logger.log(`合并了 ${mergedCount} 颗卫星的TLE轨道参数到元数据`);
+  }
+
+  /**
    * 加载卫星数据
    */
   async loadSatellites(): Promise<TLEData[]> {
@@ -223,7 +254,8 @@ export class SpaceTrackService implements OnModuleInit {
           this.logger.log(`找到本地缓存: ${cachePath}`);
           const data = fs.readFileSync(cachePath, 'utf-8');
           const tles: TLEData[] = JSON.parse(data);
-          return tles;
+          // 确保缓存数据包含轨道参数（兼容旧缓存格式）
+          return tles.map((tle) => this.ensureOrbitalParams(tle));
         }
       }
 
@@ -233,6 +265,23 @@ export class SpaceTrackService implements OnModuleInit {
       this.logger.error(`读取本地缓存失败: ${error.message}`);
       return [];
     }
+  }
+
+  /**
+   * 确保 TLE 数据包含轨道参数
+   * 如果缓存数据缺少 epoch 等参数，从 TLE 行重新解析
+   */
+  private ensureOrbitalParams(tle: TLEData): TLEData {
+    // 如果已经有 epoch，说明是新格式，直接返回
+    if (tle.epoch) {
+      return tle;
+    }
+    // 从 TLE 行重新解析轨道参数
+    if (tle.line1 && tle.line2) {
+      const orbitalParams = this.parseOrbitalParams(tle.line1, tle.line2);
+      return { ...tle, ...orbitalParams };
+    }
+    return tle;
   }
 
   /**
@@ -295,9 +344,8 @@ export class SpaceTrackService implements OnModuleInit {
    */
   private async loadSatelliteMetadata(): Promise<void> {
     const https = await import('https');
-    // CelesTrak SATCAT API - 获取 GPZ 数据的元数据
-    // SPECIAL=gpz 返回有 GP 数据的活跃卫星元数据
-    const url = 'https://celestrak.org/satcat/records.php?SPECIAL=gpz&FORMAT=json';
+    // CelesTrak SATCAT API - 获取完整卫星目录
+    const url = 'https://celestrak.org/satcat/records.php?FORMAT=json';
 
     return new Promise((resolve, reject) => {
       https
@@ -317,8 +365,10 @@ export class SpaceTrackService implements OnModuleInit {
                   noradId,
                   name: item.OBJECT_NAME,
                   objectId: item.OBJECT_ID,
+                  altNames: item.ALT_NAMES ? item.ALT_NAMES.split(',') : undefined,
                   objectType: item.OBJECT_TYPE,
-                  countryCode: item.OWNER,  // OWNER 字段包含国家/所有者代码
+                  status: item.STATUS,
+                  countryCode: item.OWNER,
                   launchDate: item.LAUNCH_DATE,
                   launchSite: item.LAUNCH_SITE,
                   decayDate: item.DECAY_DATE || undefined,
@@ -326,6 +376,8 @@ export class SpaceTrackService implements OnModuleInit {
                   inclination: item.INCLINATION,
                   apogee: item.APOGEE,
                   perigee: item.PERIGEE,
+                  rcs: item.RCS,
+                  stdMag: item.STD_MAG ? parseFloat(item.STD_MAG) : undefined,
                 });
               });
               this.logger.log(`加载了 ${this.satelliteMetadata.size} 条卫星元数据`);
@@ -445,22 +497,31 @@ export class SpaceTrackService implements OnModuleInit {
             this.satelliteMetadata.clear();
 
             // 解析并存储元数据
+            // Space-Track satcat 表字段：
+            // INTLDES, NORAD_CAT_ID, OBJECT_TYPE, SATNAME, COUNTRY, LAUNCH, SITE, DECAY,
+            // PERIOD, INCLINATION, APOGEE, PERIGEE, RCSVALUE, RCS_SIZE, CURRENT, OBJECT_NAME, OBJECT_ID
             metadata.forEach((item: any) => {
               const noradId = this.formatNoradId(item.NORAD_CAT_ID);
+
+              // CURRENT 字段: "Y" = 在轨, 其他 = 已衰减
+              // RCS_SIZE: LARGE, MEDIUM, SMALL 或空
               this.satelliteMetadata.set(noradId, {
                 noradId,
                 name: item.OBJECT_NAME || item.SATNAME,
                 objectId: item.OBJECT_ID || item.INTLDES,
                 objectType: item.OBJECT_TYPE,
-                countryCode: item.COUNTRY,  // Space-Track 使用 COUNTRY 字段
+                status: item.CURRENT === 'Y' ? '+' : 'D',  // + 表示在轨, D 表示已衰减
+                countryCode: item.COUNTRY,
                 launchDate: item.LAUNCH || undefined,
                 launchSite: item.SITE || undefined,
+                launchVehicle: undefined,  // Space-Track satcat 不含此字段
                 decayDate: item.DECAY || undefined,
                 // 轨道参数
                 period: item.PERIOD ? parseFloat(item.PERIOD) : undefined,
                 inclination: item.INCLINATION ? parseFloat(item.INCLINATION) : undefined,
                 apogee: item.APOGEE ? parseFloat(item.APOGEE) : undefined,
                 perigee: item.PERIGEE ? parseFloat(item.PERIGEE) : undefined,
+                rcs: item.RCS_SIZE || undefined,
               });
             });
 
@@ -498,16 +559,98 @@ export class SpaceTrackService implements OnModuleInit {
         const noradId = noradIdMatch ? this.formatNoradId(noradIdMatch[1]) : null;
 
         if (noradId) {
+          // 解析轨道参数
+          const orbitalParams = this.parseOrbitalParams(line1, line2);
+
           tles.push({
             name,
             noradId,
             line1,
             line2,
+            ...orbitalParams,
           });
         }
       }
     }
 
     return tles;
+  }
+
+  /**
+   * 从 TLE 行解析轨道参数
+   */
+  private parseOrbitalParams(line1: string, line2: string): Partial<TLEData> {
+    const params: Partial<TLEData> = {};
+
+    try {
+      // 从 Line 1 提取历元 (位置 19-32)
+      // 格式: YYDDD.DDDDDDDD (年份 + 年内天数)
+      const epochStr = line1.substring(18, 32).trim();
+      if (epochStr) {
+        params.epoch = this.parseTLEEpoch(epochStr);
+      }
+
+      // 从 Line 2 提取轨道参数
+      // 轨道倾角 (位置 9-16)
+      const inclination = parseFloat(line2.substring(8, 16).trim());
+      if (!isNaN(inclination)) {
+        params.inclination = inclination;
+      }
+
+      // 升交点赤经 (位置 18-25)
+      const raan = parseFloat(line2.substring(17, 25).trim());
+      if (!isNaN(raan)) {
+        params.raan = raan;
+      }
+
+      // 偏心率 (位置 27-33，需要加小数点)
+      const eccentricityStr = line2.substring(26, 33).trim();
+      if (eccentricityStr) {
+        params.eccentricity = parseFloat('0.' + eccentricityStr);
+      }
+
+      // 近地点幅角 (位置 35-42)
+      const argOfPerigee = parseFloat(line2.substring(34, 42).trim());
+      if (!isNaN(argOfPerigee)) {
+        params.argOfPerigee = argOfPerigee;
+      }
+
+      // 平均运动 (位置 53-63)
+      const meanMotion = parseFloat(line2.substring(52, 63).trim());
+      if (!isNaN(meanMotion)) {
+        params.meanMotion = meanMotion;
+      }
+    } catch (error) {
+      this.logger.warn(`解析轨道参数失败: ${error.message}`);
+    }
+
+    return params;
+  }
+
+  /**
+   * 解析 TLE 历元时间为 ISO 字符串
+   * TLE 格式: YYDDD.DDDDDDDD (年份后两位 + 年内天数)
+   */
+  private parseTLEEpoch(epochStr: string): string {
+    try {
+      const year = parseInt(epochStr.substring(0, 2));
+      const dayOfYear = parseFloat(epochStr.substring(2));
+
+      // 确定完整年份 (假设 57-99 是 1957-1999, 00-56 是 2000-2056)
+      const fullYear = year >= 57 ? 1900 + year : 2000 + year;
+
+      // 计算日期
+      const date = new Date(fullYear, 0, 1);
+      date.setDate(date.getDate() + Math.floor(dayOfYear) - 1);
+
+      // 添加小数部分的时间
+      const fractionalDay = dayOfYear - Math.floor(dayOfYear);
+      const hours = fractionalDay * 24;
+      date.setHours(Math.floor(hours), Math.floor((hours % 1) * 60), Math.floor(((hours * 60) % 1) * 60));
+
+      return date.toISOString();
+    } catch {
+      return epochStr;
+    }
   }
 }

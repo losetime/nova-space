@@ -481,15 +481,25 @@ interface SatelliteMetadata {
   noradId: string
   name?: string
   objectId?: string
+  altNames?: string[]
   objectType?: string
+  status?: string
   countryCode?: string
   launchDate?: string
   launchSite?: string
+  launchVehicle?: string
   decayDate?: string
   period?: number
   inclination?: number
   apogee?: number
   perigee?: number
+  eccentricity?: number
+  raan?: number
+  argOfPerigee?: number
+  rcs?: string
+  stdMag?: number
+  tleEpoch?: string
+  tleAge?: number
 }
 
 // 卫星元数据映射
