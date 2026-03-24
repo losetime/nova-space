@@ -10,7 +10,12 @@
 
     <!-- 分类导航 -->
     <div class="category-nav">
-      <a-tabs v-model:activeKey="activeCategory" centered size="large" @change="handleCategoryChange">
+      <a-tabs
+        v-model:activeKey="activeCategory"
+        centered
+        size="large"
+        @change="handleCategoryChange"
+      >
         <a-tab-pane key="all" tab="全部">
           <template #icon><AppstoreOutlined /></template>
         </a-tab-pane>
@@ -46,8 +51,8 @@
           @click="openArticle(item)"
         >
           <div class="card-cover">
-            <img :src="item.cover" :alt="item.title" @error="handleImageError" />
-            <div class="card-type">{{ item.type === 'video' ? '视频' : '图文' }}</div>
+            <img :src="getCoverUrl(item.cover)" :alt="item.title" @error="handleImageError" />
+            <div class="card-type">{{ item.type === "video" ? "视频" : "图文" }}</div>
           </div>
           <div class="card-body">
             <h3>{{ item.title }}</h3>
@@ -113,14 +118,14 @@
               block
               class="quiz-option"
               :class="{
-                'selected': selectedOption === index,
-                'correct': showResult && index === currentQuiz.correctIndex,
-                'wrong': showResult && selectedOption === index && !quizResult?.isCorrect
+                selected: selectedOption === index,
+                correct: showResult && index === currentQuiz.correctIndex,
+                wrong: showResult && selectedOption === index && !quizResult?.isCorrect,
               }"
               :disabled="showResult"
               @click="selectOption(index)"
             >
-              {{ ['A', 'B', 'C', 'D'][index] }}. {{ option }}
+              {{ ["A", "B", "C", "D"][index] }}. {{ option }}
             </a-button>
           </div>
 
@@ -129,7 +134,7 @@
             <div class="result-header" :class="quizResult.isCorrect ? 'success' : 'error'">
               <CheckCircleOutlined v-if="quizResult.isCorrect" />
               <CloseCircleOutlined v-else />
-              <span>{{ quizResult.isCorrect ? '回答正确！' : '回答错误' }}</span>
+              <span>{{ quizResult.isCorrect ? "回答正确！" : "回答错误" }}</span>
             </div>
             <p class="explanation">{{ quizResult.explanation }}</p>
           </div>
@@ -153,7 +158,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed } from "vue";
 import {
   RocketOutlined,
   ExperimentOutlined,
@@ -165,130 +170,143 @@ import {
   AppstoreOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
-} from '@ant-design/icons-vue'
-import { message } from 'ant-design-vue'
-import { educationApi, type Article, type Quiz, type QuizResult, type QuizStats } from '@/api'
-import { useUserStore } from '@/stores/user'
+} from "@ant-design/icons-vue";
+import { message } from "ant-design-vue";
+import { educationApi, type Article, type Quiz, type QuizResult, type QuizStats } from "@/api";
+import { useUserStore } from "@/stores/user";
 
-const userStore = useUserStore()
-const isLoggedIn = computed(() => userStore.isLoggedIn)
+const userStore = useUserStore();
+const isLoggedIn = computed(() => userStore.isLoggedIn);
 
-const activeCategory = ref('all')
-const loading = ref(false)
-const articles = ref<Article[]>([])
-const currentPage = ref(1)
-const pageSize = 12
-const total = ref(0)
+// 默认封面图
+const DEFAULT_COVER =
+  "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?w=400&h=225&fit=crop";
 
-const quizLoading = ref(false)
-const currentQuiz = ref<Quiz | null>(null)
-const selectedOption = ref<number | null>(null)
-const showResult = ref(false)
-const submitting = ref(false)
-const quizResult = ref<QuizResult | null>(null)
-const quizStats = ref<QuizStats | null>(null)
+// 获取封面 URL
+const getCoverUrl = (cover?: string) => {
+  return cover || DEFAULT_COVER;
+};
+
+const activeCategory = ref("all");
+const loading = ref(false);
+const articles = ref<Article[]>([]);
+const currentPage = ref(1);
+const pageSize = 12;
+const total = ref(0);
+
+const quizLoading = ref(false);
+const currentQuiz = ref<Quiz | null>(null);
+const selectedOption = ref<number | null>(null);
+const showResult = ref(false);
+const submitting = ref(false);
+const quizResult = ref<QuizResult | null>(null);
+const quizStats = ref<QuizStats | null>(null);
 
 // 加载文章列表
 const loadArticles = async () => {
-  loading.value = true
+  loading.value = true;
   try {
-    const category = activeCategory.value === 'all' ? undefined : activeCategory.value
-    const res = await educationApi.getArticles({ category, page: currentPage.value, limit: pageSize })
+    const category = activeCategory.value === "all" ? undefined : activeCategory.value;
+    const res = await educationApi.getArticles({
+      category,
+      page: currentPage.value,
+      limit: pageSize,
+    });
     // 后端返回格式: { code, data: { list: Article[], total: number }, timestamp }
-    articles.value = res.data.data?.list || []
-    total.value = res.data.data?.total || 0
+    articles.value = res.data.data?.list || [];
+    total.value = res.data.data?.total || 0;
   } catch (error) {
-    console.error('加载文章失败:', error)
+    console.error("加载文章失败:", error);
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 // 加载每日问答
 const loadDailyQuiz = async () => {
-  if (!isLoggedIn.value) return
+  if (!isLoggedIn.value) return;
 
-  quizLoading.value = true
+  quizLoading.value = true;
   try {
     const [quizRes, statsRes] = await Promise.all([
       educationApi.getDailyQuiz(),
       educationApi.getQuizStats(),
-    ])
-    currentQuiz.value = quizRes.data.data
-    quizStats.value = statsRes.data.data
+    ]);
+    currentQuiz.value = quizRes.data.data;
+    quizStats.value = statsRes.data.data;
   } catch (error) {
-    console.error('加载问答失败:', error)
+    console.error("加载问答失败:", error);
   } finally {
-    quizLoading.value = false
+    quizLoading.value = false;
   }
-}
+};
 
 // 切换分类
 const handleCategoryChange = () => {
-  currentPage.value = 1
-  loadArticles()
-}
+  currentPage.value = 1;
+  loadArticles();
+};
 
 // 分页变化
 const handlePageChange = (page: number) => {
-  currentPage.value = page
-  loadArticles()
+  currentPage.value = page;
+  loadArticles();
   // 滚动到顶部
-  window.scrollTo({ top: 0, behavior: 'smooth' })
-}
+  window.scrollTo({ top: 0, behavior: "smooth" });
+};
 
 // 选择答案
 const selectOption = (index: number) => {
   if (!showResult.value) {
-    selectedOption.value = index
+    selectedOption.value = index;
   }
-}
+};
 
 // 提交答案
 const submitAnswer = async () => {
-  if (selectedOption.value === null || !currentQuiz.value) return
+  if (selectedOption.value === null || !currentQuiz.value) return;
 
-  submitting.value = true
+  submitting.value = true;
   try {
     const res = await educationApi.submitAnswer({
       quizId: currentQuiz.value.id,
       selectedIndex: selectedOption.value,
-    })
-    quizResult.value = res.data.data
-    showResult.value = true
+    });
+    quizResult.value = res.data.data;
+    showResult.value = true;
   } catch (error: any) {
-    message.error(error.response?.data?.message || '提交失败')
+    message.error(error.response?.data?.message || "提交失败");
   } finally {
-    submitting.value = false
+    submitting.value = false;
   }
-}
+};
 
 // 格式化浏览量
 const formatViews = (views: number) => {
   if (views >= 10000) {
-    return (views / 10000).toFixed(1) + 'w'
+    return (views / 10000).toFixed(1) + "w";
   }
   if (views >= 1000) {
-    return (views / 1000).toFixed(1) + 'k'
+    return (views / 1000).toFixed(1) + "k";
   }
-  return views.toString()
-}
+  return views.toString();
+};
 
 // 图片加载失败处理
 const handleImageError = (e: Event) => {
-  const target = e.target as HTMLImageElement
-  target.src = 'https://via.placeholder.com/400x225/1a1a2e/00d4ff?text=航天科普'
-}
+  const target = e.target as HTMLImageElement;
+  target.src = DEFAULT_COVER;
+};
 
 // 打开文章详情
 const openArticle = (article: Article) => {
-  window.location.href = `/education/${article.id}`
-}
+  window.location.href = `/education/${article.id}`;
+};
 
 onMounted(() => {
-  loadArticles()
-  loadDailyQuiz()
-})
+  loadArticles();
+  loadDailyQuiz();
+});
 </script>
 
 <style scoped lang="scss">
