@@ -53,14 +53,8 @@
           <span v-else class="info-value">--</span>
         </div>
         <div class="info-item">
-          <span class="info-label">在轨状态</span>
-          <span
-            v-if="metadata.status"
-            :class="['info-value', 'status-badge', getStatusClass(metadata.status)]"
-          >
-            {{ getStatusLabel(metadata.status) }}
-          </span>
-          <span v-else class="info-value">--</span>
+          <span class="info-label">ESA分类</span>
+          <span class="info-value">{{ metadata.objectClass || "--" }}</span>
         </div>
         <div class="info-item">
           <span class="info-label">所属国家/组织</span>
@@ -81,6 +75,12 @@
           }}</span>
         </div>
         <div class="info-item">
+          <span class="info-label">首次轨道历元</span>
+          <span class="info-value">{{
+            metadata.firstEpoch ? formatDate(metadata.firstEpoch) : "--"
+          }}</span>
+        </div>
+        <div class="info-item">
           <span class="info-label">发射地点</span>
           <span class="info-value">{{
             metadata.launchSite ? getLaunchSiteName(metadata.launchSite) : "--"
@@ -89,6 +89,30 @@
         <div class="info-item">
           <span class="info-label">运载工具</span>
           <span class="info-value">{{ metadata.launchVehicle || "--" }}</span>
+        </div>
+        <div class="info-item" v-if="metadata.flightNo">
+          <span class="info-label">发射序号</span>
+          <span class="info-value">{{ metadata.flightNo }}</span>
+        </div>
+        <div class="info-item" v-if="metadata.cosparLaunchNo">
+          <span class="info-label">发射编号</span>
+          <span class="info-value">{{ metadata.cosparLaunchNo }}</span>
+        </div>
+        <div class="info-item" v-if="metadata.launchSiteName">
+          <span class="info-label">发射场</span>
+          <span class="info-value">{{ metadata.launchSiteName }}</span>
+        </div>
+        <div class="info-item" v-if="metadata.launchFailure !== undefined">
+          <span class="info-label">发射状态</span>
+          <span
+            :class="['info-value', 'status-badge', metadata.launchFailure ? 'decayed' : 'active']"
+          >
+            {{ metadata.launchFailure ? "发射失败" : "发射成功" }}
+          </span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">COSPAR编号</span>
+          <span class="info-value">{{ metadata.cosparId || "--" }}</span>
         </div>
         <div class="info-item">
           <span class="info-label">任务</span>
@@ -109,6 +133,16 @@
           >
         </div>
         <div class="info-item">
+          <span class="info-label">形状</span>
+          <span class="info-value">{{ metadata.shape || "--" }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">尺寸/跨度</span>
+          <span class="info-value">{{
+            metadata.dimensions || (metadata.span ? `${metadata.span} m` : "--")
+          }}</span>
+        </div>
+        <div class="info-item">
           <span class="info-label">平台</span>
           <span class="info-value">{{ metadata.platform || "--" }}</span>
         </div>
@@ -117,9 +151,9 @@
           <span class="info-value">{{ metadata.lifetime || "--" }}</span>
         </div>
         <div class="info-item">
-          <span class="info-label">衰减日期</span>
-          <span :class="['info-value', { decay: metadata.decayDate }]">{{
-            metadata.decayDate ? formatDate(metadata.decayDate) : "--"
+          <span class="info-label">预测衰减日期</span>
+          <span class="info-value">{{
+            metadata.predDecayDate ? formatDate(metadata.predDecayDate) : "--"
           }}</span>
         </div>
         <div class="info-item">
@@ -131,25 +165,11 @@
           >
           <span v-else class="info-value">--</span>
         </div>
-        <div class="info-item">
-          <span class="info-label">标准星等</span>
-          <span class="info-value">{{
-            metadata.stdMag !== undefined ? `${metadata.stdMag.toFixed(1)} mag` : "--"
-          }}</span>
-        </div>
-        <div class="info-item">
-          <span class="info-label">别名</span>
-          <span class="info-value alt-names">{{
-            metadata.altNames && metadata.altNames.length > 0
-              ? metadata.altNames.slice(0, 3).join(", ")
-              : "--"
-          }}</span>
-        </div>
       </div>
     </div>
 
     <!-- 轨道参数 -->
-    <div class="section">
+    <div class="section" v-if="satellite?.position">
       <div class="section-header">
         <CompassOutlined class="section-icon" />
         <span>轨道参数</span>
@@ -215,7 +235,7 @@
             <div class="feature-row">
               <span class="feature-label">轨道周期</span>
               <span class="feature-value">{{
-                metadata.period ? `${metadata.period.toFixed(1)} 分钟` : "--"
+                metadata.period != null ? `${metadata.period.toFixed(1)} 分钟` : "--"
               }}</span>
             </div>
           </div>
@@ -226,7 +246,7 @@
             <div class="feature-row">
               <span class="feature-label">轨道倾角</span>
               <span class="feature-value">{{
-                metadata.inclination !== undefined ? `${metadata.inclination.toFixed(2)}°` : "--"
+                metadata.inclination != null ? `${metadata.inclination.toFixed(2)}°` : "--"
               }}</span>
             </div>
           </div>
@@ -237,7 +257,7 @@
             <div class="feature-row">
               <span class="feature-label">偏心率</span>
               <span class="feature-value">{{
-                metadata.eccentricity !== undefined ? metadata.eccentricity.toFixed(6) : "--"
+                metadata.eccentricity != null ? metadata.eccentricity.toFixed(6) : "--"
               }}</span>
             </div>
           </div>
@@ -248,7 +268,7 @@
             <div class="feature-row">
               <span class="feature-label">升交点赤经</span>
               <span class="feature-value">{{
-                metadata.raan !== undefined ? `${metadata.raan.toFixed(2)}°` : "--"
+                metadata.raan != null ? `${metadata.raan.toFixed(2)}°` : "--"
               }}</span>
             </div>
           </div>
@@ -259,7 +279,7 @@
             <div class="feature-row">
               <span class="feature-label">近地点幅角</span>
               <span class="feature-value">{{
-                metadata.argOfPerigee !== undefined ? `${metadata.argOfPerigee.toFixed(2)}°` : "--"
+                metadata.argOfPerigee != null ? `${metadata.argOfPerigee.toFixed(2)}°` : "--"
               }}</span>
             </div>
           </div>
@@ -272,7 +292,10 @@
               <span
                 :class="[
                   'feature-value',
-                  { warning: metadata.tleAge > 7, old: metadata.tleAge > 14 },
+                  {
+                    warning: metadata.tleAge != null && metadata.tleAge > 7,
+                    old: metadata.tleAge != null && metadata.tleAge > 14,
+                  },
                 ]"
               >
                 {{ metadata.tleAge !== undefined ? `${metadata.tleAge} 天` : "--" }}
@@ -370,14 +393,26 @@ interface SatelliteMetadata {
   stdMag?: number;
   tleEpoch?: string;
   tleAge?: number;
-  // N2YO 扩展字段
+  // DISCOS 扩展字段
+  cosparId?: string; // COSPAR 编号
+  objectClass?: string; // ESA 对象分类
   mission?: string; // 任务描述
   operator?: string; // 运营商
   purpose?: string; // 用途
   contractor?: string; // 制造商
   launchMass?: number; // 发射质量 (kg)
+  shape?: string; // 形状
+  dimensions?: string; // 尺寸
+  span?: number; // 最大跨度 (米)
   lifetime?: string; // 设计寿命
   platform?: string; // 卫星平台
+  firstEpoch?: string; // 首次轨道历元
+  predDecayDate?: string; // 预测衰减日期
+  // 发射扩展信息
+  flightNo?: string; // 发射序号
+  cosparLaunchNo?: string; // COSPAR 发射编号
+  launchFailure?: boolean; // 发射是否失败
+  launchSiteName?: string; // 发射场名称
 }
 
 interface Props {
@@ -616,7 +651,8 @@ const RCS_CLASSES: Record<string, string> = {
 };
 
 // 格式化函数
-const formatNumber = (num: number, decimals: number): string => {
+const formatNumber = (num: number | undefined | null, decimals: number): string => {
+  if (num == null) return "--";
   return num.toFixed(decimals);
 };
 
@@ -662,14 +698,6 @@ const getObjectTypeLabel = (type: string): string => {
 
 const getObjectTypeClass = (type: string): string => {
   return OBJECT_TYPES[type]?.class || "";
-};
-
-const getStatusLabel = (status: string): string => {
-  return STATUS_LABELS[status]?.label || status;
-};
-
-const getStatusClass = (status: string): string => {
-  return STATUS_LABELS[status]?.class || "";
 };
 
 const getRcsClass = (rcs: string): string => {

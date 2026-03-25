@@ -48,6 +48,18 @@ export class SatelliteMetadataEntity {
   @Column({ type: 'varchar', length: 100, nullable: true })
   launchVehicle: string;
 
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  flightNo: string; // 发射序号
+
+  @Column({ type: 'varchar', length: 20, nullable: true })
+  cosparLaunchNo: string; // COSPAR 发射编号
+
+  @Column({ type: 'boolean', nullable: true })
+  launchFailure: boolean; // 发射是否失败
+
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  launchSiteName: string; // 发射场名称
+
   @Column({ type: 'date', nullable: true })
   decayDate: string;
 
@@ -125,6 +137,9 @@ export class SatelliteMetadataEntity {
 
   @Column({ type: 'varchar', length: 100, nullable: true })
   platform: string; // 卫星平台
+
+  @Column({ type: 'date', nullable: true })
+  predDecayDate: string; // 预测衰减日期
 
   // 数据来源标记
   @Column({ type: 'boolean', default: false })

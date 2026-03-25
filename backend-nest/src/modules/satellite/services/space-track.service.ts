@@ -8,23 +8,45 @@ import { SatelliteMetadataEntity } from '../entities/satellite-metadata.entity';
 import type { TLEData, SatelliteMetadata } from '../interfaces/satellite.interface';
 
 /**
- * 卫星分类配置 (CelesTrak)
+ * Space-Track API 配置
  */
-const SATELLITE_GROUPS: Record<string, string> = {
-  active: 'https://celestrak.org/NORAD/elements/gp.php?GROUP=active&FORMAT=tle',
-  starlink: 'https://celestrak.org/NORAD/elements/gp.php?GROUP=starlink&FORMAT=tle',
-  stations: 'https://celestrak.org/NORAD/elements/gp.php?GROUP=stations&FORMAT=tle',
-  gps: 'https://celestrak.org/NORAD/elements/gp.php?GROUP=gps-ops&FORMAT=tle',
-  beidou: 'https://celestrak.org/NORAD/elements/gp.php?GROUP=beidou&FORMAT=tle',
-  glonass: 'https://celestrak.org/NORAD/elements/gp.php?GROUP=glo-ops&FORMAT=tle',
-  galileo: 'https://celestrak.org/NORAD/elements/gp.php?GROUP=galileo&FORMAT=tle',
-  weather: 'https://celestrak.org/NORAD/elements/gp.php?GROUP=weather&FORMAT=tle',
-  science: 'https://celestrak.org/NORAD/elements/gp.php?GROUP=science&FORMAT=tle',
-};
+interface SpaceTrackConfig {
+  username: string;
+  password: string;
+  baseUrl: string;
+}
+
+/**
+ * Space-Track GP 数据响应结构
+ */
+interface SpaceTrackGpResponse {
+  OBJECT_NAME: string;
+  OBJECT_ID: string;
+  NORAD_CAT_ID: string;
+  EPOCH: string;
+  TLE_LINE0: string;
+  TLE_LINE1: string;
+  TLE_LINE2: string;
+  COUNTRY_CODE?: string;
+  LAUNCH_DATE?: string;
+  SITE?: string;
+  OBJECT_TYPE?: string;
+  RCS_SIZE?: string;
+  DECAY_DATE?: string | null;
+  INCLINATION?: string;
+  ECCENTRICITY?: string;
+  RA_OF_ASC_NODE?: string;
+  ARG_OF_PERICENTER?: string;
+  MEAN_MOTION?: string;
+  APOAPSIS?: string;
+  PERIAPSIS?: string;
+  SEMIMAJOR_AXIS?: string;
+  PERIOD?: string;
+}
 
 /**
  * 卫星数据服务
- * 从 CelesTrak 获取卫星 TLE 和元数据
+ * 从 Space-Track 获取卫星 TLE 和元数据
  * 数据存储在 PostgreSQL 数据库中
  */
 @Injectable()
@@ -32,7 +54,9 @@ export class SpaceTrackService implements OnModuleInit {
   private readonly logger = new Logger(SpaceTrackService.name);
   private cachedTLEs: TLEData[] = [];
   private maxSatellites: number;
-  private dataGroup: string;
+  private config: SpaceTrackConfig;
+  private sessionCookie: string = '';
+  private cookieExpiry: Date | null = null;
 
   constructor(
     private readonly configService: ConfigService,
@@ -41,11 +65,21 @@ export class SpaceTrackService implements OnModuleInit {
     @InjectRepository(SatelliteMetadataEntity)
     private readonly metadataRepository: Repository<SatelliteMetadataEntity>,
   ) {
-    this.maxSatellites = this.configService.get<number>('satellite.maxSatellites', 10000);
-    this.dataGroup = this.configService.get<string>('satellite.dataGroup', 'active');
+    this.maxSatellites = this.configService.get<number>('app.satellite.maxSatellites', 10000);
+    this.config = {
+      username: this.configService.get<string>('app.spaceTrack.username') || '',
+      password: this.configService.get<string>('app.spaceTrack.password') || '',
+      baseUrl: 'https://www.space-track.org',
+    };
   }
 
   async onModuleInit() {
+    // 检查配置
+    if (!this.config.username || !this.config.password) {
+      this.logger.error('Space-Track 凭据未配置，请检查环境变量 SPACE_TRACK_USERNAME 和 SPACE_TRACK_PASSWORD');
+      return;
+    }
+
     // 检查数据库是否有数据
     const tleCount = await this.tleRepository.count();
     const metadataCount = await this.metadataRepository.count();
@@ -55,7 +89,7 @@ export class SpaceTrackService implements OnModuleInit {
       await this.loadFromDatabase();
     } else {
       // 首次启动，从网络获取数据
-      this.logger.log('数据库为空，从 CelesTrak 获取数据...');
+      this.logger.log('数据库为空，从 Space-Track 获取数据...');
       await this.refreshAllData();
     }
   }
@@ -64,7 +98,6 @@ export class SpaceTrackService implements OnModuleInit {
    * 从数据库加载数据到内存
    */
   private async loadFromDatabase(): Promise<void> {
-    // 加载 TLE 数据
     const tleEntities = await this.tleRepository.find({
       order: { updatedAt: 'DESC' },
       take: this.maxSatellites,
@@ -92,14 +125,22 @@ export class SpaceTrackService implements OnModuleInit {
    */
   @Cron(CronExpression.EVERY_DAY_AT_3AM)
   async refreshAllData(): Promise<void> {
+    if (!this.config.username || !this.config.password) {
+      this.logger.warn('Space-Track 凭据未配置，跳过数据刷新');
+      return;
+    }
+
     this.logger.log('开始刷新卫星数据...');
 
     try {
-      // 并行刷新 TLE 和元数据
-      await Promise.all([this.refreshTLEData(), this.refreshMetadata()]);
+      // 登录获取 session
+      await this.login();
 
-      // 合并 TLE 轨道参数到元数据
-      await this.mergeTLEParamsToMetadata();
+      // 从 Space-Track 获取 GP 数据
+      const gpData = await this.fetchGpData();
+
+      // 处理并存储数据
+      await this.processAndStoreData(gpData);
 
       this.logger.log('卫星数据刷新完成');
     } catch (error) {
@@ -108,204 +149,251 @@ export class SpaceTrackService implements OnModuleInit {
   }
 
   /**
-   * 刷新 TLE 数据
+   * 登录 Space-Track 获取 session cookie
    */
-  private async refreshTLEData(): Promise<void> {
-    this.logger.log('正在刷新 TLE 数据...');
+  private async login(): Promise<void> {
+    const https = await import('https');
+    const url = `${this.config.baseUrl}/ajaxauth/login`;
 
-    const tleData = await this.fetchTLEFromCelesTrak();
+    this.logger.log('正在登录 Space-Track...');
 
-    // 清空现有数据
-    await this.tleRepository.clear();
+    return new Promise((resolve, reject) => {
+      const req = https.request(
+        url,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'User-Agent': 'Nova-Space/1.0',
+          },
+          timeout: 60000, // 60 秒超时
+        },
+        (res) => {
+          let body = '';
+          res.on('data', (chunk) => { body += chunk; });
+          res.on('end', () => {
+            // 检查响应状态码
+            if (res.statusCode !== 200) {
+              this.logger.error(`Space-Track 登录失败，状态码: ${res.statusCode}`);
+              reject(new Error(`登录失败，状态码: ${res.statusCode}`));
+              return;
+            }
+            // 从响应头获取 cookie
+            const cookies = res.headers['set-cookie'];
+            if (cookies) {
+              // 提取所有 cookie 值
+              this.sessionCookie = cookies.map((c) => c.split(';')[0]).join('; ');
+              // Cookie 有效期约 2 小时
+              this.cookieExpiry = new Date(Date.now() + 2 * 60 * 60 * 1000);
+              this.logger.log('Space-Track 登录成功');
+              resolve();
+            } else {
+              this.logger.error('Space-Track 登录失败：未获取到 session cookie');
+              reject(new Error('未获取到 session cookie'));
+            }
+          });
+        },
+      );
 
-    // 批量插入新数据
-    const entities = tleData.slice(0, this.maxSatellites).map((tle) => {
-      const entity = new SatelliteTle();
-      entity.noradId = tle.noradId;
-      entity.name = tle.name;
-      entity.line1 = tle.line1;
-      entity.line2 = tle.line2;
-      if (tle.epoch) entity.epoch = new Date(tle.epoch);
-      if (tle.inclination !== undefined) entity.inclination = tle.inclination;
-      if (tle.raan !== undefined) entity.raan = tle.raan;
-      if (tle.eccentricity !== undefined) entity.eccentricity = tle.eccentricity;
-      if (tle.argOfPerigee !== undefined) entity.argOfPerigee = tle.argOfPerigee;
-      if (tle.meanMotion !== undefined) entity.meanMotion = tle.meanMotion;
-      return entity;
+      req.on('error', (error) => {
+        this.logger.error(`Space-Track 登录失败: ${error.message}`);
+        reject(error);
+      });
+
+      req.on('timeout', () => {
+        this.logger.error('Space-Track 登录超时');
+        req.destroy();
+        reject(new Error('登录超时'));
+      });
+
+      req.write(`identity=${encodeURIComponent(this.config.username)}&password=${encodeURIComponent(this.config.password)}`);
+      req.end();
     });
+  }
 
-    await this.tleRepository.save(entities);
-    this.cachedTLEs = tleData.slice(0, this.maxSatellites);
+  /**
+   * 确保 session 有效
+   */
+  private async ensureSession(): Promise<void> {
+    if (!this.sessionCookie || !this.cookieExpiry || new Date() >= this.cookieExpiry) {
+      await this.login();
+    }
+  }
+
+  /**
+   * 从 Space-Track 获取 GP 数据
+   * URL: 获取活跃载荷的 TLE + 元数据
+   */
+  private async fetchGpData(): Promise<SpaceTrackGpResponse[]> {
+    await this.ensureSession();
+
+    const https = await import('https');
+    // 获取活跃载荷（排除碎片和火箭体），未衰减，TLE 历元在最近 10 天内
+    // 添加 limit 参数限制数量，开发环境可设置为较小值
+    const limit = process.env.SPACE_TRACK_LIMIT ? `/limit/${process.env.SPACE_TRACK_LIMIT}` : '';
+    const url = `${this.config.baseUrl}/basicspacedata/query/class/gp/OBJECT_TYPE/PAYLOAD/decay_date/null-val/epoch/%3Enow-10${limit}/format/json`;
+
+    this.logger.log(`正在从 Space-Track 获取数据: ${url}`);
+
+    return new Promise((resolve, reject) => {
+      const req = https.get(
+        url,
+        {
+          headers: {
+            Cookie: this.sessionCookie,
+            'User-Agent': 'Nova-Space/1.0',
+          },
+          timeout: 180000, // 180 秒超时（数据量大）
+        },
+        (res) => {
+          let data = '';
+          const startTime = Date.now();
+
+          this.logger.log(`Space-Track 响应状态码: ${res.statusCode}`);
+
+          res.on('data', (chunk) => {
+            data += chunk;
+          });
+
+          res.on('end', () => {
+            const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+            this.logger.log(`Space-Track 数据接收完成，耗时 ${elapsed}s，大小 ${data.length} bytes`);
+
+            try {
+              // 检查是否是有效响应
+              if (data.startsWith('<') || data.startsWith('Invalid')) {
+                this.logger.error(`Space-Track API 返回错误: ${data.substring(0, 100)}`);
+                reject(new Error(`Space-Track API 错误: ${data.substring(0, 50)}`));
+                return;
+              }
+
+              const items: SpaceTrackGpResponse[] = JSON.parse(data);
+              this.logger.log(`从 Space-Track 获取了 ${items.length} 条数据`);
+              resolve(items);
+            } catch (error) {
+              this.logger.error(`解析 Space-Track 数据失败: ${error.message}`);
+              reject(error);
+            }
+          });
+        },
+      );
+
+      req.on('error', (error) => {
+        this.logger.error(`Space-Track 网络请求失败: ${error.message}`);
+        reject(error);
+      });
+
+      req.on('timeout', () => {
+        this.logger.error('Space-Track 数据获取超时');
+        req.destroy();
+        reject(new Error('数据获取超时'));
+      });
+    });
+  }
+
+  /**
+   * 处理并存储数据
+   */
+  private async processAndStoreData(gpData: SpaceTrackGpResponse[]): Promise<void> {
+    const tleEntities: SatelliteTle[] = [];
+
+    for (const item of gpData.slice(0, this.maxSatellites)) {
+      // 创建 TLE 实体
+      const tleEntity = new SatelliteTle();
+      tleEntity.noradId = this.formatNoradId(item.NORAD_CAT_ID);
+      tleEntity.name = item.OBJECT_NAME;
+      tleEntity.line1 = item.TLE_LINE1;
+      tleEntity.line2 = item.TLE_LINE2;
+
+      if (item.EPOCH) {
+        tleEntity.epoch = new Date(item.EPOCH);
+      }
+
+      // 解析轨道参数
+      if (item.INCLINATION) tleEntity.inclination = parseFloat(item.INCLINATION);
+      if (item.RA_OF_ASC_NODE) tleEntity.raan = parseFloat(item.RA_OF_ASC_NODE);
+      if (item.ECCENTRICITY) tleEntity.eccentricity = parseFloat(item.ECCENTRICITY);
+      if (item.ARG_OF_PERICENTER) tleEntity.argOfPerigee = parseFloat(item.ARG_OF_PERICENTER);
+      if (item.MEAN_MOTION) tleEntity.meanMotion = parseFloat(item.MEAN_MOTION);
+
+      tleEntities.push(tleEntity);
+
+      // 更新或创建元数据
+      await this.upsertMetadata(item);
+    }
+
+    // 批量保存 TLE 数据
+    await this.tleRepository.clear();
+    await this.tleRepository.save(tleEntities);
+
+    // 更新内存缓存
+    this.cachedTLEs = tleEntities.map((entity) => ({
+      name: entity.name,
+      noradId: entity.noradId,
+      line1: entity.line1,
+      line2: entity.line2,
+      epoch: entity.epoch?.toISOString(),
+      inclination: entity.inclination,
+      raan: entity.raan,
+      eccentricity: entity.eccentricity,
+      argOfPerigee: entity.argOfPerigee,
+      meanMotion: entity.meanMotion,
+    }));
 
     this.logger.log(`已刷新 ${this.cachedTLEs.length} 条 TLE 数据`);
   }
 
   /**
-   * 刷新元数据
+   * 更新或创建元数据
    */
-  private async refreshMetadata(): Promise<void> {
-    this.logger.log('正在刷新元数据...');
+  private async upsertMetadata(item: SpaceTrackGpResponse): Promise<void> {
+    const noradId = this.formatNoradId(item.NORAD_CAT_ID);
 
-    const metadata = await this.fetchMetadataFromCelesTrak();
+    const existing = await this.metadataRepository.findOne({
+      where: { noradId },
+    });
 
-    // 批量 upsert（保留已有的 ESA DISCOS 扩展数据）
-    for (const item of metadata) {
-      if (!item.noradId) continue;
+    const metadataUpdate: Partial<SatelliteMetadataEntity> = {
+      name: item.OBJECT_NAME,
+      objectId: item.OBJECT_ID,
+      countryCode: item.COUNTRY_CODE,
+      launchDate: item.LAUNCH_DATE,
+      launchSite: item.SITE,
+      objectType: item.OBJECT_TYPE,
+      rcs: item.RCS_SIZE,
+      decayDate: item.DECAY_DATE || undefined,
+      // 从轨道参数计算周期
+      period: item.PERIOD ? parseFloat(item.PERIOD) : (item.MEAN_MOTION ? 1440 / parseFloat(item.MEAN_MOTION) : undefined),
+      inclination: item.INCLINATION ? parseFloat(item.INCLINATION) : undefined,
+      eccentricity: item.ECCENTRICITY ? parseFloat(item.ECCENTRICITY) : undefined,
+      raan: item.RA_OF_ASC_NODE ? parseFloat(item.RA_OF_ASC_NODE) : undefined,
+      argOfPerigee: item.ARG_OF_PERICENTER ? parseFloat(item.ARG_OF_PERICENTER) : undefined,
+      // 远地点和近地点 (km)
+      apogee: item.APOAPSIS ? parseFloat(item.APOAPSIS) : undefined,
+      perigee: item.PERIAPSIS ? parseFloat(item.PERIAPSIS) : undefined,
+    };
 
-      const existing = await this.metadataRepository.findOne({
-        where: { noradId: item.noradId },
-      });
-
-      if (existing) {
-        // 只更新基础字段，保留 ESA DISCOS 扩展数据
-        await this.metadataRepository.update(item.noradId!, {
-          name: item.name,
-          objectId: item.objectId,
-          altNames: item.altNames,
-          objectType: item.objectType,
-          status: item.status,
-          countryCode: item.countryCode,
-          launchDate: item.launchDate,
-          launchSite: item.launchSite,
-          decayDate: item.decayDate,
-          period: item.period,
-          inclination: item.inclination,
-          apogee: item.apogee,
-          perigee: item.perigee,
-          rcs: item.rcs,
-          stdMag: item.stdMag,
-        });
-      } else {
-        // 新增记录
-        const entity = new SatelliteMetadataEntity();
-        Object.assign(entity, item);
-        await this.metadataRepository.save(entity);
-      }
-    }
-
-    this.logger.log(`已刷新 ${metadata.length} 条元数据`);
-  }
-
-  /**
-   * 合并 TLE 轨道参数到元数据
-   */
-  private async mergeTLEParamsToMetadata(): Promise<void> {
-    const now = new Date();
-    let mergedCount = 0;
-
-    for (const tle of this.cachedTLEs) {
-      if (!tle.epoch) continue;
-
-      const epochDate = new Date(tle.epoch);
+    // TLE 历元和数据年龄
+    if (item.EPOCH) {
+      const epochDate = new Date(item.EPOCH);
+      metadataUpdate.tleEpoch = epochDate;
+      // 计算 TLE 数据年龄（天数）
+      const now = new Date();
       const ageMs = now.getTime() - epochDate.getTime();
-      const tleAge = Math.floor(ageMs / (1000 * 60 * 60 * 24));
-
-      await this.metadataRepository.update(tle.noradId, {
-        eccentricity: tle.eccentricity,
-        raan: tle.raan,
-        argOfPerigee: tle.argOfPerigee,
-        tleEpoch: epochDate,
-        tleAge,
-      });
-
-      mergedCount++;
+      metadataUpdate.tleAge = Math.floor(ageMs / (1000 * 60 * 60 * 24));
     }
 
-    this.logger.log(`合并了 ${mergedCount} 条 TLE 轨道参数到元数据`);
-  }
-
-  /**
-   * 从 CelesTrak 获取 TLE 数据
-   */
-  private async fetchTLEFromCelesTrak(): Promise<TLEData[]> {
-    const https = await import('https');
-    const url = SATELLITE_GROUPS[this.dataGroup] || SATELLITE_GROUPS.active;
-
-    return new Promise((resolve, reject) => {
-      https
-        .get(url, (res) => {
-          let data = '';
-
-          res.on('data', (chunk) => {
-            data += chunk;
-          });
-
-          res.on('end', () => {
-            try {
-              const tles = this.parseTLEData(data);
-              resolve(tles);
-            } catch (error) {
-              reject(error);
-            }
-          });
-        })
-        .on('error', reject);
-    });
-  }
-
-  /**
-   * 从 CelesTrak 获取元数据
-   * 使用 GP JSON 端点获取基本信息
-   */
-  private async fetchMetadataFromCelesTrak(): Promise<Partial<SatelliteMetadataEntity>[]> {
-    const https = await import('https');
-    // 使用 GP 端点的 JSON 格式
-    const url = 'https://celestrak.org/NORAD/elements/gp.php?GROUP=active&FORMAT=json';
-
-    return new Promise((resolve, reject) => {
-      https
-        .get(url, (res) => {
-          let data = '';
-
-          res.on('data', (chunk) => {
-            data += chunk;
-          });
-
-          res.on('end', () => {
-            try {
-              // 检查是否是有效响应
-              if (data.startsWith('<') || data.startsWith('Invalid')) {
-                this.logger.error(`CelesTrak API 返回错误: ${data.substring(0, 100)}`);
-                reject(new Error(`CelesTrak API 错误: ${data.substring(0, 50)}`));
-                return;
-              }
-
-              const items = JSON.parse(data);
-              const metadata: Partial<SatelliteMetadataEntity>[] = items.map((item: any) => {
-                // 从 OBJECT_ID 解析发射年份（格式: 1964-063C）
-                const objectId = item.OBJECT_ID || '';
-                const launchYear = objectId ? objectId.substring(0, 4) : '';
-
-                return {
-                  noradId: this.formatNoradId(item.NORAD_CAT_ID),
-                  name: item.OBJECT_NAME,
-                  objectId: objectId,
-                  // 轨道参数
-                  inclination: item.INCLINATION,
-                  eccentricity: item.ECCENTRICITY,
-                  raan: item.RA_OF_ASC_NODE,
-                  argOfPerigee: item.ARG_OF_PERICENTER,
-                  period: item.MEAN_MOTION ? 1440 / item.MEAN_MOTION : undefined, // 转换为分钟
-                  // 从 OBJECT_ID 推断发射年份
-                  launchDate: launchYear ? `${launchYear}-01-01` : undefined,
-                  // 标记未获取 ESA DISCOS 数据
-                  hasDiscosData: false,
-                };
-              });
-
-              this.logger.log(`从 CelesTrak GP 解析了 ${metadata.length} 条基础元数据`);
-              resolve(metadata);
-            } catch (error) {
-              this.logger.error(`解析 CelesTrak 数据失败: ${error.message}`);
-              reject(error);
-            }
-          });
-        })
-        .on('error', (error) => {
-          this.logger.error(`CelesTrak 网络请求失败: ${error.message}`);
-          reject(error);
-        });
-    });
+    if (existing) {
+      // 保留 ESA DISCOS 扩展字段，只更新基础字段
+      await this.metadataRepository.update(noradId, metadataUpdate);
+    } else {
+      // 新建记录
+      const entity = new SatelliteMetadataEntity();
+      entity.noradId = noradId;
+      Object.assign(entity, metadataUpdate);
+      entity.hasDiscosData = false;
+      await this.metadataRepository.save(entity);
+    }
   }
 
   /**
@@ -353,6 +441,13 @@ export class SpaceTrackService implements OnModuleInit {
    * 实体转接口
    */
   private entityToMetadata(entity: SatelliteMetadataEntity): SatelliteMetadata {
+    // 动态计算 TLE 数据年龄
+    let tleAge: number | undefined;
+    if (entity.tleEpoch) {
+      const ageMs = Date.now() - entity.tleEpoch.getTime();
+      tleAge = Math.floor(ageMs / (1000 * 60 * 60 * 24));
+    }
+
     return {
       noradId: entity.noradId,
       name: entity.name,
@@ -375,7 +470,7 @@ export class SpaceTrackService implements OnModuleInit {
       rcs: entity.rcs,
       stdMag: entity.stdMag,
       tleEpoch: entity.tleEpoch?.toISOString(),
-      tleAge: entity.tleAge,
+      tleAge,
       // ESA DISCOS 扩展字段
       cosparId: entity.cosparId,
       objectClass: entity.objectClass,
@@ -390,6 +485,12 @@ export class SpaceTrackService implements OnModuleInit {
       contractor: entity.contractor,
       lifetime: entity.lifetime,
       platform: entity.platform,
+      predDecayDate: entity.predDecayDate,
+      // 发射扩展信息
+      flightNo: entity.flightNo,
+      cosparLaunchNo: entity.cosparLaunchNo,
+      launchFailure: entity.launchFailure,
+      launchSiteName: entity.launchSiteName,
     };
   }
 
@@ -401,108 +502,5 @@ export class SpaceTrackService implements OnModuleInit {
     data: Partial<SatelliteMetadataEntity>,
   ): Promise<void> {
     await this.metadataRepository.update(noradId, data);
-  }
-
-  /**
-   * 解析 TLE 数据
-   */
-  private parseTLEData(tleData: string): TLEData[] {
-    const lines = tleData.split('\n').filter((line) => line.trim() !== '');
-    const tles: TLEData[] = [];
-
-    for (let i = 0; i < lines.length; i += 3) {
-      if (i + 2 < lines.length) {
-        const name = lines[i].trim();
-        const line1 = lines[i + 1].trim();
-        const line2 = lines[i + 2].trim();
-
-        const noradIdMatch = line1.match(/^1 (\d{5})/);
-        const noradId = noradIdMatch ? this.formatNoradId(noradIdMatch[1]) : null;
-
-        if (noradId) {
-          const orbitalParams = this.parseOrbitalParams(line1, line2);
-
-          tles.push({
-            name,
-            noradId,
-            line1,
-            line2,
-            ...orbitalParams,
-          });
-        }
-      }
-    }
-
-    return tles;
-  }
-
-  /**
-   * 从 TLE 行解析轨道参数
-   */
-  private parseOrbitalParams(line1: string, line2: string): Partial<TLEData> {
-    const params: Partial<TLEData> = {};
-
-    try {
-      const epochStr = line1.substring(18, 32).trim();
-      if (epochStr) {
-        params.epoch = this.parseTLEEpoch(epochStr);
-      }
-
-      const inclination = parseFloat(line2.substring(8, 16).trim());
-      if (!isNaN(inclination)) {
-        params.inclination = inclination;
-      }
-
-      const raan = parseFloat(line2.substring(17, 25).trim());
-      if (!isNaN(raan)) {
-        params.raan = raan;
-      }
-
-      const eccentricityStr = line2.substring(26, 33).trim();
-      if (eccentricityStr) {
-        params.eccentricity = parseFloat('0.' + eccentricityStr);
-      }
-
-      const argOfPerigee = parseFloat(line2.substring(34, 42).trim());
-      if (!isNaN(argOfPerigee)) {
-        params.argOfPerigee = argOfPerigee;
-      }
-
-      const meanMotion = parseFloat(line2.substring(52, 63).trim());
-      if (!isNaN(meanMotion)) {
-        params.meanMotion = meanMotion;
-      }
-    } catch (error) {
-      this.logger.warn(`解析轨道参数失败: ${error.message}`);
-    }
-
-    return params;
-  }
-
-  /**
-   * 解析 TLE 历元时间
-   */
-  private parseTLEEpoch(epochStr: string): string {
-    try {
-      const year = parseInt(epochStr.substring(0, 2));
-      const dayOfYear = parseFloat(epochStr.substring(2));
-
-      const fullYear = year >= 57 ? 1900 + year : 2000 + year;
-
-      const date = new Date(fullYear, 0, 1);
-      date.setDate(date.getDate() + Math.floor(dayOfYear) - 1);
-
-      const fractionalDay = dayOfYear - Math.floor(dayOfYear);
-      const hours = fractionalDay * 24;
-      date.setHours(
-        Math.floor(hours),
-        Math.floor((hours % 1) * 60),
-        Math.floor(((hours * 60) % 1) * 60),
-      );
-
-      return date.toISOString();
-    } catch {
-      return epochStr;
-    }
   }
 }

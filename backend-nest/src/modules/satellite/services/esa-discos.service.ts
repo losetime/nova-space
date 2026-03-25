@@ -25,6 +25,39 @@ interface DiscosResponse {
       span?: number;
       mission?: string;
       firstEpoch?: string;
+      predDecayDate?: string;
+    };
+    relationships?: {
+      operators?: {
+        data?: Array<{ type: string; id: string }>;
+      };
+      launch?: {
+        data?: { type: string; id: string } | null;
+      };
+      tags?: {
+        data?: Array<{ type: string; id: string }>;
+      };
+      constellations?: {
+        data?: Array<{ type: string; id: string }>;
+      };
+    };
+  }>;
+  included?: Array<{
+    type: string;
+    id: string;
+    attributes: {
+      name?: string;
+      flightNo?: string;
+      cosparLaunchNo?: string;
+      failure?: boolean;
+    };
+    relationships?: {
+      vehicle?: {
+        data?: { type: string; id: string };
+      };
+      site?: {
+        data?: { type: string; id: string };
+      };
     };
   }>;
 }
@@ -43,6 +76,13 @@ interface DiscosSatelliteInfo {
   span?: number;
   mission?: string;
   firstEpoch?: string;
+  operator?: string;
+  predDecayDate?: string;
+  launchVehicle?: string;
+  flightNo?: string;
+  cosparLaunchNo?: string;
+  launchFailure?: boolean;
+  launchSiteName?: string;
 }
 
 /**
@@ -92,7 +132,6 @@ export class EsaDiscosService {
 
     // 未配置 API，返回基础数据
     if (!this.isConfigured()) {
-      this.logger.debug(`ESA DISCOS API 未配置，返回基础元数据: ${noradId}`);
       return this.entityToMetadata(entity);
     }
 
@@ -110,7 +149,7 @@ export class EsaDiscosService {
         });
 
         if (updated) {
-          this.logger.log(`已从 ESA DISCOS 获取并存储扩展数据: ${noradId}`);
+          this.logger.log(`已从 ESA DISCOS 获取扩展数据: ${noradId}`);
           return this.entityToMetadata(updated);
         }
       }
@@ -131,7 +170,10 @@ export class EsaDiscosService {
     }
 
     try {
-      const url = `${this.baseUrl}/objects?filter=satno=${noradId}`;
+      // 移除前导零，ESA DISCOS 使用纯数字
+      const numericId = parseInt(noradId, 10);
+      // 一次性获取运营商、发射信息、运载工具、发射场
+      const url = `${this.baseUrl}/objects?filter=satno=${numericId}&include=operators,launch,launch.vehicle,launch.site`;
       this.logger.debug(`请求 ESA DISCOS API: ${url}`);
 
       const response = await fetch(url, {
@@ -153,7 +195,59 @@ export class EsaDiscosService {
         return null;
       }
 
-      const attrs = json.data[0].attributes;
+      const item = json.data[0];
+      const attrs = item.attributes;
+      const included = json.included || [];
+
+      // 解析运营商信息
+      let operator: string | undefined;
+      if (item.relationships?.operators?.data?.length) {
+        const operatorId = item.relationships.operators.data[0]?.id;
+        if (operatorId) {
+          const operatorData = included.find(
+            (inc) => inc.type === 'organisation' && inc.id === operatorId,
+          );
+          operator = operatorData?.attributes?.name;
+        }
+      }
+
+      // 解析发射信息
+      let launchVehicle: string | undefined;
+      let flightNo: string | undefined;
+      let cosparLaunchNo: string | undefined;
+      let launchFailure: boolean | undefined;
+      let launchSiteName: string | undefined;
+
+      if (item.relationships?.launch?.data && item.relationships.launch.data) {
+        const launchId = item.relationships.launch.data.id;
+        const launchData = included.find(
+          (inc) => inc.type === 'launch' && inc.id === launchId,
+        );
+
+        if (launchData) {
+          flightNo = launchData.attributes?.flightNo;
+          cosparLaunchNo = launchData.attributes?.cosparLaunchNo;
+          launchFailure = launchData.attributes?.failure;
+
+          // 获取运载工具
+          if (launchData.relationships?.vehicle?.data) {
+            const vehicleId = launchData.relationships.vehicle.data.id;
+            const vehicleData = included.find(
+              (inc) => inc.type === 'vehicle' && inc.id === vehicleId,
+            );
+            launchVehicle = vehicleData?.attributes?.name;
+          }
+
+          // 获取发射场
+          if (launchData.relationships?.site?.data) {
+            const siteId = launchData.relationships.site.data.id;
+            const siteData = included.find(
+              (inc) => inc.type === 'launchSite' && inc.id === siteId,
+            );
+            launchSiteName = siteData?.attributes?.name;
+          }
+        }
+      }
 
       return {
         cosparId: attrs.cosparId,
@@ -166,6 +260,13 @@ export class EsaDiscosService {
         span: attrs.span,
         mission: attrs.mission,
         firstEpoch: attrs.firstEpoch,
+        operator,
+        predDecayDate: attrs.predDecayDate,
+        launchVehicle,
+        flightNo,
+        cosparLaunchNo,
+        launchFailure,
+        launchSiteName,
       };
     } catch (error) {
       this.logger.error(`ESA DISCOS API 请求失败 (${noradId}): ${error.message}`);
@@ -190,8 +291,27 @@ export class EsaDiscosService {
       span: info.span,
       mission: info.mission,
       firstEpoch: info.firstEpoch,
+      operator: info.operator,
+      predDecayDate: info.predDecayDate,
       hasDiscosData: true,
     };
+
+    // 如果 ESA DISCOS 有发射信息，更新这些字段（仅当原值为空时）
+    if (info.launchVehicle) {
+      updateData.launchVehicle = info.launchVehicle;
+    }
+    if (info.flightNo) {
+      updateData.flightNo = info.flightNo;
+    }
+    if (info.cosparLaunchNo) {
+      updateData.cosparLaunchNo = info.cosparLaunchNo;
+    }
+    if (info.launchFailure !== undefined) {
+      updateData.launchFailure = info.launchFailure;
+    }
+    if (info.launchSiteName) {
+      updateData.launchSiteName = info.launchSiteName;
+    }
 
     await this.metadataRepository.update(noradId, updateData);
   }
@@ -214,6 +334,13 @@ export class EsaDiscosService {
    * 实体转接口
    */
   private entityToMetadata(entity: SatelliteMetadataEntity): SatelliteMetadata {
+    // 动态计算 TLE 数据年龄
+    let tleAge: number | undefined;
+    if (entity.tleEpoch) {
+      const ageMs = Date.now() - entity.tleEpoch.getTime();
+      tleAge = Math.floor(ageMs / (1000 * 60 * 60 * 24));
+    }
+
     return {
       noradId: entity.noradId,
       name: entity.name,
@@ -236,7 +363,7 @@ export class EsaDiscosService {
       rcs: entity.rcs,
       stdMag: entity.stdMag,
       tleEpoch: entity.tleEpoch?.toISOString(),
-      tleAge: entity.tleAge,
+      tleAge,
       // ESA DISCOS 扩展字段
       cosparId: entity.cosparId,
       objectClass: entity.objectClass,
@@ -251,6 +378,12 @@ export class EsaDiscosService {
       contractor: entity.contractor,
       lifetime: entity.lifetime,
       platform: entity.platform,
+      predDecayDate: entity.predDecayDate,
+      // 发射扩展信息
+      flightNo: entity.flightNo,
+      cosparLaunchNo: entity.cosparLaunchNo,
+      launchFailure: entity.launchFailure,
+      launchSiteName: entity.launchSiteName,
     };
   }
 }

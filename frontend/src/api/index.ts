@@ -345,8 +345,68 @@ export interface PassPrediction {
   totalPasses: number
 }
 
+// 卫星详情数据
+export interface SatelliteDetail {
+  noradId: string
+  name: string
+  position: {
+    noradId: string
+    name: string
+    lat: number
+    lng: number
+    alt: number
+    velocity?: number
+  } | null
+  metadata: {
+    noradId: string
+    name?: string
+    objectId?: string
+    altNames?: string[]
+    objectType?: string
+    status?: string
+    countryCode?: string
+    launchDate?: string
+    launchSite?: string
+    launchVehicle?: string
+    decayDate?: string
+    period?: number
+    inclination?: number
+    apogee?: number
+    perigee?: number
+    eccentricity?: number
+    raan?: number
+    argOfPerigee?: number
+    rcs?: string
+    stdMag?: number
+    tleEpoch?: string
+    tleAge?: number
+    // ESA DISCOS 扩展字段
+    cosparId?: string
+    objectClass?: string
+    launchMass?: number
+    dimensions?: string
+    span?: number
+    shape?: string
+    mission?: string
+    operator?: string
+    firstEpoch?: string
+    predDecayDate?: string
+    hasDiscosData?: boolean
+    // 发射扩展信息
+    flightNo?: string
+    cosparLaunchNo?: string
+    launchFailure?: boolean
+    launchSiteName?: string
+  } | null
+  orbit: SatelliteOrbit
+}
+
 // 卫星 API
 export const satelliteApi = {
+  // 获取卫星详细信息（推荐）
+  getDetail: (noradId: string | number) =>
+    api.get<ApiResponse<SatelliteDetail>>(`/satellites/${noradId}/detail`),
+
   // 获取卫星轨道数据
   getOrbit: (noradId: string | number, params?: {
     steps?: number

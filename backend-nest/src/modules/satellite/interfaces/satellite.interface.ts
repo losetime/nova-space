@@ -58,6 +58,13 @@ export interface SatelliteMetadata {
   dimensions?: string;     // 尺寸显示 "72.8m × 20.0m × 108.5m"
   span?: number;           // 最大跨度 (米)
   firstEpoch?: string;     // 首次轨道历元
+  predDecayDate?: string;  // 预测衰减日期
+
+  // 发射扩展信息 (ESA DISCOS)
+  flightNo?: string;           // 发射序号
+  cosparLaunchNo?: string;     // COSPAR 发射编号
+  launchFailure?: boolean;     // 发射是否失败
+  launchSiteName?: string;     // 发射场名称
 }
 
 /**

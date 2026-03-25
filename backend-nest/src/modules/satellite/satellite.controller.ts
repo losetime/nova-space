@@ -23,6 +23,29 @@ export class SatelliteController {
   ) {}
 
   /**
+   * 手动刷新卫星数据
+   * POST /api/satellites/refresh
+   */
+  @Post('refresh')
+  async refreshData() {
+    this.logger.log('手动触发卫星数据刷新');
+    try {
+      await this.spaceTrackService.refreshAllData();
+      return {
+        code: 0,
+        data: null,
+        message: '卫星数据刷新成功',
+      };
+    } catch (error) {
+      return {
+        code: -1,
+        data: null,
+        message: `刷新失败: ${error.message}`,
+      };
+    }
+  }
+
+  /**
    * 获取所有卫星的当前位置
    * GET /api/satellites
    */
@@ -231,6 +254,60 @@ export class SatelliteController {
   }
 
   // ==================== 以下为参数路由 ====================
+
+  /**
+   * 获取卫星详细信息（推荐使用）
+   * GET /api/satellites/:noradId/detail
+   * 一次性返回位置、元数据（含 ESA DISCOS 扩展）、轨道预测
+   */
+  @Get(':noradId/detail')
+  async getSatelliteDetail(@Param('noradId') noradId: string) {
+    this.logger.log(`获取卫星 ${noradId} 的详细信息`);
+
+    // 1. 获取卫星基本信息
+    const sat = this.orbitCalculator.getSatelliteInfo(noradId);
+    if (!sat) {
+      return {
+        code: -1,
+        data: null,
+        message: '卫星不存在',
+      };
+    }
+
+    // 2. 获取当前位置
+    const positions = this.orbitCalculator.calculateAllSatellitesPosition();
+    const position = positions.find((p) => p.noradId === noradId);
+
+    // 3. 获取完整元数据（触发 ESA DISCOS 懒加载）
+    const metadata = await this.esaDiscosService.enrichSatelliteMetadata(noradId);
+
+    // 4. 计算轨道预测（默认一个轨道周期）
+    const orbit = this.orbitCalculator.calculateSatelliteOrbit(
+      noradId,
+      100,  // 轨道点数
+      new Date(),
+      150,  // 约 2.5 小时
+    );
+
+    return {
+      code: 0,
+      data: {
+        noradId,
+        name: sat.name,
+        position: position || null,
+        metadata,
+        orbit: {
+          noradId,
+          name: sat.name,
+          startTime: new Date().toISOString(),
+          duration: 150,
+          steps: 100,
+          orbitPoints: orbit,
+        },
+      },
+      message: 'success',
+    };
+  }
 
   /**
    * 获取卫星元数据（含 ESA DISCOS 扩展信息）
