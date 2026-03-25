@@ -287,7 +287,7 @@
           <SatelliteDetail
             v-if="activeRightPanel === 'detail'"
             :satellite="selectedSatellite"
-            :metadata="selectedSatelliteMetadata"
+            :metadata="selectedMetadata"
             @favorite-change="handleFavoriteChange"
           />
 
@@ -539,13 +539,7 @@ const filteredSatellites = computed(() => {
 })
 
 // 卫星选择逻辑
-const { selectedSatellite, handleSelectSatellite: baseHandleSelectSatellite } = useSatellite(cesium, websocket)
-
-// 当前选中卫星的元数据
-const selectedSatelliteMetadata = computed(() => {
-  if (!selectedSatellite.value) return null
-  return satelliteMetadata.value.get(selectedSatellite.value.noradId) || null
-})
+const { selectedSatellite, selectedMetadata, handleSelectSatellite: baseHandleSelectSatellite } = useSatellite(cesium, websocket)
 
 // 子组件引用
 const orbitPredictionRef = ref<InstanceType<typeof OrbitPrediction> | null>(null)

@@ -28,6 +28,11 @@ export default registerAs('app', () => ({
     broadcastInterval: parseInt(process.env.SATELLITE_BROADCAST_INTERVAL || '5000', 10) || 5000,
     dataGroup: process.env.SATELLITE_DATA_GROUP || 'active', // active, starlink, gps, beidou, etc.
   },
+  spaceTrack: {
+    username: process.env.SPACE_TRACK_USERNAME || '',
+    password: process.env.SPACE_TRACK_PASSWORD || '',
+    baseUrl: 'https://www.space-track.org',
+  },
   esaDiscos: {
     apiToken: process.env.ESA_DISCOS_API_TOKEN || '',
     baseUrl: 'https://discosweb.esoc.esa.int/api',

@@ -1,17 +1,19 @@
 import { ref } from 'vue'
 import type { Satellite } from './useWebSocket'
-import { satelliteApi } from '@/api'
+import { satelliteApi, type SatelliteDetail } from '@/api'
 
 export function useSatellite(
   cesium: any,
   websocket: any
 ) {
   const selectedSatellite = ref<Satellite | null>(null)
+  const selectedMetadata = ref<SatelliteDetail['metadata']>(null)
   const rightPanelVisible = ref(true)
   const orbitLoading = ref(false)
 
   const handleSelectSatellite = async (satellite: Satellite) => {
     selectedSatellite.value = satellite
+    selectedMetadata.value = null
 
     // 取消之前的选中，然后选中当前卫星
     if (cesium) {
@@ -23,21 +25,35 @@ export function useSatellite(
     // 显示右侧面板
     rightPanelVisible.value = true
 
-    // 请求轨道数据
-    await requestOrbitData(satellite.noradId)
+    // 请求详细数据（位置 + 元数据 + 轨道）
+    await fetchSatelliteDetail(satellite.noradId)
   }
 
-  // 请求卫星轨道数据
-  const requestOrbitData = async (noradId: string | number) => {
+  // 获取卫星详细数据
+  const fetchSatelliteDetail = async (noradId: string | number) => {
     orbitLoading.value = true
     try {
-      const response = await satelliteApi.getOrbit(noradId)
-      const { orbitPoints } = response.data.data
-      if (orbitPoints && orbitPoints.length > 0 && cesium) {
-        cesium.updateOrbit(noradId, orbitPoints)
+      const response = await satelliteApi.getDetail(noradId)
+      const { position, metadata, orbit } = response.data.data
+
+      // 更新元数据
+      selectedMetadata.value = metadata
+
+      // 更新卫星位置（使用最新计算的位置）
+      // 后端返回的 position 结构: { noradId, name, position: { lat, lng, alt }, timestamp }
+      if (position?.position && selectedSatellite.value) {
+        selectedSatellite.value = {
+          ...selectedSatellite.value,
+          position: position.position
+        }
+      }
+
+      // 绘制轨道
+      if (orbit?.orbitPoints && orbit.orbitPoints.length > 0 && cesium) {
+        cesium.updateOrbit(noradId, orbit.orbitPoints)
       }
     } catch (error) {
-      console.error('获取轨道数据失败:', error)
+      console.error('获取卫星详细数据失败:', error)
     } finally {
       orbitLoading.value = false
     }
@@ -49,6 +65,7 @@ export function useSatellite(
 
   return {
     selectedSatellite,
+    selectedMetadata,
     rightPanelVisible,
     orbitLoading,
     handleSelectSatellite,
