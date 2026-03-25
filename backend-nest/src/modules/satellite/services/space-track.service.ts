@@ -248,7 +248,8 @@ export class SpaceTrackService implements OnModuleInit {
    */
   private async fetchMetadataFromCelesTrak(): Promise<Partial<SatelliteMetadataEntity>[]> {
     const https = await import('https');
-    const url = 'https://celestrak.org/satcat/records.php?FORMAT=json';
+    // CelesTrak SATCAT API - 获取完整卫星目录 (JSON 格式)
+    const url = 'https://celestrak.org/satcat/csv.php';
 
     return new Promise((resolve, reject) => {
       https
@@ -261,34 +262,92 @@ export class SpaceTrackService implements OnModuleInit {
 
           res.on('end', () => {
             try {
-              const items = JSON.parse(data);
-              const metadata = items.map((item: any) => ({
-                noradId: this.formatNoradId(item.NORAD_CAT_ID),
-                name: item.OBJECT_NAME,
-                objectId: item.OBJECT_ID,
-                altNames: item.ALT_NAMES ? item.ALT_NAMES.split(',') : null,
-                objectType: item.OBJECT_TYPE,
-                status: item.STATUS,
-                countryCode: item.OWNER,
-                launchDate: item.LAUNCH_DATE,
-                launchSite: item.LAUNCH_SITE,
-                decayDate: item.DECAY_DATE || null,
-                period: item.PERIOD,
-                inclination: item.INCLINATION,
-                apogee: item.APOGEE,
-                perigee: item.PERIGEE,
-                rcs: item.RCS,
-                stdMag: item.STD_MAG ? parseFloat(item.STD_MAG) : null,
-                hasDiscosData: false,
-              }));
+              // 检查是否是有效响应
+              if (data.startsWith('<') || data.startsWith('Invalid')) {
+                this.logger.error(`CelesTrak API 返回错误: ${data.substring(0, 100)}`);
+                reject(new Error(`CelesTrak API 错误: ${data.substring(0, 50)}`));
+                return;
+              }
+
+              // 解析 CSV 格式
+              const lines = data.trim().split('\n');
+              if (lines.length < 2) {
+                reject(new Error('CelesTrak 返回数据为空'));
+                return;
+              }
+
+              // 第一行是表头
+              const headers = lines[0].split(',');
+              const metadata: Partial<SatelliteMetadataEntity>[] = [];
+
+              for (let i = 1; i < lines.length; i++) {
+                const values = this.parseCSVLine(lines[i]);
+                if (values.length < headers.length) continue;
+
+                const item: Record<string, string> = {};
+                headers.forEach((header, idx) => {
+                  item[header.trim()] = values[idx]?.trim() || '';
+                });
+
+                metadata.push({
+                  noradId: this.formatNoradId(item.NORAD_CAT_ID || item.norad_cat_id || ''),
+                  name: item.OBJECT_NAME || item.object_name || '',
+                  objectId: item.OBJECT_ID || item.object_id || '',
+                  altNames: item.ALT_NAMES ? item.ALT_NAMES.split(',') : undefined,
+                  objectType: item.OBJECT_TYPE || item.object_type || '',
+                  status: item.STATUS || item.status || '',
+                  countryCode: item.OWNER || item.owner || '',
+                  launchDate: item.LAUNCH_DATE || item.launch || '',
+                  launchSite: item.LAUNCH_SITE || item.site || '',
+                  decayDate: item.DECAY_DATE || item.decay || undefined,
+                  period: item.PERIOD ? parseFloat(item.PERIOD) : item.period ? parseFloat(item.period) : undefined,
+                  inclination: item.INCLINATION ? parseFloat(item.INCLINATION) : item.inclination ? parseFloat(item.inclination) : undefined,
+                  apogee: item.APOGEE ? parseFloat(item.APOGEE) : item.apogee ? parseFloat(item.apogee) : undefined,
+                  perigee: item.PERIGEE ? parseFloat(item.PERIGEE) : item.perigee ? parseFloat(item.perigee) : undefined,
+                  rcs: item.RCS || item.rcs_size || '',
+                  stdMag: item.STD_MAG ? parseFloat(item.STD_MAG) : undefined,
+                  hasDiscosData: false,
+                });
+              }
+
+              this.logger.log(`从 CelesTrak 解析了 ${metadata.length} 条元数据`);
               resolve(metadata);
             } catch (error) {
+              this.logger.error(`解析 CelesTrak 数据失败: ${error.message}`);
               reject(error);
             }
           });
         })
-        .on('error', reject);
+        .on('error', (error) => {
+          this.logger.error(`CelesTrak 网络请求失败: ${error.message}`);
+          reject(error);
+        });
     });
+  }
+
+  /**
+   * 解析 CSV 行（处理引号内的逗号）
+   */
+  private parseCSVLine(line: string): string[] {
+    const result: string[] = [];
+    let current = '';
+    let inQuotes = false;
+
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+
+      if (char === '"') {
+        inQuotes = !inQuotes;
+      } else if (char === ',' && !inQuotes) {
+        result.push(current);
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+
+    result.push(current);
+    return result;
   }
 
   /**
