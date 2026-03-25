@@ -50,6 +50,14 @@ export interface SatelliteMetadata {
   launchMass?: number;     // 发射质量 (kg)
   lifetime?: string;       // 设计寿命
   platform?: string;       // 卫星平台
+
+  // ESA DISCOS 扩展字段
+  cosparId?: string;       // COSPAR 编号 (ESA 格式)
+  objectClass?: string;    // 对象类型 (Payload/Debris - ESA 分类)
+  shape?: string;          // 形状代码
+  dimensions?: string;     // 尺寸显示 "72.8m × 20.0m × 108.5m"
+  span?: number;           // 最大跨度 (米)
+  firstEpoch?: string;     // 首次轨道历元
 }
 
 /**

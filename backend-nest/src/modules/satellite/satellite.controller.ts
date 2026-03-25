@@ -2,8 +2,9 @@ import { Controller, Get, Post, Delete, Param, Query, Logger, UseGuards, Req } f
 import { OrbitCalculatorService } from './services/orbit-calculator.service';
 import { SpaceTrackService } from './services/space-track.service';
 import { SatelliteFavoriteService } from './services/satellite-favorite.service';
+import { EsaDiscosService } from './services/esa-discos.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import type { OrbitPoint, OrbitPrediction, PositionPrediction, ObserverPosition } from './interfaces/satellite.interface';
+import type { OrbitPoint, ObserverPosition } from './interfaces/satellite.interface';
 
 /**
  * 卫星控制器
@@ -18,6 +19,7 @@ export class SatelliteController {
     private readonly orbitCalculator: OrbitCalculatorService,
     private readonly spaceTrackService: SpaceTrackService,
     private readonly favoriteService: SatelliteFavoriteService,
+    private readonly esaDiscosService: EsaDiscosService,
   ) {}
 
   /**
@@ -44,7 +46,7 @@ export class SatelliteController {
    * GET /api/satellites/search?name=xxx&limit=20
    */
   @Get('search')
-  searchSatellites(
+  async searchSatellites(
     @Query('name') name?: string,
     @Query('limit') limit?: string,
   ) {
@@ -62,14 +64,22 @@ export class SatelliteController {
 
     const limitedResults = results.slice(0, searchLimit);
 
+    // 批量获取元数据
+    const satellites = await Promise.all(
+      limitedResults.map(async (tle) => {
+        const metadata = await this.spaceTrackService.getSatelliteMetadata(tle.noradId);
+        return {
+          noradId: tle.noradId,
+          name: tle.name,
+          metadata,
+        };
+      })
+    );
+
     return {
       code: 0,
       data: {
-        satellites: limitedResults.map(tle => ({
-          noradId: tle.noradId,
-          name: tle.name,
-          metadata: this.spaceTrackService.getSatelliteMetadata(tle.noradId),
-        })),
+        satellites,
         total: results.length,
         limit: searchLimit,
       },
@@ -82,13 +92,14 @@ export class SatelliteController {
    * GET /api/satellites/stats
    */
   @Get('stats')
-  getStats() {
+  async getStats() {
+    const metadata = await this.spaceTrackService.getAllMetadata();
     return {
       code: 0,
       data: {
         total: this.orbitCalculator.getSatelliteCount(),
         lastUpdate: new Date().toISOString(),
-        metadataCount: this.spaceTrackService.getAllMetadata().size,
+        metadataCount: metadata.size,
       },
       message: 'success',
     };
@@ -99,18 +110,17 @@ export class SatelliteController {
    * GET /api/satellites/countries
    */
   @Get('countries')
-  getCountries() {
+  async getCountries() {
     this.logger.log('获取国家列表');
 
     // 获取 TLE 数据中的 NORAD ID 集合
     const tleData = this.spaceTrackService.getCachedTLEs();
     const tleNoradIds = new Set(tleData.map(tle => tle.noradId));
 
-    const metadata = this.spaceTrackService.getAllMetadata();
+    const metadata = await this.spaceTrackService.getAllMetadata();
     const countryCount = new Map<string, number>();
     let matchedCount = 0;
     let noCountryCount = 0;
-    const unmatchedSamples: string[] = [];
 
     metadata.forEach((meta, noradId) => {
       // 只统计存在于 TLE 数据中的卫星
@@ -122,8 +132,6 @@ export class SatelliteController {
         } else {
           noCountryCount++;
         }
-      } else if (unmatchedSamples.length < 5) {
-        unmatchedSamples.push(noradId);
       }
     });
 
@@ -132,8 +140,6 @@ export class SatelliteController {
     this.logger.log(`元数据: ${metadata.size} 条`);
     this.logger.log(`匹配成功: ${matchedCount} 条`);
     this.logger.log(`无国家代码: ${noCountryCount} 条`);
-    this.logger.log(`TLE NORAD ID 示例: ${tleData.slice(0, 3).map(t => t.noradId).join(', ')}`);
-    this.logger.log(`元数据 NORAD ID 示例: ${Array.from(metadata.keys()).slice(0, 5).join(', ')}`);
 
     // 转换为数组并排序
     const countries = Array.from(countryCount.entries())
@@ -153,8 +159,8 @@ export class SatelliteController {
    * GET /api/satellites/metadata/all
    */
   @Get('metadata/all')
-  getAllMetadata() {
-    const metadata = this.spaceTrackService.getAllMetadata();
+  async getAllMetadata() {
+    const metadata = await this.spaceTrackService.getAllMetadata();
     const result = Array.from(metadata.entries()).map(([noradId, meta]) => ({
       noradId,
       name: meta.name,
@@ -178,6 +184,13 @@ export class SatelliteController {
       stdMag: meta.stdMag,
       tleEpoch: meta.tleEpoch,
       tleAge: meta.tleAge,
+      // ESA DISCOS 扩展字段
+      launchMass: meta.launchMass,
+      dimensions: meta.dimensions,
+      span: meta.span,
+      shape: meta.shape,
+      mission: meta.mission,
+      hasDiscosData: !!(meta.launchMass || meta.dimensions || meta.span),
     }));
 
     return {
@@ -198,15 +211,17 @@ export class SatelliteController {
     const favorites = await this.favoriteService.getUserFavorites(userId);
 
     // 获取卫星元数据
-    const result = favorites.map((fav) => {
-      const metadata = this.spaceTrackService.getSatelliteMetadata(fav.targetId);
-      return {
-        noradId: fav.targetId,
-        name: metadata?.name || `卫星 ${fav.targetId}`,
-        followedAt: fav.createdAt,
-        metadata,
-      };
-    });
+    const result = await Promise.all(
+      favorites.map(async (fav) => {
+        const metadata = await this.spaceTrackService.getSatelliteMetadata(fav.targetId);
+        return {
+          noradId: fav.targetId,
+          name: metadata?.name || `卫星 ${fav.targetId}`,
+          followedAt: fav.createdAt,
+          metadata,
+        };
+      })
+    );
 
     return {
       code: 0,
@@ -218,15 +233,17 @@ export class SatelliteController {
   // ==================== 以下为参数路由 ====================
 
   /**
-   * 获取卫星元数据
+   * 获取卫星元数据（含 ESA DISCOS 扩展信息）
    * GET /api/satellites/:noradId/metadata
    */
   @Get(':noradId/metadata')
-  getSatelliteMetadata(@Param('noradId') noradId: string) {
+  async getSatelliteMetadata(@Param('noradId') noradId: string) {
     this.logger.log(`获取卫星 ${noradId} 的元数据`);
 
-    const metadata = this.spaceTrackService.getSatelliteMetadata(noradId);
-    if (!metadata) {
+    // 尝试从 ESA DISCOS 获取扩展信息
+    const enrichedMetadata = await this.esaDiscosService.enrichSatelliteMetadata(noradId);
+
+    if (!enrichedMetadata) {
       return {
         code: -1,
         data: null,
@@ -236,7 +253,7 @@ export class SatelliteController {
 
     return {
       code: 0,
-      data: metadata,
+      data: enrichedMetadata,
       message: 'success',
     };
   }
