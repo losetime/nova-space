@@ -245,11 +245,12 @@ export class SpaceTrackService implements OnModuleInit {
 
   /**
    * 从 CelesTrak 获取元数据
+   * 使用 GP JSON 端点获取基本信息
    */
   private async fetchMetadataFromCelesTrak(): Promise<Partial<SatelliteMetadataEntity>[]> {
     const https = await import('https');
-    // CelesTrak SATCAT API - 获取完整卫星目录 (JSON 格式)
-    const url = 'https://celestrak.org/satcat/csv.php';
+    // 使用 GP 端点的 JSON 格式
+    const url = 'https://celestrak.org/NORAD/elements/gp.php?GROUP=active&FORMAT=json';
 
     return new Promise((resolve, reject) => {
       https
@@ -269,48 +270,30 @@ export class SpaceTrackService implements OnModuleInit {
                 return;
               }
 
-              // 解析 CSV 格式
-              const lines = data.trim().split('\n');
-              if (lines.length < 2) {
-                reject(new Error('CelesTrak 返回数据为空'));
-                return;
-              }
+              const items = JSON.parse(data);
+              const metadata: Partial<SatelliteMetadataEntity>[] = items.map((item: any) => {
+                // 从 OBJECT_ID 解析发射年份（格式: 1964-063C）
+                const objectId = item.OBJECT_ID || '';
+                const launchYear = objectId ? objectId.substring(0, 4) : '';
 
-              // 第一行是表头
-              const headers = lines[0].split(',');
-              const metadata: Partial<SatelliteMetadataEntity>[] = [];
-
-              for (let i = 1; i < lines.length; i++) {
-                const values = this.parseCSVLine(lines[i]);
-                if (values.length < headers.length) continue;
-
-                const item: Record<string, string> = {};
-                headers.forEach((header, idx) => {
-                  item[header.trim()] = values[idx]?.trim() || '';
-                });
-
-                metadata.push({
-                  noradId: this.formatNoradId(item.NORAD_CAT_ID || item.norad_cat_id || ''),
-                  name: item.OBJECT_NAME || item.object_name || '',
-                  objectId: item.OBJECT_ID || item.object_id || '',
-                  altNames: item.ALT_NAMES ? item.ALT_NAMES.split(',') : undefined,
-                  objectType: item.OBJECT_TYPE || item.object_type || '',
-                  status: item.STATUS || item.status || '',
-                  countryCode: item.OWNER || item.owner || '',
-                  launchDate: item.LAUNCH_DATE || item.launch || '',
-                  launchSite: item.LAUNCH_SITE || item.site || '',
-                  decayDate: item.DECAY_DATE || item.decay || undefined,
-                  period: item.PERIOD ? parseFloat(item.PERIOD) : item.period ? parseFloat(item.period) : undefined,
-                  inclination: item.INCLINATION ? parseFloat(item.INCLINATION) : item.inclination ? parseFloat(item.inclination) : undefined,
-                  apogee: item.APOGEE ? parseFloat(item.APOGEE) : item.apogee ? parseFloat(item.apogee) : undefined,
-                  perigee: item.PERIGEE ? parseFloat(item.PERIGEE) : item.perigee ? parseFloat(item.perigee) : undefined,
-                  rcs: item.RCS || item.rcs_size || '',
-                  stdMag: item.STD_MAG ? parseFloat(item.STD_MAG) : undefined,
+                return {
+                  noradId: this.formatNoradId(item.NORAD_CAT_ID),
+                  name: item.OBJECT_NAME,
+                  objectId: objectId,
+                  // 轨道参数
+                  inclination: item.INCLINATION,
+                  eccentricity: item.ECCENTRICITY,
+                  raan: item.RA_OF_ASC_NODE,
+                  argOfPerigee: item.ARG_OF_PERICENTER,
+                  period: item.MEAN_MOTION ? 1440 / item.MEAN_MOTION : undefined, // 转换为分钟
+                  // 从 OBJECT_ID 推断发射年份
+                  launchDate: launchYear ? `${launchYear}-01-01` : undefined,
+                  // 标记未获取 ESA DISCOS 数据
                   hasDiscosData: false,
-                });
-              }
+                };
+              });
 
-              this.logger.log(`从 CelesTrak 解析了 ${metadata.length} 条元数据`);
+              this.logger.log(`从 CelesTrak GP 解析了 ${metadata.length} 条基础元数据`);
               resolve(metadata);
             } catch (error) {
               this.logger.error(`解析 CelesTrak 数据失败: ${error.message}`);
@@ -323,31 +306,6 @@ export class SpaceTrackService implements OnModuleInit {
           reject(error);
         });
     });
-  }
-
-  /**
-   * 解析 CSV 行（处理引号内的逗号）
-   */
-  private parseCSVLine(line: string): string[] {
-    const result: string[] = [];
-    let current = '';
-    let inQuotes = false;
-
-    for (let i = 0; i < line.length; i++) {
-      const char = line[i];
-
-      if (char === '"') {
-        inQuotes = !inQuotes;
-      } else if (char === ',' && !inQuotes) {
-        result.push(current);
-        current = '';
-      } else {
-        current += char;
-      }
-    }
-
-    result.push(current);
-    return result;
   }
 
   /**
