@@ -178,6 +178,36 @@ export class SatelliteController {
   }
 
   /**
+   * 获取用途列表（含卫星数量）
+   * GET /api/satellites/purposes
+   */
+  @Get('purposes')
+  async getPurposes() {
+    this.logger.log('获取用途列表');
+    const purposes = await this.spaceTrackService.getPurposeCounts();
+    return {
+      code: 0,
+      data: purposes,
+      message: 'success',
+    };
+  }
+
+  /**
+   * 获取运营商列表（含卫星数量）
+   * GET /api/satellites/operators
+   */
+  @Get('operators')
+  async getOperators() {
+    this.logger.log('获取运营商列表');
+    const operators = await this.spaceTrackService.getOperatorCounts();
+    return {
+      code: 0,
+      data: operators,
+      message: 'success',
+    };
+  }
+
+  /**
    * 获取所有卫星元数据
    * GET /api/satellites/metadata/all
    */
@@ -213,6 +243,7 @@ export class SatelliteController {
       span: meta.span,
       shape: meta.shape,
       mission: meta.mission,
+      operator: meta.operator,
       hasDiscosData: !!(meta.launchMass || meta.dimensions || meta.span),
     }));
 

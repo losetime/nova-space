@@ -87,8 +87,8 @@ interface DiscosSatelliteInfo {
 
 /**
  * ESA DISCOS 服务
- * 从 ESA DISCOS API 获取卫星扩展信息（质量、尺寸等）
- * 采用懒加载策略，数据存入数据库长期有效
+ * 提供 ESA DISCOS API 集成功能
+ * 注意：客户端只从数据库读取数据，数据同步由管理端负责
  */
 @Injectable()
 export class EsaDiscosService {
@@ -112,11 +112,11 @@ export class EsaDiscosService {
   }
 
   /**
-   * 获取卫星扩展信息
-   * 优先从数据库读取，无则从 API 获取并存储
+   * 获取卫星元数据
+   * 只从数据库读取，不触发外部 API 调用
+   * 数据同步由管理端负责
    */
   async enrichSatelliteMetadata(noradId: string): Promise<SatelliteMetadata | null> {
-    // 从数据库获取现有元数据
     const entity = await this.metadataRepository.findOne({
       where: { noradId },
     });
@@ -125,39 +125,6 @@ export class EsaDiscosService {
       return null;
     }
 
-    // 如果已有 ESA DISCOS 数据，直接返回
-    if (entity.hasDiscosData) {
-      return this.entityToMetadata(entity);
-    }
-
-    // 未配置 API，返回基础数据
-    if (!this.isConfigured()) {
-      return this.entityToMetadata(entity);
-    }
-
-    // 从 ESA DISCOS 获取扩展信息
-    try {
-      const discosInfo = await this.fetchFromApi(noradId);
-
-      if (discosInfo) {
-        // 更新数据库
-        await this.updateMetadataWithDiscos(noradId, discosInfo);
-
-        // 重新获取更新后的数据
-        const updated = await this.metadataRepository.findOne({
-          where: { noradId },
-        });
-
-        if (updated) {
-          this.logger.log(`已从 ESA DISCOS 获取扩展数据: ${noradId}`);
-          return this.entityToMetadata(updated);
-        }
-      }
-    } catch (error) {
-      this.logger.warn(`获取 ESA DISCOS 数据失败 (${noradId}): ${error.message}`);
-    }
-
-    // 失败时返回基础数据
     return this.entityToMetadata(entity);
   }
 
@@ -374,7 +341,6 @@ export class EsaDiscosService {
       mission: entity.mission,
       firstEpoch: entity.firstEpoch,
       operator: entity.operator,
-      purpose: entity.purpose,
       contractor: entity.contractor,
       lifetime: entity.lifetime,
       platform: entity.platform,

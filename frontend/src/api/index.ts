@@ -443,6 +443,14 @@ export const satelliteApi = {
   getCountries: () =>
     api.get<ApiResponse<{ code: string; count: number }[]>>('/satellites/countries'),
 
+  // 获取用途列表
+  getPurposes: () =>
+    api.get<ApiResponse<{ name: string; count: number }[]>>('/satellites/purposes'),
+
+  // 获取运营商列表
+  getOperators: () =>
+    api.get<ApiResponse<{ name: string; count: number }[]>>('/satellites/operators'),
+
   // 获取所有卫星元数据
   getAllMetadata: () =>
     api.get<ApiResponse<{
@@ -468,6 +476,8 @@ export const satelliteApi = {
       stdMag?: number
       tleEpoch?: string
       tleAge?: number
+      mission?: string
+      operator?: string
     }[]>>('/satellites/metadata/all'),
 
   // 关注/取消关注卫星

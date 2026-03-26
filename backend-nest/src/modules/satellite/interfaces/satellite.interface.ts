@@ -42,10 +42,9 @@ export interface SatelliteMetadata {
   tleEpoch?: string;       // TLE历元时间
   tleAge?: number;         // TLE数据年龄（天）
 
-  // N2YO 扩展字段
-  mission?: string;        // 任务描述
+  // ESA DISCOS 扩展字段
+  mission?: string;        // 用途/任务类型
   operator?: string;       // 运营商
-  purpose?: string;        // 用途
   contractor?: string;     // 制造商
   launchMass?: number;     // 发射质量 (kg)
   lifetime?: string;       // 设计寿命

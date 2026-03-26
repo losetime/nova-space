@@ -1,5 +1,6 @@
 import { ref, onUnmounted } from "vue";
 import * as Cesium from "cesium";
+import satelliteModelUrl from "@/assets/satellite.glb";
 
 interface Satellite {
   noradId: string;
@@ -11,75 +12,284 @@ interface Satellite {
   };
 }
 
-// 卫星渲染器 - PointPrimitive + Billboard 混合方案
+// 颜色分类类型
+export type ColorSchemeType = 'orbit' | 'purpose' | 'country' | 'objectType';
+
+// 图例项
+export interface LegendItem {
+  color: string;
+  label: string;
+}
+
+// 轨道类型颜色配置
+const ORBIT_COLORS: Record<string, { color: Cesium.Color; label: string }> = {
+  LEO: { color: Cesium.Color.fromCssColorString('#00ff88'), label: '低轨 LEO' },
+  MEO: { color: Cesium.Color.fromCssColorString('#00d4ff'), label: '中轨 MEO' },
+  GEO: { color: Cesium.Color.fromCssColorString('#b366e8'), label: '地球同步 GEO' },
+  HEO: { color: Cesium.Color.fromCssColorString('#ffaa00'), label: '大椭圆轨道' },
+};
+
+// 轨道类型判断（基于高度，单位：米）
+function getOrbitType(alt: number): string {
+  if (alt < 2000000) return 'LEO';      // < 2000 km
+  if (alt < 35000000) return 'MEO';     // 2000-35000 km
+  if (alt < 45000000) return 'GEO';     // 35000-45000 km
+  return 'HEO';
+}
+
+// 轨道类型图例
+const ORBIT_LEGEND: LegendItem[] = [
+  { color: '#00ff88', label: '低轨 LEO (<2000km)' },
+  { color: '#00d4ff', label: '中轨 MEO (2000-35000km)' },
+  { color: '#b366e8', label: '地球同步 GEO (>35000km)' },
+  { color: '#ffaa00', label: '大椭圆轨道' },
+];
+
+// 卫星渲染器 - PointPrimitive + Model 混合方案
 class SatelliteRenderer {
   private viewer: Cesium.Viewer;
   private pointCollection: Cesium.PointPrimitiveCollection | null = null;
-  private billboardCollection: Cesium.BillboardCollection | null = null;
   private labelCollection: Cesium.LabelCollection | null = null;
 
   private pointMap: Map<string, Cesium.PointPrimitive> = new Map();
   private selectedNoradId: string | null = null;
-  private selectedBillboard: Cesium.Billboard | null = null;
+  private selectedModel: Cesium.Entity | null = null;
   private selectedLabel: Cesium.Label | null = null;
-  private satellitePositions: Map<string, { name: string; position: Cesium.Cartesian3 }> = new Map();
+  private satellitePositions: Map<string, { name: string; position: Cesium.Cartesian3; alt: number }> =
+    new Map();
+  private clickHandler: Cesium.ScreenSpaceEventHandler | null = null;
+  private onSatelliteClick: ((noradId: string, name: string) => void) | null = null;
+
+  // 悬停相关
+  private hoverHandler: Cesium.ScreenSpaceEventHandler | null = null;
+  private hoveredNoradId: string | null = null;
+  private hoverLabel: Cesium.Label | null = null;
+
+  // 默认卫星样式
+  private readonly DEFAULT_PIXEL_SIZE = 3;
+  private readonly HOVER_PIXEL_SIZE = 8;
+  private readonly DEFAULT_COLOR = Cesium.Color.fromCssColorString("#00ff9d");
+  private readonly HOVER_COLOR = Cesium.Color.fromCssColorString("#00ffff");
+
+  // 颜色分类
+  private colorScheme: ColorSchemeType = 'orbit';
 
   constructor(viewer: Cesium.Viewer) {
     this.viewer = viewer;
     this.initialize();
   }
 
-  // 初始化 - 创建三个集合
+  // 初始化 - 创建两个集合
   initialize() {
     // 1. PointPrimitiveCollection - 所有卫星点
     this.pointCollection = new Cesium.PointPrimitiveCollection();
     this.viewer.scene.primitives.add(this.pointCollection);
 
-    // 2. BillboardCollection - 选中的卫星（贴图高亮）
-    this.billboardCollection = new Cesium.BillboardCollection();
-    this.viewer.scene.primitives.add(this.billboardCollection);
-
-    // 3. LabelCollection - 选中的卫星标签
+    // 2. LabelCollection - 选中的卫星标签
     this.labelCollection = new Cesium.LabelCollection();
     this.viewer.scene.primitives.add(this.labelCollection);
+
+    // 3. 设置点击事件处理
+    this.setupClickHandler();
+
+    // 4. 设置悬停事件处理
+    this.setupHoverHandler();
   }
 
-  // 动态生成卫星图标
-  private createSatelliteIcon(): string {
-    const canvas = document.createElement('canvas');
-    canvas.width = 32;
-    canvas.height = 32;
-    const ctx = canvas.getContext('2d')!;
+  // 设置点击事件处理
+  private setupClickHandler() {
+    if (this.clickHandler) {
+      this.clickHandler.destroy();
+    }
 
-    // 绘制外圈光晕
-    const gradient = ctx.createRadialGradient(16, 16, 0, 16, 16, 16);
-    gradient.addColorStop(0, 'rgba(0, 255, 157, 0.8)');
-    gradient.addColorStop(0.5, 'rgba(0, 255, 157, 0.3)');
-    gradient.addColorStop(1, 'rgba(0, 255, 157, 0)');
-    ctx.fillStyle = gradient;
-    ctx.beginPath();
-    ctx.arc(16, 16, 16, 0, Math.PI * 2);
-    ctx.fill();
+    this.clickHandler = new Cesium.ScreenSpaceEventHandler(this.viewer.scene.canvas);
 
-    // 绘制中心点
-    ctx.fillStyle = '#00ff9d';
-    ctx.beginPath();
-    ctx.arc(16, 16, 6, 0, Math.PI * 2);
-    ctx.fill();
+    // 处理点击事件
+    this.clickHandler.setInputAction((event: Cesium.ScreenSpaceEventHandler.PositionedEvent) => {
+      const clickedPosition = event.position;
+      const pickedObject = this.viewer.scene.pick(clickedPosition);
 
-    // 绘制白色高光
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-    ctx.beginPath();
-    ctx.arc(16, 16, 3, 0, Math.PI * 2);
-    ctx.fill();
+      // 检查是否点击了卫星点
+      if (pickedObject && pickedObject.primitive) {
+        // 遍历查找匹配的卫星
+        const clickedNoradId = this.findClickedSatellite(pickedObject.primitive);
+        if (clickedNoradId) {
+          const satInfo = this.satellitePositions.get(clickedNoradId);
+          if (satInfo && this.onSatelliteClick) {
+            this.onSatelliteClick(clickedNoradId, satInfo.name);
+          }
+          return;
+        }
+      }
 
-    return canvas.toDataURL();
+      // 如果没有直接点击到卫星点，尝试通过距离检测
+      const nearbySatellite = this.findNearbySatellite(clickedPosition);
+      if (nearbySatellite) {
+        const satInfo = this.satellitePositions.get(nearbySatellite);
+        if (satInfo && this.onSatelliteClick) {
+          this.onSatelliteClick(nearbySatellite, satInfo.name);
+        }
+      }
+    }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+  }
+
+  // 查找被点击的卫星
+  private findClickedSatellite(primitive: any): string | null {
+    for (const [noradId, point] of this.pointMap.entries()) {
+      if (point === primitive) {
+        return noradId;
+      }
+    }
+    return null;
+  }
+
+  // 通过屏幕坐标查找附近的卫星（像素距离检测）
+  private findNearbySatellite(screenPosition: Cesium.Cartesian2): string | null {
+    const maxDistance = 15; // 最大点击距离（像素）
+    let closestNoradId: string | null = null;
+    let closestDistance = maxDistance;
+
+    for (const [noradId, satInfo] of this.satellitePositions.entries()) {
+      // 将卫星世界坐标转换为屏幕坐标
+      const screenPos = Cesium.SceneTransforms.worldToWindowCoordinates(
+        this.viewer.scene,
+        satInfo.position
+      );
+
+      if (screenPos) {
+        const distance = Math.sqrt(
+          Math.pow(screenPos.x - screenPosition.x, 2) +
+          Math.pow(screenPos.y - screenPosition.y, 2)
+        );
+
+        if (distance < closestDistance) {
+          closestDistance = distance;
+          closestNoradId = noradId;
+        }
+      }
+    }
+
+    return closestNoradId;
+  }
+
+  // 设置卫星点击回调
+  setOnSatelliteClick(callback: (noradId: string, name: string) => void) {
+    this.onSatelliteClick = callback;
+  }
+
+  // 设置悬停事件处理
+  private setupHoverHandler() {
+    if (this.hoverHandler) {
+      this.hoverHandler.destroy();
+    }
+
+    this.hoverHandler = new Cesium.ScreenSpaceEventHandler(this.viewer.scene.canvas);
+
+    // 处理鼠标移动事件
+    this.hoverHandler.setInputAction((movement: Cesium.ScreenSpaceEventHandler.MotionEvent) => {
+      const mousePosition = movement.endPosition;
+      const nearbySatellite = this.findNearbySatelliteForHover(mousePosition);
+
+      if (nearbySatellite !== this.hoveredNoradId) {
+        // 取消之前的高亮
+        if (this.hoveredNoradId) {
+          this.unhighlightSatellite(this.hoveredNoradId);
+        }
+
+        // 高亮新的卫星
+        if (nearbySatellite) {
+          this.highlightSatellite(nearbySatellite);
+          this.hoveredNoradId = nearbySatellite;
+        } else {
+          this.hoveredNoradId = null;
+        }
+      }
+    }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+  }
+
+  // 高亮卫星（变大、改变颜色、发光效果）
+  private highlightSatellite(noradId: string) {
+    const point = this.pointMap.get(noradId);
+    if (point && noradId !== this.selectedNoradId) {
+      point.pixelSize = this.HOVER_PIXEL_SIZE;
+      point.color = this.HOVER_COLOR;
+      // 发光效果
+      point.outlineWidth = 4;
+      point.outlineColor = Cesium.Color.fromCssColorString("#00ffff").withAlpha(0.6);
+    }
+
+    // 显示悬停标签（卫星下方居中）
+    const satInfo = this.satellitePositions.get(noradId);
+    if (satInfo && this.labelCollection) {
+      this.hoverLabel = this.labelCollection.add({
+        position: satInfo.position,
+        text: satInfo.name,
+        font: "12px sans-serif",
+        fillColor: Cesium.Color.WHITE,
+        outlineColor: Cesium.Color.BLACK,
+        outlineWidth: 2,
+        style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+        verticalOrigin: Cesium.VerticalOrigin.TOP,  // 标签顶部对齐卫星
+        horizontalOrigin: Cesium.HorizontalOrigin.CENTER,  // 水平居中
+        pixelOffset: new Cesium.Cartesian2(0, 15),  // 向下偏移
+        showBackground: true,
+        backgroundColor: Cesium.Color.fromCssColorString("rgba(0, 0, 0, 0.7)"),
+      });
+    }
+  }
+
+  // 取消高亮卫星
+  private unhighlightSatellite(noradId: string) {
+    const point = this.pointMap.get(noradId);
+    if (point && noradId !== this.selectedNoradId) {
+      point.pixelSize = this.DEFAULT_PIXEL_SIZE;
+      point.color = this.DEFAULT_COLOR;
+      // 移除发光效果
+      point.outlineWidth = 0;
+    }
+
+    // 移除悬停标签
+    if (this.hoverLabel && this.labelCollection) {
+      this.labelCollection.remove(this.hoverLabel);
+      this.hoverLabel = null;
+    }
+  }
+
+  // 查找鼠标附近的卫星（用于悬停检测，范围更大）
+  private findNearbySatelliteForHover(screenPosition: Cesium.Cartesian2): string | null {
+    const maxDistance = 20; // 悬停检测范围（像素）
+    let closestNoradId: string | null = null;
+    let closestDistance = maxDistance;
+
+    for (const [noradId, satInfo] of this.satellitePositions.entries()) {
+      // 跳过已选中的卫星
+      if (noradId === this.selectedNoradId) continue;
+
+      const screenPos = Cesium.SceneTransforms.worldToWindowCoordinates(
+        this.viewer.scene,
+        satInfo.position
+      );
+
+      if (screenPos) {
+        const distance = Math.sqrt(
+          Math.pow(screenPos.x - screenPosition.x, 2) +
+          Math.pow(screenPos.y - screenPosition.y, 2)
+        );
+
+        if (distance < closestDistance) {
+          closestDistance = distance;
+          closestNoradId = noradId;
+        }
+      }
+    }
+
+    return closestNoradId;
   }
 
   // 批量更新卫星位置（分批处理，避免阻塞主线程）
   updateSatellites(satellites: Satellite[], batchSize: number = 500) {
     // 先标记所有现有卫星为"待删除"
-    const currentIds = new Set(satellites.map(s => s.noradId));
+    const currentIds = new Set(satellites.map((s) => s.noradId));
 
     // 删除不在新列表中的卫星
     const idsToRemove: string[] = [];
@@ -88,7 +298,7 @@ class SatelliteRenderer {
         idsToRemove.push(noradId);
       }
     });
-    idsToRemove.forEach(id => {
+    idsToRemove.forEach((id) => {
       const point = this.pointMap.get(id);
       if (point && this.pointCollection) {
         this.pointCollection.remove(point);
@@ -106,18 +316,27 @@ class SatelliteRenderer {
       for (let i = index; i < end; i++) {
         const sat = satellites[i];
         const position = Cesium.Cartesian3.fromDegrees(
-          sat.position.lng, sat.position.lat, sat.position.alt
+          sat.position.lng,
+          sat.position.lat,
+          sat.position.alt,
         );
+
+        // 获取颜色（基于分类方式）
+        const color = this.getSatelliteColor(sat);
 
         if (this.pointMap.has(sat.noradId)) {
           // 更新现有点的位置
           const point = this.pointMap.get(sat.noradId)!;
           point.position = position;
+          // 更新颜色
+          if (sat.noradId !== this.selectedNoradId && sat.noradId !== this.hoveredNoradId) {
+            point.color = color;
+          }
 
-          // 如果是选中的卫星，同步更新 Billboard 和 Label 位置
+          // 如果是选中的卫星，同步更新 Model 和 Label 位置
           if (sat.noradId === this.selectedNoradId) {
-            if (this.selectedBillboard) {
-              this.selectedBillboard.position = position;
+            if (this.selectedModel) {
+              this.selectedModel.position = new Cesium.ConstantPositionProperty(position);
             }
             if (this.selectedLabel) {
               this.selectedLabel.position = position;
@@ -127,14 +346,14 @@ class SatelliteRenderer {
           // 创建新点
           const point = this.pointCollection!.add({
             position,
-            pixelSize: 3,
-            color: Cesium.Color.fromCssColorString('#00ff9d'),
+            pixelSize: this.DEFAULT_PIXEL_SIZE,
+            color,
           });
           this.pointMap.set(sat.noradId, point);
         }
 
         // 存储卫星位置和名称（用于选中逻辑）
-        this.satellitePositions.set(sat.noradId, { name: sat.name, position });
+        this.satellitePositions.set(sat.noradId, { name: sat.name, position, alt: sat.position.alt });
       }
 
       index = end;
@@ -149,7 +368,44 @@ class SatelliteRenderer {
     requestAnimationFrame(processBatch);
   }
 
-  // 选中卫星 - 切换为 Billboard
+  // 获取卫星颜色（基于分类方式）
+  private getSatelliteColor(sat: Satellite): Cesium.Color {
+    if (this.colorScheme === 'orbit') {
+      const orbitType = getOrbitType(sat.position.alt);
+      return ORBIT_COLORS[orbitType]?.color || this.DEFAULT_COLOR;
+    }
+    // 其他分类方式可以在这里扩展
+    return this.DEFAULT_COLOR;
+  }
+
+  // 设置颜色分类方式
+  setColorScheme(scheme: ColorSchemeType) {
+    this.colorScheme = scheme;
+    // 更新所有卫星的颜色
+    this.refreshAllColors();
+  }
+
+  // 刷新所有卫星颜色
+  private refreshAllColors() {
+    this.satellitePositions.forEach((satInfo, noradId) => {
+      const point = this.pointMap.get(noradId);
+      if (point && noradId !== this.selectedNoradId && noradId !== this.hoveredNoradId) {
+        const color = this.getSatelliteColor({ noradId, name: satInfo.name, position: { lng: 0, lat: 0, alt: satInfo.alt } });
+        point.color = color;
+      }
+    });
+  }
+
+  // 获取当前分类的图例
+  getLegend(): LegendItem[] {
+    if (this.colorScheme === 'orbit') {
+      return ORBIT_LEGEND;
+    }
+    // 其他分类方式的图例
+    return [];
+  }
+
+  // 选中卫星 - 切换为 3D 模型
   selectSatellite(noradId: string, name: string) {
     const point = this.pointMap.get(noradId);
     if (!point) return;
@@ -157,33 +413,56 @@ class SatelliteRenderer {
     // 取消之前的选中
     this.deselectSatellite();
 
+    // 清除悬停效果（如果正在悬停的是当前卫星）
+    if (this.hoveredNoradId === noradId) {
+      this.hoveredNoradId = null;
+      // 移除悬停标签
+      if (this.hoverLabel && this.labelCollection) {
+        this.labelCollection.remove(this.hoverLabel);
+        this.hoverLabel = null;
+      }
+    }
+
+    // 清除点的样式（防止之前 hover 的发光效果残留）
+    point.pixelSize = this.DEFAULT_PIXEL_SIZE;
+    point.outlineWidth = 0;
     // 隐藏点（设为透明）
     point.color = Cesium.Color.TRANSPARENT;
 
-    // 创建高亮 Billboard
-    this.selectedBillboard = this.billboardCollection!.add({
+    // 创建 3D 模型 Entity
+    this.selectedModel = this.viewer.entities.add({
+      id: `selected_model_${noradId}`,
       position: point.position.clone(),
-      image: this.createSatelliteIcon(),
-      width: 32,
-      height: 32,
-      scaleByDistance: new Cesium.NearFarScalar(1e7, 1.0, 1e8, 0.5),
-      verticalOrigin: Cesium.VerticalOrigin.CENTER,
-      horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
+      orientation: Cesium.Transforms.headingPitchRollQuaternion(
+        point.position.clone(),
+        new Cesium.HeadingPitchRoll(
+          Cesium.Math.toRadians(120),
+          Cesium.Math.toRadians(-20),
+          Cesium.Math.toRadians(30),
+        ),
+      ),
+      model: {
+        uri: satelliteModelUrl,
+        minimumPixelSize: 64,
+        maximumScale: 50000,
+        scale: 500,
+      },
     });
 
-    // 创建标签
+    // 创建标签（模型下方居中）
     this.selectedLabel = this.labelCollection!.add({
       position: point.position.clone(),
       text: name,
-      font: '14px sans-serif',
+      font: "14px sans-serif",
       fillColor: Cesium.Color.WHITE,
       outlineColor: Cesium.Color.BLACK,
       outlineWidth: 2,
       style: Cesium.LabelStyle.FILL_AND_OUTLINE,
-      verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
-      pixelOffset: new Cesium.Cartesian2(0, -20),
+      verticalOrigin: Cesium.VerticalOrigin.TOP,
+      horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
+      pixelOffset: new Cesium.Cartesian2(0, 50),
       showBackground: true,
-      backgroundColor: Cesium.Color.fromCssColorString('rgba(0, 0, 0, 0.7)'),
+      backgroundColor: Cesium.Color.fromCssColorString("rgba(0, 0, 0, 0.7)"),
     });
 
     this.selectedNoradId = noradId;
@@ -192,17 +471,18 @@ class SatelliteRenderer {
   // 取消选中 - 恢复为点
   deselectSatellite() {
     if (this.selectedNoradId) {
-      // 恢复点的颜色
+      // 恢复点的样式
       const point = this.pointMap.get(this.selectedNoradId);
       if (point) {
-        point.color = Cesium.Color.fromCssColorString('#00ff9d');
+        point.pixelSize = this.DEFAULT_PIXEL_SIZE;
+        point.color = this.DEFAULT_COLOR;
       }
     }
 
-    // 移除 Billboard
-    if (this.selectedBillboard) {
-      this.billboardCollection!.remove(this.selectedBillboard);
-      this.selectedBillboard = null;
+    // 移除 3D 模型
+    if (this.selectedModel) {
+      this.viewer.entities.remove(this.selectedModel);
+      this.selectedModel = null;
     }
 
     // 移除标签
@@ -216,7 +496,7 @@ class SatelliteRenderer {
 
   // 设置点大小（根据相机高度）
   setPointSize(pixelSize: number) {
-    this.pointCollection?.forEach(point => {
+    this.pointCollection?.forEach((point) => {
       point.pixelSize = pixelSize;
     });
   }
@@ -242,9 +522,20 @@ class SatelliteRenderer {
 
   // 销毁
   destroy() {
+    if (this.clickHandler) {
+      this.clickHandler.destroy();
+      this.clickHandler = null;
+    }
+    if (this.hoverHandler) {
+      this.hoverHandler.destroy();
+      this.hoverHandler = null;
+    }
     this.pointCollection?.removeAll();
-    this.billboardCollection?.removeAll();
     this.labelCollection?.removeAll();
+    if (this.selectedModel) {
+      this.viewer.entities.remove(this.selectedModel);
+      this.selectedModel = null;
+    }
     this.pointMap.clear();
     this.satellitePositions.clear();
   }
@@ -319,7 +610,10 @@ export function useCesium() {
   };
 
   // 更新卫星轨道
-  const updateOrbit = (noradId: string, orbitPoints: Array<{ lng: number; lat: number; alt: number }>) => {
+  const updateOrbit = (
+    noradId: string,
+    orbitPoints: Array<{ lng: number; lat: number; alt: number }>,
+  ) => {
     if (!viewer.value) return;
 
     const orbitEntityId = `orbit_${noradId}`;
@@ -329,7 +623,7 @@ export function useCesium() {
     }
 
     const positions = orbitPoints.map((point) =>
-      Cesium.Cartesian3.fromDegrees(point.lng, point.lat, point.alt)
+      Cesium.Cartesian3.fromDegrees(point.lng, point.lat, point.alt),
     );
 
     viewer.value.entities.add({
@@ -539,6 +833,28 @@ export function useCesium() {
     // 这里保留空实现以保持兼容性
   };
 
+  // 设置卫星点击回调
+  const setOnSatelliteClick = (callback: (noradId: string, name: string) => void) => {
+    if (satelliteRenderer.value) {
+      satelliteRenderer.value.setOnSatelliteClick(callback);
+    }
+  };
+
+  // 设置颜色分类方式
+  const setColorScheme = (scheme: ColorSchemeType) => {
+    if (satelliteRenderer.value) {
+      satelliteRenderer.value.setColorScheme(scheme);
+    }
+  };
+
+  // 获取图例
+  const getLegend = (): LegendItem[] => {
+    if (satelliteRenderer.value) {
+      return satelliteRenderer.value.getLegend();
+    }
+    return [];
+  };
+
   // 销毁
   const destroyCesium = () => {
     if (satelliteRenderer.value) {
@@ -575,5 +891,8 @@ export function useCesium() {
     clearAllPredictedOrbits,
     flyToPosition,
     destroyCesium,
+    setOnSatelliteClick,
+    setColorScheme,
+    getLegend,
   };
 }

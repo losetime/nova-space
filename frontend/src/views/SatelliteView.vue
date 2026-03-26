@@ -37,6 +37,24 @@
           <span class="stat-label">最后更新</span>
         </div>
       </div>
+      <!-- 颜色分类选择 -->
+      <div class="stat-card color-scheme-card">
+        <a-select v-model:value="colorScheme" size="small" style="width: 120px">
+          <a-select-option value="orbit">轨道分类</a-select-option>
+          <!-- 后续可扩展其他分类方式 -->
+        </a-select>
+      </div>
+    </div>
+
+    <!-- 图例 -->
+    <div v-show="!loading && legendItems.length > 0" class="floating-legend">
+      <div class="legend-title">图例</div>
+      <div class="legend-items">
+        <div v-for="item in legendItems" :key="item.label" class="legend-item">
+          <span class="legend-color" :style="{ backgroundColor: item.color }"></span>
+          <span class="legend-label">{{ item.label }}</span>
+        </div>
+      </div>
     </div>
 
     <!-- 主内容区 -->
@@ -169,6 +187,98 @@
                   >
                     <RocketOutlined class="option-icon geo" />
                     <span>地球同步 (GEO)</span>
+                  </div>
+                </div>
+              </transition>
+            </div>
+
+            <!-- 用途筛选 -->
+            <div class="filter-section">
+              <div class="filter-section-header" @click="toggleFilterSection('purpose')">
+                <span class="section-title">
+                  用途分类
+                  <span v-if="selectedPurpose" class="selected-tag">{{ selectedPurpose }}</span>
+                </span>
+                <DownOutlined :class="['expand-icon', { expanded: expandedSections.purpose }]" />
+              </div>
+              <transition name="collapse">
+                <div v-show="expandedSections.purpose" class="filter-options purpose-options">
+                  <div class="filter-search">
+                    <a-input
+                      v-model:value="purposeSearch"
+                      placeholder="搜索用途..."
+                      allow-clear
+                    />
+                  </div>
+                  <div
+                    class="filter-option"
+                    :class="{ active: !selectedPurpose }"
+                    @click="selectedPurpose = ''"
+                  >
+                    <GlobalOutlined class="option-icon" />
+                    <span>全部</span>
+                  </div>
+                  <div
+                    v-for="purpose in filteredPurposes"
+                    :key="purpose.name"
+                    class="filter-option"
+                    :class="{ active: selectedPurpose === purpose.name }"
+                    @click="selectedPurpose = purpose.name"
+                  >
+                    <span class="option-name">{{ purpose.name }}</span>
+                    <span class="option-count">{{ purpose.count }}</span>
+                  </div>
+                  <div v-if="filteredPurposes.length === 0 && purposeSearch" class="no-result">
+                    未找到匹配的用途
+                  </div>
+                  <div v-else-if="purposes.length === 0" class="no-result">
+                    暂无用途数据
+                  </div>
+                </div>
+              </transition>
+            </div>
+
+            <!-- 运营商筛选 -->
+            <div class="filter-section">
+              <div class="filter-section-header" @click="toggleFilterSection('operator')">
+                <span class="section-title">
+                  运营商
+                  <span v-if="selectedOperator" class="selected-tag">{{ selectedOperator }}</span>
+                </span>
+                <DownOutlined :class="['expand-icon', { expanded: expandedSections.operator }]" />
+              </div>
+              <transition name="collapse">
+                <div v-show="expandedSections.operator" class="filter-options operator-options">
+                  <div class="filter-search">
+                    <a-input
+                      v-model:value="operatorSearch"
+                      placeholder="搜索运营商..."
+                      allow-clear
+                    />
+                  </div>
+                  <div
+                    class="filter-option"
+                    :class="{ active: !selectedOperator }"
+                    @click="selectedOperator = ''"
+                  >
+                    <GlobalOutlined class="option-icon" />
+                    <span>全部</span>
+                  </div>
+                  <div
+                    v-for="operator in filteredOperators"
+                    :key="operator.name"
+                    class="filter-option"
+                    :class="{ active: selectedOperator === operator.name }"
+                    @click="selectedOperator = operator.name"
+                  >
+                    <span class="option-name">{{ operator.name }}</span>
+                    <span class="option-count">{{ operator.count }}</span>
+                  </div>
+                  <div v-if="filteredOperators.length === 0 && operatorSearch" class="no-result">
+                    未找到匹配的运营商
+                  </div>
+                  <div v-else-if="operators.length === 0" class="no-result">
+                    暂无运营商数据
                   </div>
                 </div>
               </transition>
@@ -338,7 +448,7 @@ import SatelliteDetail from '@/components/SatelliteDetail.vue'
 import OrbitPrediction from '@/components/OrbitPrediction.vue'
 import PassPrediction from '@/components/PassPrediction.vue'
 import FlagIcon from '@/components/FlagIcon.vue'
-import { useCesium } from '@/hooks/useCesium'
+import { useCesium, type ColorSchemeType, type LegendItem } from '@/hooks/useCesium'
 import { useWebSocket } from '@/hooks/useWebSocket'
 import { usePanel } from '@/hooks/usePanel'
 import { useSatellite } from '@/hooks/useSatellite'
@@ -348,9 +458,15 @@ import { getFlagClass } from '@/utils/countryFlags'
 
 const filterType = ref('all')
 const selectedCountry = ref('')
+const selectedPurpose = ref('')
+const selectedOperator = ref('')
 const favoriteFilter = ref<'all' | 'favorited' | 'unfavorited'>('all')
 const loading = ref(true)
 const userStore = useUserStore()
+
+// 颜色分类
+const colorScheme = ref<ColorSchemeType>('orbit')
+const legendItems = ref<LegendItem[]>([])
 
 // 收藏的卫星 ID 集合
 const favoritedIds = ref<Set<string>>(new Set())
@@ -359,12 +475,22 @@ const favoritedIds = ref<Set<string>>(new Set())
 const expandedSections = ref({
   country: false,
   orbit: false,
+  purpose: false,
+  operator: false,
   favorite: false
 })
 
 // 国家列表
 const countries = ref<{ code: string; count: number }[]>([])
 const countrySearch = ref('')
+
+// 用途列表
+const purposes = ref<{ name: string; count: number }[]>([])
+const purposeSearch = ref('')
+
+// 运营商列表
+const operators = ref<{ name: string; count: number }[]>([])
+const operatorSearch = ref('')
 
 // 过滤后的国家列表
 const filteredCountries = computed(() => {
@@ -375,6 +501,20 @@ const filteredCountries = computed(() => {
     const nameMatch = getCountryName(c.code).includes(countrySearch.value)
     return codeMatch || nameMatch
   })
+})
+
+// 过滤后的用途列表
+const filteredPurposes = computed(() => {
+  if (!purposeSearch.value) return purposes.value
+  const search = purposeSearch.value.toLowerCase()
+  return purposes.value.filter(p => p.name.toLowerCase().includes(search))
+})
+
+// 过滤后的运营商列表
+const filteredOperators = computed(() => {
+  if (!operatorSearch.value) return operators.value
+  const search = operatorSearch.value.toLowerCase()
+  return operators.value.filter(o => o.name.toLowerCase().includes(search))
 })
 
 // 国家代码到中文名称的映射 (CelesTrak 格式)
@@ -450,11 +590,13 @@ const getCountryLabel = (code: string): string => {
 }
 
 // 切换筛选区域展开/折叠（同时关闭其他区域）
-const toggleFilterSection = (section: 'orbit' | 'country' | 'favorite') => {
+const toggleFilterSection = (section: 'orbit' | 'country' | 'purpose' | 'operator' | 'favorite') => {
   // 如果当前区域是折叠状态，则展开它并关闭其他区域
   if (!expandedSections.value[section]) {
     expandedSections.value.orbit = section === 'orbit'
     expandedSections.value.country = section === 'country'
+    expandedSections.value.purpose = section === 'purpose'
+    expandedSections.value.operator = section === 'operator'
     expandedSections.value.favorite = section === 'favorite'
   } else {
     // 如果当前区域是展开状态，则折叠它
@@ -500,6 +642,8 @@ interface SatelliteMetadata {
   stdMag?: number
   tleEpoch?: string
   tleAge?: number
+  mission?: string  // 用途（ESA DISCOS）
+  operator?: string
 }
 
 // 卫星元数据映射
@@ -525,6 +669,22 @@ const filteredSatellites = computed(() => {
     result = result.filter(sat => {
       const meta = satelliteMetadata.value.get(sat.noradId)
       return meta?.countryCode === selectedCountry.value
+    })
+  }
+
+  // 按用途筛选（使用 mission 字段）
+  if (selectedPurpose.value) {
+    result = result.filter(sat => {
+      const meta = satelliteMetadata.value.get(sat.noradId)
+      return meta?.mission === selectedPurpose.value
+    })
+  }
+
+  // 按运营商筛选
+  if (selectedOperator.value) {
+    result = result.filter(sat => {
+      const meta = satelliteMetadata.value.get(sat.noradId)
+      return meta?.operator === selectedOperator.value
     })
   }
 
@@ -579,6 +739,18 @@ const handleSelectSatellite = (satellite: typeof selectedSatellite.value) => {
   showSatelliteDetail()
 }
 
+// 处理 Cesium 点击卫星事件
+const handleSatelliteClick = (noradId: string, name: string) => {
+  // 从卫星列表中找到对应的卫星
+  const satellite = satellites.value.find(s => s.noradId === noradId)
+  if (satellite) {
+    // 打开卫星列表面板
+    toggleLeftPanel('satellite-list')
+    // 选中卫星并显示详情
+    handleSelectSatellite(satellite)
+  }
+}
+
 // 显示预测轨道
 const handleShowPredictedOrbit = (points: Array<{ lat: number; lng: number; alt: number }>) => {
   if (cesium && selectedSatellite.value) {
@@ -611,6 +783,13 @@ watch(filteredSatellites, (newSatellites) => {
   }
 }, { deep: true })
 
+// 监听颜色分类变化
+watch(colorScheme, (newScheme) => {
+  cesium.setColorScheme?.(newScheme)
+  // 更新图例
+  legendItems.value = cesium.getLegend?.() || []
+})
+
 // 获取用户收藏的卫星
 async function fetchFavorites() {
   if (!userStore.isLoggedIn) return
@@ -642,6 +821,12 @@ onMounted(async () => {
     // 初始化 Cesium
     cesium.initCesium()
 
+    // 设置卫星点击回调
+    cesium.setOnSatelliteClick(handleSatelliteClick)
+
+    // 初始化图例
+    legendItems.value = cesium.getLegend?.() || []
+
     // 初始化 WebSocket
     websocket.connect()
 
@@ -664,6 +849,26 @@ onMounted(async () => {
     }
   } catch (err) {
     console.error('加载国家列表失败:', err)
+  }
+
+  // 加载用途列表
+  try {
+    const purposeRes = await satelliteApi.getPurposes()
+    if (purposeRes.data.code === 0) {
+      purposes.value = purposeRes.data.data || []
+    }
+  } catch (err) {
+    console.error('加载用途列表失败:', err)
+  }
+
+  // 加载运营商列表
+  try {
+    const operatorRes = await satelliteApi.getOperators()
+    if (operatorRes.data.code === 0) {
+      operators.value = operatorRes.data.data || []
+    }
+  } catch (err) {
+    console.error('加载运营商列表失败:', err)
   }
 
   // 加载卫星元数据
@@ -834,6 +1039,69 @@ const handleRefresh = () => {
   }
   50% {
     box-shadow: 0 0 30px rgba(0, 255, 136, 0.4);
+  }
+}
+
+// 颜色分类选择卡片
+.color-scheme-card {
+  padding: 8px 12px !important;
+
+  :deep(.ant-select) {
+    .ant-select-selector {
+      background: rgba(0, 212, 255, 0.08) !important;
+      border-color: rgba(0, 212, 255, 0.2) !important;
+      color: #fff !important;
+    }
+
+    .ant-select-arrow {
+      color: rgba(255, 255, 255, 0.5);
+    }
+  }
+}
+
+// 浮动图例
+.floating-legend {
+  position: absolute;
+  right: 20px;
+  bottom: 80px;
+  background: rgba(12, 12, 20, 0.9);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(0, 212, 255, 0.12);
+  border-radius: 12px;
+  padding: 12px 16px;
+  z-index: 100;
+
+  .legend-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .legend-items {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .legend-color {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    flex-shrink: 0;
+  }
+
+  .legend-label {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.8);
   }
 }
 

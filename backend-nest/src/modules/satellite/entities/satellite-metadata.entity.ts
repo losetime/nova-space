@@ -127,9 +127,6 @@ export class SatelliteMetadataEntity {
   operator: string; // 运营商
 
   @Column({ type: 'varchar', length: 100, nullable: true })
-  purpose: string; // 用途
-
-  @Column({ type: 'varchar', length: 100, nullable: true })
   contractor: string; // 制造商
 
   @Column({ type: 'varchar', length: 50, nullable: true })
