@@ -15,6 +15,7 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url))
     },
   },
+  assetsInclude: ['**/*.glb'],
   server: {
     port: 5174,
     open: true,
