@@ -740,6 +740,203 @@ export function useCesium() {
     predictedOrbitEntities.clear();
   };
 
+  // 过境轨迹实体存储
+  const passTrajectoryEntities = new Map<string, boolean>();
+
+  // 显示过境轨迹
+  const showPassTrajectory = (
+    noradId: string,
+    orbitPoints: Array<{ lat: number; lng: number; alt: number; timestamp?: string }>,
+    observer: { lat: number; lng: number; alt: number },
+    passInfo?: { startTime: string; endTime: string; maxElevationTime?: string }
+  ) => {
+    if (!viewer.value || !orbitPoints.length) return;
+
+    // 清除之前的过境轨迹
+    clearPassTrajectory();
+
+    // 1. 绘制过境轨迹线（渐变色）
+    const trajectoryId = `pass_trajectory_${noradId}`;
+
+    // 创建渐变颜色的轨迹线
+    const positions: Cesium.Cartesian3[] = [];
+    const colors: Cesium.Color[] = [];
+
+    orbitPoints.forEach((point, index) => {
+      positions.push(Cesium.Cartesian3.fromDegrees(point.lng, point.lat, point.alt));
+
+      // 颜色根据位置渐变：开始(蓝) -> 中间(青) -> 结束(蓝)
+      const ratio = index / (orbitPoints.length - 1);
+      const color = ratio < 0.5
+        ? Cesium.Color.lerp(
+            Cesium.Color.fromCssColorString("#3b82f6"), // 蓝色
+            Cesium.Color.fromCssColorString("#00ff88"), // 青绿色
+            ratio * 2,
+            new Cesium.Color()
+          )
+        : Cesium.Color.lerp(
+            Cesium.Color.fromCssColorString("#00ff88"),
+            Cesium.Color.fromCssColorString("#3b82f6"),
+            (ratio - 0.5) * 2,
+            new Cesium.Color()
+          );
+      colors.push(color);
+    });
+
+    // 使用 PolylineOutlineMaterialProperty 创建轨迹线
+    viewer.value.entities.add({
+      id: trajectoryId,
+      polyline: {
+        positions: positions,
+        width: 4,
+        material: new Cesium.PolylineGlowMaterialProperty({
+          glowPower: 0.4,
+          color: Cesium.Color.fromCssColorString("#00ff88"),
+        }),
+        clampToGround: false,
+      },
+    });
+    passTrajectoryEntities.set(trajectoryId, true);
+
+    // 2. 标记观察者位置
+    const observerId = `pass_observer_${noradId}`;
+    viewer.value.entities.add({
+      id: observerId,
+      position: Cesium.Cartesian3.fromDegrees(observer.lng, observer.lat, observer.alt),
+      point: {
+        pixelSize: 12,
+        color: Cesium.Color.YELLOW,
+        outlineColor: Cesium.Color.WHITE,
+        outlineWidth: 2,
+        heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+      },
+      label: {
+        text: '观察者',
+        font: '14px sans-serif',
+        fillColor: Cesium.Color.WHITE,
+        outlineColor: Cesium.Color.BLACK,
+        outlineWidth: 2,
+        style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+        verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+        pixelOffset: new Cesium.Cartesian2(0, -15),
+        heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+      },
+    });
+    passTrajectoryEntities.set(observerId, true);
+
+    // 3. 标记起始点
+    if (orbitPoints.length > 0) {
+      const startPoint = orbitPoints[0];
+      const startId = `pass_start_${noradId}`;
+      viewer.value.entities.add({
+        id: startId,
+        position: Cesium.Cartesian3.fromDegrees(startPoint.lng, startPoint.lat, startPoint.alt),
+        point: {
+          pixelSize: 8,
+          color: Cesium.Color.fromCssColorString("#3b82f6"),
+          outlineColor: Cesium.Color.WHITE,
+          outlineWidth: 1,
+        },
+        label: {
+          text: '开始',
+          font: '12px sans-serif',
+          fillColor: Cesium.Color.fromCssColorString("#3b82f6"),
+          outlineColor: Cesium.Color.BLACK,
+          outlineWidth: 1,
+          style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+          verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+          pixelOffset: new Cesium.Cartesian2(0, -10),
+        },
+      });
+      passTrajectoryEntities.set(startId, true);
+    }
+
+    // 4. 标记结束点
+    if (orbitPoints.length > 1) {
+      const endPoint = orbitPoints[orbitPoints.length - 1];
+      const endId = `pass_end_${noradId}`;
+      viewer.value.entities.add({
+        id: endId,
+        position: Cesium.Cartesian3.fromDegrees(endPoint.lng, endPoint.lat, endPoint.alt),
+        point: {
+          pixelSize: 8,
+          color: Cesium.Color.fromCssColorString("#3b82f6"),
+          outlineColor: Cesium.Color.WHITE,
+          outlineWidth: 1,
+        },
+        label: {
+          text: '结束',
+          font: '12px sans-serif',
+          fillColor: Cesium.Color.fromCssColorString("#3b82f6"),
+          outlineColor: Cesium.Color.BLACK,
+          outlineWidth: 1,
+          style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+          verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+          pixelOffset: new Cesium.Cartesian2(0, -10),
+        },
+      });
+      passTrajectoryEntities.set(endId, true);
+    }
+
+    // 5. 标记最高点（轨道中点附近）
+    const midIndex = Math.floor(orbitPoints.length / 2);
+    if (midIndex > 0 && midIndex < orbitPoints.length) {
+      const maxPoint = orbitPoints[midIndex];
+      const maxId = `pass_max_${noradId}`;
+      viewer.value.entities.add({
+        id: maxId,
+        position: Cesium.Cartesian3.fromDegrees(maxPoint.lng, maxPoint.lat, maxPoint.alt),
+        point: {
+          pixelSize: 10,
+          color: Cesium.Color.fromCssColorString("#00ff88"),
+          outlineColor: Cesium.Color.WHITE,
+          outlineWidth: 2,
+        },
+        label: {
+          text: '最高点',
+          font: '12px sans-serif',
+          fillColor: Cesium.Color.fromCssColorString("#00ff88"),
+          outlineColor: Cesium.Color.BLACK,
+          outlineWidth: 1,
+          style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+          verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+          pixelOffset: new Cesium.Cartesian2(0, -10),
+        },
+      });
+      passTrajectoryEntities.set(maxId, true);
+    }
+
+    // 6. 飞到轨迹视图
+    const centerIndex = Math.floor(orbitPoints.length / 2);
+    const centerPoint = orbitPoints[centerIndex];
+    viewer.value.camera.flyTo({
+      destination: Cesium.Cartesian3.fromDegrees(
+        centerPoint.lng,
+        centerPoint.lat,
+        centerPoint.alt + 5000000 // 5000km 高度
+      ),
+      orientation: {
+        heading: Cesium.Math.toRadians(0),
+        pitch: Cesium.Math.toRadians(-45),
+        roll: 0,
+      },
+      duration: 1.5,
+    });
+  };
+
+  // 清除过境轨迹
+  const clearPassTrajectory = () => {
+    if (!viewer.value) return;
+
+    passTrajectoryEntities.forEach((_, key) => {
+      const entity = viewer.value!.entities.getById(key);
+      if (entity) {
+        viewer.value!.entities.remove(entity);
+      }
+    });
+    passTrajectoryEntities.clear();
+  };
+
   // 飞到指定位置
   const flyToPosition = (
     position: { lat: number; lng: number; alt: number },
@@ -884,6 +1081,8 @@ export function useCesium() {
     showPredictedOrbit,
     clearPredictedOrbit,
     clearAllPredictedOrbits,
+    showPassTrajectory,
+    clearPassTrajectory,
     flyToPosition,
     destroyCesium,
     setOnSatelliteClick,

@@ -118,7 +118,8 @@
             v-for="(pass, index) in prediction.passes"
             :key="index"
             class="pass-item"
-            :class="{ visible: pass.visible }"
+            :class="{ visible: pass.visible, selected: selectedPassIndex === index }"
+            @click="handlePassClick(pass, index)"
           >
             <div class="pass-header">
               <div class="pass-date">
@@ -208,12 +209,24 @@ import {
   CalendarOutlined,
 } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
-import { satelliteApi, type PassPrediction } from '@/api'
+import { satelliteApi, type PassPrediction, type PassEvent } from '@/api'
 import type { Satellite } from '@/hooks/useWebSocket'
 
 const props = defineProps<{
   satellite: Satellite | null
 }>()
+
+const emit = defineEmits<{
+  'show-trajectory': [data: {
+    noradId: string
+    startTime: string
+    endTime: string
+    observer: { lat: number; lng: number; alt: number }
+  }]
+}>()
+
+// 选中的过境索引
+const selectedPassIndex = ref<number | null>(null)
 
 // 重置预测数据
 const reset = () => {
@@ -360,6 +373,26 @@ const getElevationColor = (elevation: number): string => {
   if (elevation >= 60) return 'gold'
   if (elevation >= 30) return 'cyan'
   return 'blue'
+}
+
+// 点击过境记录，显示轨迹
+const handlePassClick = (pass: PassEvent, index: number) => {
+  if (!props.satellite) return
+
+  // 切换选中状态
+  if (selectedPassIndex.value === index) {
+    selectedPassIndex.value = null
+  } else {
+    selectedPassIndex.value = index
+
+    // 发送事件给父组件，请求显示轨迹
+    emit('show-trajectory', {
+      noradId: props.satellite.noradId,
+      startTime: pass.startTime,
+      endTime: pass.endTime,
+      observer: { ...observer.value },
+    })
+  }
 }
 
 // 初始化时尝试获取位置
@@ -569,10 +602,17 @@ $text-muted: rgba(255, 255, 255, 0.4);
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 10px;
   transition: all 0.2s;
+  cursor: pointer;
 
   &:hover {
     background: rgba(255, 255, 255, 0.04);
     border-color: rgba($primary, 0.2);
+  }
+
+  &.selected {
+    background: rgba($primary, 0.1);
+    border-color: rgba($primary, 0.4);
+    box-shadow: 0 0 20px rgba($primary, 0.15);
   }
 
   &.visible {

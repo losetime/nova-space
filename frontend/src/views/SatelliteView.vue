@@ -423,6 +423,7 @@
             <PassPrediction
               ref="passPredictionRef"
               :satellite="selectedSatellite"
+              @show-trajectory="handleShowPassTrajectory"
             />
           </div>
         </aside>
@@ -757,6 +758,46 @@ const handleFlyToPosition = (position: { lat: number; lng: number; alt: number }
 const handleClearOrbit = (noradId: string) => {
   if (cesium && noradId) {
     cesium.clearPredictedOrbit(noradId)
+  }
+}
+
+// 显示过境轨迹
+const handleShowPassTrajectory = async (data: {
+  noradId: string
+  startTime: string
+  endTime: string
+  observer: { lat: number; lng: number; alt: number }
+}) => {
+  if (!cesium) return
+
+  try {
+    // 清除之前的过境轨迹
+    cesium.clearPassTrajectory()
+
+    // 计算过境时段的轨道数据
+    const startTime = new Date(data.startTime)
+    const endTime = new Date(data.endTime)
+    const durationMinutes = Math.ceil((endTime.getTime() - startTime.getTime()) / 60000)
+
+    const res = await satelliteApi.getOrbit(data.noradId, {
+      startTime: data.startTime,
+      duration: durationMinutes,
+      steps: Math.min(durationMinutes * 2, 200), // 每分钟2个点，最多200点
+    })
+
+    if (res.data.code === 0 && res.data.data?.orbitPoints) {
+      cesium.showPassTrajectory(
+        data.noradId,
+        res.data.data.orbitPoints,
+        data.observer,
+        {
+          startTime: data.startTime,
+          endTime: data.endTime,
+        }
+      )
+    }
+  } catch (error) {
+    console.error('获取过境轨迹失败:', error)
   }
 }
 
