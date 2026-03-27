@@ -26,7 +26,7 @@
     </div>
 
     <!-- 卫星列表 -->
-    <div class="list-container" v-bind="containerProps" ref="listRef">
+    <div class="list-container" v-bind="containerProps">
       <div v-bind="wrapperProps" class="satellite-items">
         <div
           v-for="{ data: satellite } in list"
@@ -102,7 +102,6 @@ const emit = defineEmits<{
 }>()
 
 const searchQuery = ref('')
-const listRef = ref<HTMLElement | null>(null)
 
 const filteredSatellites = computed(() => {
   let result = props.satellites
@@ -261,6 +260,7 @@ const formatAlt = (alt: number): string => {
 // 列表容器
 .list-container {
   flex: 1;
+  min-height: 0; // 关键：允许 flex 子元素缩小
   overflow-y: auto;
   overflow-x: hidden;
   position: relative;
