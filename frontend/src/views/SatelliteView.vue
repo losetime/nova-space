@@ -37,24 +37,6 @@
           <span class="stat-label">最后更新</span>
         </div>
       </div>
-      <!-- 颜色分类选择 -->
-      <div class="stat-card color-scheme-card">
-        <a-select v-model:value="colorScheme" size="small" style="width: 120px">
-          <a-select-option value="orbit">轨道分类</a-select-option>
-          <!-- 后续可扩展其他分类方式 -->
-        </a-select>
-      </div>
-    </div>
-
-    <!-- 图例 -->
-    <div v-show="!loading && legendItems.length > 0" class="floating-legend">
-      <div class="legend-title">图例</div>
-      <div class="legend-items">
-        <div v-for="item in legendItems" :key="item.label" class="legend-item">
-          <span class="legend-color" :style="{ backgroundColor: item.color }"></span>
-          <span class="legend-label">{{ item.label }}</span>
-        </div>
-      </div>
     </div>
 
     <!-- 主内容区 -->
@@ -322,6 +304,30 @@
                 </div>
               </transition>
             </div>
+
+            <!-- 颜色分类 -->
+            <div class="filter-section">
+              <div class="filter-section-header" @click="toggleFilterSection('color')">
+                <span class="section-title">
+                  颜色分类
+                  <span class="selected-tag">{{ getColorSchemeLabel(colorScheme) }}</span>
+                </span>
+                <DownOutlined :class="['expand-icon', { expanded: expandedSections.color }]" />
+              </div>
+              <transition name="collapse">
+                <div v-show="expandedSections.color" class="filter-options">
+                  <div
+                    class="filter-option"
+                    :class="{ active: colorScheme === 'orbit' }"
+                    @click="colorScheme = 'orbit'"
+                  >
+                    <RocketOutlined class="option-icon leo" />
+                    <span>轨道分类</span>
+                  </div>
+                  <!-- 后续可扩展其他分类方式 -->
+                </div>
+              </transition>
+            </div>
           </div>
         </aside>
       </transition>
@@ -448,7 +454,7 @@ import SatelliteDetail from '@/components/SatelliteDetail.vue'
 import OrbitPrediction from '@/components/OrbitPrediction.vue'
 import PassPrediction from '@/components/PassPrediction.vue'
 import FlagIcon from '@/components/FlagIcon.vue'
-import { useCesium, type ColorSchemeType, type LegendItem } from '@/hooks/useCesium'
+import { useCesium, type ColorSchemeType } from '@/hooks/useCesium'
 import { useWebSocket } from '@/hooks/useWebSocket'
 import { usePanel } from '@/hooks/usePanel'
 import { useSatellite } from '@/hooks/useSatellite'
@@ -466,7 +472,6 @@ const userStore = useUserStore()
 
 // 颜色分类
 const colorScheme = ref<ColorSchemeType>('orbit')
-const legendItems = ref<LegendItem[]>([])
 
 // 收藏的卫星 ID 集合
 const favoritedIds = ref<Set<string>>(new Set())
@@ -477,7 +482,8 @@ const expandedSections = ref({
   orbit: false,
   purpose: false,
   operator: false,
-  favorite: false
+  favorite: false,
+  color: false
 })
 
 // 国家列表
@@ -581,6 +587,17 @@ const getFavoriteLabel = (type: string): string => {
   return labels[type] || ''
 }
 
+// 颜色分类标签
+const getColorSchemeLabel = (scheme: ColorSchemeType): string => {
+  const labels: Record<ColorSchemeType, string> = {
+    orbit: '轨道分类',
+    purpose: '用途分类',
+    country: '国家分类',
+    objectType: '类型分类'
+  }
+  return labels[scheme] || '轨道分类'
+}
+
 // 获取国家选择标签文本（不含国旗）
 const getCountryLabel = (code: string): string => {
   if (!code) return '全部'
@@ -590,7 +607,7 @@ const getCountryLabel = (code: string): string => {
 }
 
 // 切换筛选区域展开/折叠（同时关闭其他区域）
-const toggleFilterSection = (section: 'orbit' | 'country' | 'purpose' | 'operator' | 'favorite') => {
+const toggleFilterSection = (section: 'orbit' | 'country' | 'purpose' | 'operator' | 'favorite' | 'color') => {
   // 如果当前区域是折叠状态，则展开它并关闭其他区域
   if (!expandedSections.value[section]) {
     expandedSections.value.orbit = section === 'orbit'
@@ -598,6 +615,7 @@ const toggleFilterSection = (section: 'orbit' | 'country' | 'purpose' | 'operato
     expandedSections.value.purpose = section === 'purpose'
     expandedSections.value.operator = section === 'operator'
     expandedSections.value.favorite = section === 'favorite'
+    expandedSections.value.color = section === 'color'
   } else {
     // 如果当前区域是展开状态，则折叠它
     expandedSections.value[section] = false
@@ -786,8 +804,6 @@ watch(filteredSatellites, (newSatellites) => {
 // 监听颜色分类变化
 watch(colorScheme, (newScheme) => {
   cesium.setColorScheme?.(newScheme)
-  // 更新图例
-  legendItems.value = cesium.getLegend?.() || []
 })
 
 // 获取用户收藏的卫星
@@ -823,9 +839,6 @@ onMounted(async () => {
 
     // 设置卫星点击回调
     cesium.setOnSatelliteClick(handleSatelliteClick)
-
-    // 初始化图例
-    legendItems.value = cesium.getLegend?.() || []
 
     // 初始化 WebSocket
     websocket.connect()
@@ -1042,22 +1055,7 @@ const handleRefresh = () => {
   }
 }
 
-// 颜色分类选择卡片
-.color-scheme-card {
-  padding: 8px 12px !important;
-
-  :deep(.ant-select) {
-    .ant-select-selector {
-      background: rgba(0, 212, 255, 0.08) !important;
-      border-color: rgba(0, 212, 255, 0.2) !important;
-      color: #fff !important;
-    }
-
-    .ant-select-arrow {
-      color: rgba(255, 255, 255, 0.5);
-    }
-  }
-}
+// 颜色分类选择卡片（已移动到筛选面板）
 
 // 浮动图例
 .floating-legend {
