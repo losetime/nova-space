@@ -425,6 +425,7 @@
               :satellite="selectedSatellite"
               @show-trajectory="handleShowPassTrajectory"
               @play-animation="handlePlayPassAnimation"
+              @sky-view="handleSkyView"
             />
           </div>
         </aside>
@@ -852,6 +853,19 @@ const handlePlayPassAnimation = async (data: {
   } catch (error) {
     console.error('播放过境动画失败:', error)
   }
+}
+
+// 切换到天空视角
+const handleSkyView = (observer: { lat: number; lng: number; alt: number }) => {
+  if (!cesium) return
+
+  // 清除之前的轨迹和动画
+  cesium.clearPassTrajectory()
+  cesium.stopPassAnimation()
+  cesium.clearSkyView()
+
+  // 切换到天空视角
+  cesium.flyToSkyView(observer)
 }
 
 // 监听筛选后的卫星数据变化，更新 Cesium（使用批量更新提高性能）
