@@ -906,14 +906,16 @@ export function useCesium() {
       passTrajectoryEntities.set(maxId, true);
     }
 
-    // 6. 飞到轨迹视图
+    // 6. 飞到轨迹视图（保持地球居中）
     const centerIndex = Math.floor(orbitPoints.length / 2);
     const centerPoint = orbitPoints[centerIndex];
+
+    // 使用观察者位置作为视角中心，确保地球可见
     viewer.value.camera.flyTo({
       destination: Cesium.Cartesian3.fromDegrees(
         centerPoint.lng,
         centerPoint.lat,
-        centerPoint.alt + 5000000 // 5000km 高度
+        20000000 // 20000km 高度，确保地球整体可见
       ),
       orientation: {
         heading: Cesium.Math.toRadians(0),
@@ -1046,22 +1048,8 @@ export function useCesium() {
 
     viewer.value.clock.onTick.addEventListener(animationClockCallback);
 
-    // 飞到轨迹中心
-    const centerIndex = Math.floor(orbitPoints.length / 2);
-    const centerPoint = orbitPoints[centerIndex];
-    viewer.value.camera.flyTo({
-      destination: Cesium.Cartesian3.fromDegrees(
-        centerPoint.lng,
-        centerPoint.lat,
-        centerPoint.alt + 1000000
-      ),
-      orientation: {
-        heading: Cesium.Math.toRadians(0),
-        pitch: Cesium.Math.toRadians(-30),
-        roll: 0,
-      },
-      duration: 1,
-    });
+    // 飞到轨迹视图（保持地球居中，不再自动飞行）
+    // 动画播放时保持当前视角，避免相机跳动
   };
 
   // 停止动画
