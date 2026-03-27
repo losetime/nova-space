@@ -22,60 +22,27 @@
         <!-- 分类筛选 -->
         <div class="category-filter">
           <div
+            v-for="cat in categoryOptions"
+            :key="cat.value"
             class="category-item"
-            :class="{ active: selectedCategory === '' }"
-            @click="selectedCategory = ''"
+            :class="{ active: selectedCategory === cat.value }"
+            @click="selectedCategory = cat.value"
           >
-            <GlobalOutlined class="category-icon" />
-            <span>全部</span>
-          </div>
-          <div
-            class="category-item"
-            :class="{ active: selectedCategory === 'launch' }"
-            @click="selectedCategory = 'launch'"
-          >
-            <RocketOutlined class="category-icon launch" />
-            <span>发射任务</span>
-          </div>
-          <div
-            class="category-item"
-            :class="{ active: selectedCategory === 'recovery' }"
-            @click="selectedCategory = 'recovery'"
-          >
-            <RocketOutlined class="category-icon recovery" />
-            <span>回收任务</span>
-          </div>
-          <div
-            class="category-item"
-            :class="{ active: selectedCategory === 'orbit' }"
-            @click="selectedCategory = 'orbit'"
-          >
-            <ApiOutlined class="category-icon orbit" />
-            <span>在轨测试</span>
-          </div>
-          <div
-            class="category-item"
-            :class="{ active: selectedCategory === 'mission' }"
-            @click="selectedCategory = 'mission'"
-          >
-            <GlobalOutlined class="category-icon mission" />
-            <span>深空探测</span>
-          </div>
-          <div
-            class="category-item"
-            :class="{ active: selectedCategory === 'other' }"
-            @click="selectedCategory = 'other'"
-          >
-            <InfoCircleOutlined class="category-icon other" />
-            <span>其他</span>
+            <component :is="cat.icon" class="category-icon" :class="cat.value || 'all'" />
+            <span>{{ cat.label }}</span>
           </div>
         </div>
       </div>
 
       <!-- 时间线内容 -->
       <div class="timeline-container">
+        <div v-if="filteredTimeline.length === 0" class="empty-state">
+          <InboxOutlined class="empty-icon" />
+          <p>暂无相关里程碑数据</p>
+        </div>
+
         <div
-          v-for="decade in timelineData"
+          v-for="decade in filteredTimeline"
           :key="decade.decade"
           class="timeline-decade"
         >
@@ -89,7 +56,7 @@
               v-for="item in decade.items"
               :key="item.id"
               class="timeline-item"
-              :class="{ 'featured': item.importance >= 4 }"
+              :class="{ featured: item.importance >= 4 }"
               @click="showDetail(item)"
             >
               <div class="timeline-marker">
@@ -99,9 +66,6 @@
 
               <div class="timeline-content">
                 <div class="content-card">
-                  <div v-if="item.cover" class="card-cover">
-                    <img :src="item.cover" :alt="item.title" />
-                  </div>
                   <div class="card-body">
                     <div class="card-header">
                       <span class="event-date">{{ formatDate(item.eventDate) }}</span>
@@ -112,13 +76,13 @@
                     <h3 class="card-title">{{ item.title }}</h3>
                     <p class="card-description">{{ item.description }}</p>
                     <div class="card-footer">
-                      <span v-if="item.location" class="footer-item">
+                      <span class="footer-item">
                         <EnvironmentOutlined />
-                        {{ item.location }}
+                        {{ item.location || '未知地点' }}
                       </span>
-                      <span v-if="item.organizer" class="footer-item">
+                      <span class="footer-item">
                         <UserOutlined />
-                        {{ item.organizer }}
+                        {{ item.organizer || '未知机构' }}
                       </span>
                     </div>
                   </div>
@@ -134,13 +98,17 @@
     <a-drawer
       v-model:open="detailVisible"
       :width="600"
-      :title="selectedMilestone?.title"
+      :title="selectedMilestone?.title || '里程碑详情'"
       class="milestone-detail-drawer"
       placement="right"
     >
       <div v-if="selectedMilestone" class="detail-content">
-        <div v-if="selectedMilestone.cover" class="detail-cover">
-          <img :src="selectedMilestone.cover" :alt="selectedMilestone.title" />
+        <div class="detail-cover">
+          <img
+            :src="selectedMilestone.cover || defaultCover"
+            :alt="selectedMilestone.title"
+            @error="handleImageError"
+          />
         </div>
 
         <div class="detail-meta">
@@ -154,15 +122,15 @@
             <span class="meta-label">分类</span>
             <span class="meta-value">{{ getCategoryLabel(selectedMilestone.category) }}</span>
           </div>
-          <div v-if="selectedMilestone.location" class="meta-item">
+          <div class="meta-item">
             <EnvironmentOutlined class="meta-icon" />
             <span class="meta-label">地点</span>
-            <span class="meta-value">{{ selectedMilestone.location }}</span>
+            <span class="meta-value">{{ selectedMilestone.location || '未知地点' }}</span>
           </div>
-          <div v-if="selectedMilestone.organizer" class="meta-item">
+          <div class="meta-item">
             <UserOutlined class="meta-icon" />
             <span class="meta-label">组织</span>
-            <span class="meta-value">{{ selectedMilestone.organizer }}</span>
+            <span class="meta-value">{{ selectedMilestone.organizer || '未知机构' }}</span>
           </div>
         </div>
 
@@ -171,23 +139,37 @@
           <p>{{ selectedMilestone.description }}</p>
         </div>
 
-        <div v-if="selectedMilestone.content" class="detail-content-markdown" v-html="renderMarkdown(selectedMilestone.content)"></div>
+        <div
+          v-if="selectedMilestone.content"
+          class="detail-content-markdown"
+          v-html="renderMarkdown(selectedMilestone.content)"
+        ></div>
 
-        <div v-if="selectedMilestone.media && selectedMilestone.media.length > 0" class="detail-media">
+        <div class="detail-media">
           <h4>相关媒体</h4>
           <div class="media-grid">
-            <div v-for="(media, index) in selectedMilestone.media" :key="index" class="media-item">
-              <img v-if="media.type === 'image'" :src="media.url" :alt="'媒体' + (index + 1)" />
-              <video v-else-if="media.type === 'video'" :src="media.url" controls></video>
+            <template v-if="selectedMilestone.media && selectedMilestone.media.length > 0">
+              <div v-for="(media, index) in selectedMilestone.media" :key="index" class="media-item">
+                <img v-if="media.type === 'image'" :src="media.url" :alt="media.caption || `媒体${index + 1}`" />
+                <video v-else-if="media.type === 'video'" :src="media.url" controls></video>
+              </div>
+            </template>
+            <div v-else class="media-empty">
+              <PictureOutlined class="empty-media-icon" />
+              <span>暂无媒体资源</span>
             </div>
           </div>
         </div>
 
-        <div v-if="selectedMilestone.relatedSatelliteNoradId" class="detail-related">
+        <div class="detail-related">
           <h4>关联卫星</h4>
-          <a-button type="primary" @click="viewRelatedSatellite(selectedMilestone.relatedSatelliteNoradId)">
+          <a-button
+            type="primary"
+            :disabled="!selectedMilestone.relatedSatelliteNoradId"
+            @click="viewRelatedSatellite(selectedMilestone.relatedSatelliteNoradId)"
+          >
             <RocketOutlined />
-            查看卫星详情
+            {{ selectedMilestone.relatedSatelliteNoradId ? '查看卫星详情' : '暂无关联卫星' }}
           </a-button>
         </div>
       </div>
@@ -196,8 +178,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, shallowRef, markRaw } from 'vue'
 import { useRouter } from 'vue-router'
+import { message } from 'ant-design-vue'
 import {
   RocketOutlined,
   GlobalOutlined,
@@ -207,9 +190,19 @@ import {
   TagOutlined,
   EnvironmentOutlined,
   UserOutlined,
+  InboxOutlined,
+  PictureOutlined,
 } from '@ant-design/icons-vue'
 import { milestoneApi } from '@/api'
 import { marked } from 'marked'
+import DOMPurify from 'dompurify'
+
+// 类型定义
+interface MediaItem {
+  type: 'image' | 'video'
+  url: string
+  caption?: string
+}
 
 interface Milestone {
   id: number
@@ -219,7 +212,7 @@ interface Milestone {
   eventDate: string
   category: string
   cover?: string
-  media?: any[]
+  media?: MediaItem[]
   relatedSatelliteNoradId?: string
   importance: number
   location?: string
@@ -233,13 +226,18 @@ interface TimelineDecade {
   items: Milestone[]
 }
 
-const router = useRouter()
-const loading = ref(true)
-const detailVisible = ref(false)
-const selectedMilestone = ref<Milestone | null>(null)
-const selectedCategory = ref('')
+// 默认封面图
+const defaultCover = `data:image/svg+xml,${encodeURIComponent('<svg width="400" height="200" xmlns="http://www.w3.org/2000/svg"><rect width="100%" height="100%" fill="#1a1a2e"/><text x="50%" y="50%" fill="#666" font-size="16" text-anchor="middle" dy=".3em">暂无封面图片</text></svg>')}`
 
-const timelineData = ref<TimelineDecade[]>([])
+// 分类选项配置
+const categoryOptions = [
+  { value: '', label: '全部', icon: markRaw(GlobalOutlined) },
+  { value: 'launch', label: '发射任务', icon: markRaw(RocketOutlined) },
+  { value: 'recovery', label: '回收任务', icon: markRaw(RocketOutlined) },
+  { value: 'orbit', label: '在轨测试', icon: markRaw(ApiOutlined) },
+  { value: 'mission', label: '深空探测', icon: markRaw(GlobalOutlined) },
+  { value: 'other', label: '其他', icon: markRaw(InfoCircleOutlined) },
+]
 
 // 分类标签映射
 const categoryLabels: Record<string, string> = {
@@ -250,8 +248,28 @@ const categoryLabels: Record<string, string> = {
   other: '其他',
 }
 
+const router = useRouter()
+const loading = ref(true)
+const detailVisible = ref(false)
+const selectedMilestone = shallowRef<Milestone | null>(null)
+const selectedCategory = ref('')
+const timelineData = ref<TimelineDecade[]>([])
+
+// 根据 selectedCategory 筛选数据
+const filteredTimeline = computed(() => {
+  if (!selectedCategory.value) {
+    return timelineData.value
+  }
+  return timelineData.value
+    .map((decade) => ({
+      decade: decade.decade,
+      items: decade.items.filter((item) => item.category === selectedCategory.value),
+    }))
+    .filter((decade) => decade.items.length > 0)
+})
+
 const getCategoryLabel = (category: string): string => {
-  return categoryLabels[category] || category
+  return categoryLabels[category] || '未知分类'
 }
 
 const formatDate = (dateStr: string): string => {
@@ -263,8 +281,16 @@ const formatDate = (dateStr: string): string => {
   })
 }
 
+// 安全渲染 Markdown（防 XSS）
 const renderMarkdown = (content: string): string => {
-  return marked(content)
+  const rawHtml = marked(content) as string
+  return DOMPurify.sanitize(rawHtml)
+}
+
+// 图片加载失败处理
+const handleImageError = (event: Event) => {
+  const target = event.target as HTMLImageElement
+  target.src = defaultCover
 }
 
 // 加载时间线数据
@@ -273,9 +299,12 @@ async function loadTimeline() {
     const res = await milestoneApi.getTimeline()
     if (res.data.code === 0) {
       timelineData.value = res.data.data
+    } else {
+      message.error(res.data.message || '加载失败')
     }
-  } catch (err) {
+  } catch (err: any) {
     console.error('加载时间线数据失败:', err)
+    message.error(err.response?.data?.message || '加载数据失败，请稍后重试')
   } finally {
     loading.value = false
   }
@@ -288,7 +317,8 @@ function showDetail(milestone: Milestone) {
 }
 
 // 查看关联卫星
-function viewRelatedSatellite(noradId: string) {
+function viewRelatedSatellite(noradId?: string) {
+  if (!noradId) return
   detailVisible.value = false
   router.push({
     path: '/satellite',
@@ -337,7 +367,9 @@ onMounted(() => {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .loading-text {
@@ -421,11 +453,44 @@ onMounted(() => {
   .category-icon {
     font-size: 16px;
 
-    &.launch { color: #00ff88; }
-    &.recovery { color: #00d4ff; }
-    &.orbit { color: #b366e8; }
-    &.mission { color: #ffaa00; }
-    &.other { color: rgba(255, 255, 255, 0.5); }
+    &.all {
+      color: rgba(255, 255, 255, 0.6);
+    }
+    &.launch {
+      color: #00ff88;
+    }
+    &.recovery {
+      color: #00d4ff;
+    }
+    &.orbit {
+      color: #b366e8;
+    }
+    &.mission {
+      color: #ffaa00;
+    }
+    &.other {
+      color: rgba(255, 255, 255, 0.5);
+    }
+  }
+}
+
+// 空状态
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  color: rgba(255, 255, 255, 0.4);
+
+  .empty-icon {
+    font-size: 64px;
+    margin-bottom: 16px;
+  }
+
+  p {
+    font-size: 16px;
+    margin: 0;
   }
 }
 
@@ -533,17 +598,6 @@ onMounted(() => {
   }
 }
 
-.card-cover {
-  height: 200px;
-  overflow: hidden;
-
-  img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-}
-
 .card-body {
   padding: 20px;
 }
@@ -569,11 +623,26 @@ onMounted(() => {
   background: rgba(168, 85, 247, 0.15);
   color: #a855f7;
 
-  &.launch { background: rgba(0, 255, 136, 0.15); color: #00ff88; }
-  &.recovery { background: rgba(0, 212, 255, 0.15); color: #00d4ff; }
-  &.orbit { background: rgba(179, 102, 232, 0.15); color: #b366e8; }
-  &.mission { background: rgba(255, 170, 0, 0.15); color: #ffaa00; }
-  &.other { background: rgba(255, 255, 255, 0.1); color: rgba(255, 255, 255, 0.5); }
+  &.launch {
+    background: rgba(0, 255, 136, 0.15);
+    color: #00ff88;
+  }
+  &.recovery {
+    background: rgba(0, 212, 255, 0.15);
+    color: #00d4ff;
+  }
+  &.orbit {
+    background: rgba(179, 102, 232, 0.15);
+    color: #b366e8;
+  }
+  &.mission {
+    background: rgba(255, 170, 0, 0.15);
+    color: #ffaa00;
+  }
+  &.other {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.5);
+  }
 }
 
 .card-title {
@@ -634,6 +703,7 @@ onMounted(() => {
 .detail-cover {
   border-radius: 12px;
   overflow: hidden;
+  background: #1a1a2e;
 
   img {
     width: 100%;
@@ -700,13 +770,17 @@ onMounted(() => {
     margin-bottom: 12px;
   }
 
-  :deep(h1), :deep(h2), :deep(h3), :deep(h4) {
+  :deep(h1),
+  :deep(h2),
+  :deep(h3),
+  :deep(h4) {
     color: #fff;
     margin-top: 20px;
     margin-bottom: 12px;
   }
 
-  :deep(ul), :deep(ol) {
+  :deep(ul),
+  :deep(ol) {
     padding-left: 20px;
     color: rgba(255, 255, 255, 0.7);
   }
@@ -723,10 +797,31 @@ onMounted(() => {
     border-radius: 8px;
     overflow: hidden;
 
-    img, video {
+    img,
+    video {
       width: 100%;
       height: 100px;
       object-fit: cover;
+    }
+  }
+
+  .media-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 30px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    color: rgba(255, 255, 255, 0.3);
+
+    .empty-media-icon {
+      font-size: 32px;
+    }
+
+    span {
+      font-size: 13px;
     }
   }
 }

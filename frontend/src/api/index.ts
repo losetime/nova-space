@@ -1,11 +1,12 @@
 import axios, { type AxiosInstance, type AxiosResponse } from 'axios'
 import { useUserStore } from '@/stores/user'
 
-// API 响应格式
+// API 响应格式（与后端 TransformInterceptor 一致）
 export interface ApiResponse<T = unknown> {
-  success: boolean
+  code: number
   data: T
   message?: string
+  timestamp?: string
 }
 
 // 用户信息

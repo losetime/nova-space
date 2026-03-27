@@ -23,6 +23,9 @@ importers:
       cesium:
         specifier: ^1.139.0
         version: 1.139.1
+      dompurify:
+        specifier: ^3.3.3
+        version: 3.3.3
       flag-icons:
         specifier: ^7.5.0
         version: 7.5.0
@@ -51,6 +54,9 @@ importers:
       '@tsconfig/node24':
         specifier: ^24.0.4
         version: 24.0.4
+      '@types/dompurify':
+        specifier: ^3.2.0
+        version: 3.2.0
       '@types/node':
         specifier: ^24.11.0
         version: 24.12.0
@@ -932,6 +938,10 @@ packages:
   '@types/cesium@1.70.4':
     resolution: {integrity: sha512-dSBhF5qftTCyB8xYRpumjzeEdEiV0wjDfmLtXF+1cNYUHvn2xs2HcvxCKFCqH6hEcATPWDP0WW6aaCCqrUo9dQ==}
     deprecated: This is a stub types definition. cesium provides its own type definitions, so you do not need this installed.
+
+  '@types/dompurify@3.2.0':
+    resolution: {integrity: sha512-Fgg31wv9QbLDA0SpTOXO3MaxySc4DKGLi8sna4/Utjo4r3ZRPdCt4UQee8BWr+Q5z21yifghREPJGYaEOEIACg==}
+    deprecated: This is a stub types definition. dompurify provides its own type definitions, so you do not need this installed.
 
   '@types/esrecurse@4.3.1':
     resolution: {integrity: sha512-xJBAbDifo5hpffDBuHl0Y8ywswbiAp/Wi7Y/GtAgSlZyIABppyurxVueOPE8LUQOxdlgi6Zqce7uoEpqNTeiUw==}
@@ -3195,6 +3205,10 @@ snapshots:
   '@types/cesium@1.70.4':
     dependencies:
       cesium: 1.139.1
+
+  '@types/dompurify@3.2.0':
+    dependencies:
+      dompurify: 3.3.3
 
   '@types/esrecurse@4.3.1': {}
 

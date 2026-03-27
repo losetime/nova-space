@@ -1,5 +1,16 @@
-import { IsString, IsNotEmpty, IsOptional, IsEnum, IsNumber, Min, Max, IsDateString } from 'class-validator';
-import { MilestoneCategory } from '../entities/milestone.entity';
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsEnum,
+  IsNumber,
+  Min,
+  Max,
+  IsDateString,
+  IsBoolean,
+} from 'class-validator';
+import { Transform } from 'class-transformer';
+import { MilestoneCategory, MediaItem } from '../entities/milestone.entity';
 
 export class CreateMilestoneDto {
   @IsString()
@@ -27,7 +38,7 @@ export class CreateMilestoneDto {
   cover?: string;
 
   @IsOptional()
-  media?: any;
+  media?: MediaItem[];
 
   @IsString()
   @IsOptional()
@@ -47,8 +58,9 @@ export class CreateMilestoneDto {
   @IsOptional()
   organizer?: string;
 
-  @IsString()
+  @IsBoolean()
   @IsOptional()
+  @Transform(({ value }) => value === true || value === 'true' || value === 1)
   isPublished?: boolean;
 }
 
@@ -78,7 +90,7 @@ export class UpdateMilestoneDto {
   cover?: string;
 
   @IsOptional()
-  media?: any;
+  media?: MediaItem[];
 
   @IsString()
   @IsOptional()
@@ -98,8 +110,9 @@ export class UpdateMilestoneDto {
   @IsOptional()
   organizer?: string;
 
-  @IsString()
+  @IsBoolean()
   @IsOptional()
+  @Transform(({ value }) => value === true || value === 'true' || value === 1)
   isPublished?: boolean;
 }
 
