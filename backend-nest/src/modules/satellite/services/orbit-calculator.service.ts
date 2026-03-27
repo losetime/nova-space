@@ -3,6 +3,10 @@ import * as satellite from 'satellite.js';
 import type { TLEData, SatellitePosition, OrbitPoint, SatelliteData, OrbitPrediction, PositionPrediction, ObserverPosition, PassEvent, PassPrediction } from '../interfaces/satellite.interface';
 import { SpaceTrackService } from './space-track.service';
 
+// 常量定义
+const EARTH_RADIUS_KM = 6371; // 地球半径 (km)
+const AU_TO_KM = 149597870.7; // 天文单位转千米
+
 /**
  * 轨道计算服务
  * 使用 satellite.js 计算卫星位置和轨道
@@ -512,15 +516,118 @@ export class OrbitCalculatorService implements OnModuleInit {
 
   /**
    * 检查卫星是否肉眼可见（太阳在地平线下，卫星被照亮）
-   * 简化版本：暂时返回 false，后续可添加太阳位置计算
+   * @param sat 卫星数据
+   * @param observer 观察者位置
+   * @param time 预测时间
    */
   private isVisuallyVisible(
     sat: SatelliteData,
     observer: ObserverPosition,
     time: Date,
   ): boolean {
-    // TODO: 实现太阳位置计算，判断是否肉眼可见
-    // 目前简化处理，返回 false
-    return false;
+    try {
+      // 1. 计算太阳位置
+      const jday = satellite.jday(time);
+      const sunPosition = satellite.sunPos(jday);
+
+      // 将太阳位置从天文单位转换为千米
+      const sunPosKm = {
+        x: sunPosition.rsun[0] * AU_TO_KM,
+        y: sunPosition.rsun[1] * AU_TO_KM,
+        z: sunPosition.rsun[2] * AU_TO_KM,
+      };
+
+      // 2. 检查太阳是否在地平线下（观察者在黑暗中）
+      const gmst = satellite.gstime(time);
+      const sunEcf = satellite.eciToEcf(sunPosKm, gmst);
+
+      const observerGd = {
+        latitude: satellite.degreesToRadians(observer.lat),
+        longitude: satellite.degreesToRadians(observer.lng),
+        height: observer.alt / 1000, // 转换为 km
+      };
+
+      const sunLookAngles = satellite.ecfToLookAngles(observerGd, sunEcf);
+      const sunElevation = satellite.radiansToDegrees(sunLookAngles.elevation);
+
+      // 太阳高度角需低于 -6 度（民用晨昏线以下）
+      // 此时天空足够暗，能看到被照亮的卫星
+      const isSunBelowHorizon = sunElevation < -6;
+
+      if (!isSunBelowHorizon) {
+        return false; // 白天或天空太亮，无法看到卫星
+      }
+
+      // 3. 检查卫星是否被太阳照亮
+      const eci = satellite.propagate(sat.satrec, time);
+      if (!eci || !eci.position) {
+        return false;
+      }
+
+      const isIlluminated = this.isSatelliteIlluminated(eci.position, sunPosKm);
+
+      return isIlluminated;
+    } catch (error) {
+      this.logger.error(`计算卫星可见性错误: ${error}`);
+      return false;
+    }
+  }
+
+  /**
+   * 检查卫星是否被太阳照亮（不在地球阴影中）
+   * @param satPositionEci 卫星 ECI 坐标 (km)
+   * @param sunPositionEci 太阳 ECI 坐标 (km)
+   */
+  private isSatelliteIlluminated(
+    satPositionEci: { x: number; y: number; z: number },
+    sunPositionEci: { x: number; y: number; z: number },
+  ): boolean {
+    // 计算卫星到太阳的向量
+    const satToSun = {
+      x: sunPositionEci.x - satPositionEci.x,
+      y: sunPositionEci.y - satPositionEci.y,
+      z: sunPositionEci.z - satPositionEci.z,
+    };
+
+    const distToSun = Math.sqrt(
+      satToSun.x ** 2 + satToSun.y ** 2 + satToSun.z ** 2,
+    );
+
+    // 归一化的太阳方向向量（从卫星指向太阳）
+    const sunDir = {
+      x: satToSun.x / distToSun,
+      y: satToSun.y / distToSun,
+      z: satToSun.z / distToSun,
+    };
+
+    // 卫星到地心的距离
+    const satMag = Math.sqrt(
+      satPositionEci.x ** 2 + satPositionEci.y ** 2 + satPositionEci.z ** 2,
+    );
+
+    // 归一化的卫星位置向量（从地心指向卫星）
+    const satDir = {
+      x: satPositionEci.x / satMag,
+      y: satPositionEci.y / satMag,
+      z: satPositionEci.z / satMag,
+    };
+
+    // 点积：判断卫星在地球的向阳面还是背阳面
+    // 正值表示卫星在向阳面，负值表示在背阳面（可能在阴影中）
+    const dotProduct = satDir.x * sunDir.x + satDir.y * sunDir.y + satDir.z * sunDir.z;
+
+    // 如果点积为正，卫星在向阳面，肯定被照亮
+    if (dotProduct >= 0) {
+      return true;
+    }
+
+    // 卫星在背阳面，需要检查是否在地球阴影锥内
+    // 计算卫星到地心-太阳连线的垂直距离
+    const sinTheta = Math.sqrt(1 - dotProduct ** 2);
+    const perpDist = satMag * sinTheta;
+
+    // 如果垂直距离大于地球半径，卫星在阴影锥之外，仍被照亮
+    // 否则卫星在地球阴影中（本影区）
+    return perpDist > EARTH_RADIUS_KM;
   }
 }

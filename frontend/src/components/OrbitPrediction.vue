@@ -165,6 +165,7 @@ import {
   DownOutlined,
   EnvironmentOutlined,
 } from '@ant-design/icons-vue'
+import { message } from 'ant-design-vue'
 import { satelliteApi, type OrbitPrediction, type PositionPrediction } from '@/api'
 import type { Satellite } from '@/hooks/useWebSocket'
 
@@ -243,9 +244,12 @@ const handlePredict = async () => {
       prediction.value = res.data.data
       // 通知父组件显示轨道
       emit('showOrbit', prediction.value.orbit)
+    } else {
+      message.error(res.data.message || '轨道预测失败')
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('轨道预测失败:', error)
+    message.error(error.response?.data?.message || '轨道预测请求失败，请稍后重试')
   } finally {
     loading.value = false
   }
@@ -264,9 +268,12 @@ const handlePositionPredict = async () => {
 
     if (res.data.code === 0) {
       positionResult.value = res.data.data
+    } else {
+      message.error(res.data.message || '位置预测失败')
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('位置预测失败:', error)
+    message.error(error.response?.data?.message || '位置预测请求失败，请稍后重试')
   } finally {
     positionLoading.value = false
   }

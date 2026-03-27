@@ -207,6 +207,7 @@ import {
   CalculatorOutlined,
   CalendarOutlined,
 } from '@ant-design/icons-vue'
+import { message } from 'ant-design-vue'
 import { satelliteApi, type PassPrediction } from '@/api'
 import type { Satellite } from '@/hooks/useWebSocket'
 
@@ -257,6 +258,7 @@ const isValidLocation = computed(() => {
 // 检测当前位置
 const detectLocation = async () => {
   if (!navigator.geolocation) {
+    message.warning('您的浏览器不支持地理定位功能')
     return
   }
 
@@ -272,8 +274,17 @@ const detectLocation = async () => {
     observer.value.lat = position.coords.latitude
     observer.value.lng = position.coords.longitude
     observer.value.alt = position.coords.altitude || 0
-  } catch (error) {
+  } catch (error: any) {
     console.error('获取位置失败:', error)
+    if (error.code === 1) {
+      message.error('位置权限被拒绝，请允许访问位置信息')
+    } else if (error.code === 2) {
+      message.error('无法获取位置信息，请检查设备设置')
+    } else if (error.code === 3) {
+      message.error('获取位置超时，请重试')
+    } else {
+      message.error('获取位置失败，请手动输入坐标')
+    }
   } finally {
     locating.value = false
   }
@@ -300,9 +311,12 @@ const handlePredict = async () => {
 
     if (res.data.code === 0) {
       prediction.value = res.data.data
+    } else {
+      message.error(res.data.message || '过境预测失败')
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('过境预测失败:', error)
+    message.error(error.response?.data?.message || '过境预测请求失败，请稍后重试')
   } finally {
     loading.value = false
   }
@@ -338,7 +352,7 @@ const formatDuration = (seconds: number) => {
 const getAzimuthDirection = (azimuth: number): string => {
   const directions = ['北', '东北', '东', '东南', '南', '西南', '西', '西北']
   const index = Math.round(azimuth / 45) % 8
-  return directions[index]
+  return directions[index] ?? '北'
 }
 
 // 获取高度角颜色
