@@ -26,10 +26,10 @@
     </div>
 
     <!-- 卫星列表 -->
-    <div class="list-container" ref="listRef">
-      <transition-group name="list" tag="div" class="satellite-items">
+    <div class="list-container" v-bind="containerProps" ref="listRef">
+      <div v-bind="wrapperProps" class="satellite-items">
         <div
-          v-for="satellite in filteredSatellites"
+          v-for="{ data: satellite } in list"
           :key="satellite.noradId"
           :class="['satellite-item', { active: selectedSatellite?.noradId === satellite.noradId }]"
           @click="$emit('select-satellite', satellite)"
@@ -39,7 +39,7 @@
             <div class="orbit-ring"></div>
             <div class="sat-dot" :style="{ animationDelay: `${Math.random() * 2}s` }"></div>
           </div>
-          
+
           <!-- 卫星信息 -->
           <div class="sat-content">
             <div class="sat-header">
@@ -66,7 +66,7 @@
             </div>
           </div>
         </div>
-      </transition-group>
+      </div>
 
       <!-- 空状态 -->
       <div v-if="filteredSatellites.length === 0" class="empty-state">
@@ -81,7 +81,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
+import { useVirtualList } from '@vueuse/core'
 import { SearchOutlined, CloseCircleOutlined, GlobalOutlined, ArrowUpOutlined } from '@ant-design/icons-vue'
 import type { Satellite } from '@/hooks/useWebSocket'
 
@@ -115,7 +116,22 @@ const filteredSatellites = computed(() => {
     )
   }
 
-  return result.slice(0, 100)
+  return result
+})
+
+// 虚拟滚动配置
+const ITEM_HEIGHT = 72 // 列表项高度（包含 margin）
+const { list, containerProps, wrapperProps, scrollTo } = useVirtualList(
+  filteredSatellites,
+  {
+    itemHeight: ITEM_HEIGHT,
+    overscan: 10, // 预渲染可见区域外的项目数
+  }
+)
+
+// 搜索时滚动到顶部
+watch(searchQuery, () => {
+  scrollTo(0)
 })
 
 const getOrbitType = (alt: number): string => {
@@ -247,7 +263,7 @@ const formatAlt = (alt: number): string => {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 12px;
+  position: relative;
 
   &::-webkit-scrollbar {
     width: 5px;
@@ -268,9 +284,11 @@ const formatAlt = (alt: number): string => {
 }
 
 .satellite-items {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  padding: 12px;
+}
+
+.satellite-items .satellite-item {
+  margin-bottom: 8px;
 }
 
 // 卫星列表项
@@ -488,6 +506,8 @@ const formatAlt = (alt: number): string => {
 
 // 空状态
 .empty-state {
+  position: absolute;
+  inset: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -527,22 +547,6 @@ const formatAlt = (alt: number): string => {
 @keyframes float {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-8px); }
-}
-
-// 列表过渡动画
-.list-enter-active,
-.list-leave-active {
-  transition: all 0.3s ease;
-}
-
-.list-enter-from {
-  opacity: 0;
-  transform: translateX(-20px);
-}
-
-.list-leave-to {
-  opacity: 0;
-  transform: translateX(20px);
 }
 
 // fade 过渡
