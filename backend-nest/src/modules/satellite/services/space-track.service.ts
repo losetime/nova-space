@@ -53,6 +53,7 @@ interface SpaceTrackGpResponse {
 export class SpaceTrackService implements OnModuleInit {
   private readonly logger = new Logger(SpaceTrackService.name);
   private cachedTLEs: TLEData[] = [];
+  private cachedMetadata: Map<string, { countryCode?: string; mission?: string; operator?: string }> = new Map();
   private maxSatellites: number;
   private config: SpaceTrackConfig;
   private sessionCookie: string = '';
@@ -116,7 +117,25 @@ export class SpaceTrackService implements OnModuleInit {
       meanMotion: entity.meanMotion,
     }));
 
-    this.logger.log(`已加载 ${this.cachedTLEs.length} 条 TLE 数据到内存`);
+    // 加载元数据缓存（筛选字段）
+    const metadataEntities = await this.metadataRepository.find();
+    this.cachedMetadata.clear();
+    metadataEntities.forEach((entity) => {
+      this.cachedMetadata.set(entity.noradId, {
+        countryCode: entity.countryCode || undefined,
+        mission: entity.mission || undefined,
+        operator: entity.operator || undefined,
+      });
+    });
+
+    this.logger.log(`已加载 ${this.cachedTLEs.length} 条 TLE 数据和 ${this.cachedMetadata.size} 条元数据到内存`);
+  }
+
+  /**
+   * 获取缓存的元数据（筛选字段）
+   */
+  getCachedMetadata(): Map<string, { countryCode?: string; mission?: string; operator?: string }> {
+    return this.cachedMetadata;
   }
 
   /**

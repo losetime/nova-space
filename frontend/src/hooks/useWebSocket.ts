@@ -9,7 +9,10 @@ export interface Satellite {
     alt: number
   }
   timestamp: string
+  // 筛选字段
   countryCode?: string
+  mission?: string
+  operator?: string
 }
 
 export function useWebSocket() {
@@ -19,6 +22,7 @@ export function useWebSocket() {
   const satelliteCount = ref(0)
   const lastUpdate = ref('--')
   const isInitialized = ref(false)
+  const useHttpFallback = ref(false) // 是否使用 HTTP 备用模式
 
   // 动态获取地址（开发环境通过 vite proxy，生产环境通过 nginx）
   const wsUrl = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws/satellites`
@@ -33,6 +37,7 @@ export function useWebSocket() {
       ws.value.onopen = () => {
         console.log('WebSocket 连接已建立')
         status.value = '已连接'
+        useHttpFallback.value = false // WebSocket 成功，禁用 HTTP 备用
       }
 
       ws.value.onmessage = (event) => {
@@ -62,15 +67,20 @@ export function useWebSocket() {
         }, 5000)
       }
 
-      ws.value.onerror = (error) => {
-        console.error('WebSocket 错误:', error)
-        status.value = '连接错误'
+      ws.value.onerror = () => {
+        console.error('WebSocket 连接失败，切换到 HTTP 备用模式')
+        status.value = 'HTTP 模式'
+        useHttpFallback.value = true
+        // WebSocket 失败后才发起 HTTP 备用请求
+        fetchSatellites()
       }
 
       isInitialized.value = true
     } catch (error) {
       console.error('创建 WebSocket 连接失败:', error)
       status.value = '连接失败'
+      useHttpFallback.value = true
+      fetchSatellites()
     }
   }
 
@@ -82,6 +92,7 @@ export function useWebSocket() {
       ws.value.onopen = () => {
         console.log('WebSocket 连接已建立')
         status.value = '已连接'
+        useHttpFallback.value = false
       }
 
       ws.value.onmessage = (event) => {
@@ -109,16 +120,20 @@ export function useWebSocket() {
         }, 5000)
       }
 
-      ws.value.onerror = (error) => {
-        console.error('WebSocket 错误:', error)
-        status.value = '连接错误'
+      ws.value.onerror = () => {
+        console.error('WebSocket 重连失败')
+        status.value = 'HTTP 模式'
+        useHttpFallback.value = true
+        fetchSatellites()
       }
     } catch (error) {
       console.error('重连失败:', error)
+      useHttpFallback.value = true
+      fetchSatellites()
     }
   }
 
-  // 获取卫星数据（HTTP 方式）
+  // 获取卫星数据（HTTP 方式 - 仅作为 WebSocket 失败时的备用）
   const fetchSatellites = async () => {
     try {
       const response = await fetch(apiUrl)
@@ -131,6 +146,15 @@ export function useWebSocket() {
       }
     } catch (error) {
       console.error('获取卫星数据失败:', error)
+    }
+
+    // 如果是 HTTP 备用模式，定时轮询
+    if (useHttpFallback.value) {
+      setTimeout(() => {
+        if (useHttpFallback.value) {
+          fetchSatellites()
+        }
+      }, 10000) // 每 10 秒轮询一次
     }
   }
 
@@ -149,6 +173,7 @@ export function useWebSocket() {
   const disconnect = () => {
     if (ws.value) {
       isInitialized.value = false
+      useHttpFallback.value = false
       ws.value.close()
       ws.value = null
     }

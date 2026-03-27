@@ -207,54 +207,7 @@ export class SatelliteController {
     };
   }
 
-  /**
-   * 获取所有卫星元数据
-   * GET /api/satellites/metadata/all
-   */
-  @Get('metadata/all')
-  async getAllMetadata() {
-    const metadata = await this.spaceTrackService.getAllMetadata();
-    const result = Array.from(metadata.entries()).map(([noradId, meta]) => ({
-      noradId,
-      name: meta.name,
-      objectId: meta.objectId,
-      altNames: meta.altNames,
-      objectType: meta.objectType,
-      status: meta.status,
-      countryCode: meta.countryCode,
-      launchDate: meta.launchDate,
-      launchSite: meta.launchSite,
-      launchVehicle: meta.launchVehicle,
-      decayDate: meta.decayDate,
-      period: meta.period,
-      inclination: meta.inclination,
-      apogee: meta.apogee,
-      perigee: meta.perigee,
-      eccentricity: meta.eccentricity,
-      raan: meta.raan,
-      argOfPerigee: meta.argOfPerigee,
-      rcs: meta.rcs,
-      stdMag: meta.stdMag,
-      tleEpoch: meta.tleEpoch,
-      tleAge: meta.tleAge,
-      // ESA DISCOS 扩展字段
-      launchMass: meta.launchMass,
-      dimensions: meta.dimensions,
-      span: meta.span,
-      shape: meta.shape,
-      mission: meta.mission,
-      operator: meta.operator,
-      hasDiscosData: !!(meta.launchMass || meta.dimensions || meta.span),
-    }));
-
-    return {
-      code: 0,
-      data: result,
-      message: 'success',
-    };
-  }
-
-  /**
+/**
    * 获取用户关注的卫星列表
    * GET /api/satellites/favorites
    */

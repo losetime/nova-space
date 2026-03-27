@@ -636,37 +636,6 @@ const {
 // 解构 websocket 数据
 const { status, satellites, satelliteCount, lastUpdate } = websocket
 
-// 卫星元数据类型
-interface SatelliteMetadata {
-  noradId: string
-  name?: string
-  objectId?: string
-  altNames?: string[]
-  objectType?: string
-  status?: string
-  countryCode?: string
-  launchDate?: string
-  launchSite?: string
-  launchVehicle?: string
-  decayDate?: string
-  period?: number
-  inclination?: number
-  apogee?: number
-  perigee?: number
-  eccentricity?: number
-  raan?: number
-  argOfPerigee?: number
-  rcs?: string
-  stdMag?: number
-  tleEpoch?: string
-  tleAge?: number
-  mission?: string  // 用途（ESA DISCOS）
-  operator?: string
-}
-
-// 卫星元数据映射
-const satelliteMetadata = ref<Map<string, SatelliteMetadata>>(new Map())
-
 // 筛选后的卫星列表
 const filteredSatellites = computed(() => {
   let result = satellites.value
@@ -682,28 +651,19 @@ const filteredSatellites = computed(() => {
     })
   }
 
-  // 按国家筛选
+  // 按国家筛选（直接使用卫星数据中的字段）
   if (selectedCountry.value) {
-    result = result.filter(sat => {
-      const meta = satelliteMetadata.value.get(sat.noradId)
-      return meta?.countryCode === selectedCountry.value
-    })
+    result = result.filter(sat => sat.countryCode === selectedCountry.value)
   }
 
-  // 按用途筛选（使用 mission 字段）
+  // 按用途筛选
   if (selectedPurpose.value) {
-    result = result.filter(sat => {
-      const meta = satelliteMetadata.value.get(sat.noradId)
-      return meta?.mission === selectedPurpose.value
-    })
+    result = result.filter(sat => sat.mission === selectedPurpose.value)
   }
 
   // 按运营商筛选
   if (selectedOperator.value) {
-    result = result.filter(sat => {
-      const meta = satelliteMetadata.value.get(sat.noradId)
-      return meta?.operator === selectedOperator.value
-    })
+    result = result.filter(sat => sat.operator === selectedOperator.value)
   }
 
   // 按收藏筛选
@@ -853,11 +813,7 @@ onMounted(async () => {
     // 初始化 WebSocket
     websocket.connect()
 
-    // 延迟获取一次 HTTP 数据作为备份
-    setTimeout(() => {
-      websocket.fetchSatellites()
-    }, 1000)
-
+    
     // 延迟隐藏 loading，确保 Cesium 渲染完成
     setTimeout(() => {
       loading.value = false
@@ -894,20 +850,7 @@ onMounted(async () => {
     console.error('加载运营商列表失败:', err)
   }
 
-  // 加载卫星元数据
-  try {
-    const metaRes = await satelliteApi.getAllMetadata()
-    if (metaRes.data.code === 0 && metaRes.data.data) {
-      const map = new Map<string, SatelliteMetadata>()
-      metaRes.data.data.forEach((item: SatelliteMetadata) => {
-        map.set(item.noradId, item)
-      })
-      satelliteMetadata.value = map
-    }
-  } catch (err) {
-    console.error('加载卫星元数据失败:', err)
-  }
-
+  
   // 加载收藏列表
   await fetchFavorites()
 })

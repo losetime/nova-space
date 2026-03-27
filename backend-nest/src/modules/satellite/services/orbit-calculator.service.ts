@@ -78,11 +78,19 @@ export class OrbitCalculatorService implements OnModuleInit {
   calculateAllSatellitesPosition(): SatellitePosition[] {
     const now = new Date();
     const positionData: SatellitePosition[] = [];
+    const metadata = this.spaceTrackService.getCachedMetadata();
 
     this.satellites.forEach((sat, noradId) => {
       try {
         const position = this.calculateSatellitePosition(sat, now);
         if (position) {
+          // 附加筛选字段
+          const meta = metadata.get(noradId);
+          if (meta) {
+            position.countryCode = meta.countryCode;
+            position.mission = meta.mission;
+            position.operator = meta.operator;
+          }
           positionData.push(position);
         }
       } catch (error) {

@@ -452,35 +452,6 @@ export const satelliteApi = {
   getOperators: () =>
     api.get<ApiResponse<{ name: string; count: number }[]>>('/satellites/operators'),
 
-  // 获取所有卫星元数据
-  getAllMetadata: () =>
-    api.get<ApiResponse<{
-      noradId: string
-      name?: string
-      objectId?: string
-      altNames?: string[]
-      objectType?: string
-      status?: string
-      countryCode?: string
-      launchDate?: string
-      launchSite?: string
-      launchVehicle?: string
-      decayDate?: string
-      period?: number
-      inclination?: number
-      apogee?: number
-      perigee?: number
-      eccentricity?: number
-      raan?: number
-      argOfPerigee?: number
-      rcs?: string
-      stdMag?: number
-      tleEpoch?: string
-      tleAge?: number
-      mission?: string
-      operator?: string
-    }[]>>('/satellites/metadata/all'),
-
   // 关注/取消关注卫星
   toggleFavorite: (noradId: string | number) =>
     api.post<ApiResponse<{ favorited: boolean }>>(`/satellites/${noradId}/favorite`),

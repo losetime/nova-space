@@ -78,6 +78,10 @@ export interface SatellitePosition {
     alt: number;
   };
   timestamp?: string;
+  // 筛选字段（从元数据获取）
+  countryCode?: string;
+  mission?: string;
+  operator?: string;
 }
 
 /**
