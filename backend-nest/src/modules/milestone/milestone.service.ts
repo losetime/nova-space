@@ -1,8 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Milestone, MilestoneCategory } from '../entities/milestone.entity';
-import { CreateMilestoneDto, UpdateMilestoneDto, QueryMilestoneDto } from '../dto/milestone.dto';
+import { Milestone, MilestoneCategory } from './entities/milestone.entity';
+import { CreateMilestoneDto, UpdateMilestoneDto, QueryMilestoneDto } from './dto/milestone.dto';
 
 @Injectable()
 export class MilestoneService {

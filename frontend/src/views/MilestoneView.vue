@@ -50,7 +50,7 @@
             :class="{ active: selectedCategory === 'orbit' }"
             @click="selectedCategory = 'orbit'"
           >
-            <SatelliteOutlined class="category-icon orbit" />
+            <ApiOutlined class="category-icon orbit" />
             <span>在轨测试</span>
           </div>
           <div
@@ -201,7 +201,7 @@ import { useRouter } from 'vue-router'
 import {
   RocketOutlined,
   GlobalOutlined,
-  SatelliteOutlined,
+  ApiOutlined,
   InfoCircleOutlined,
   ClockCircleOutlined,
   TagOutlined,

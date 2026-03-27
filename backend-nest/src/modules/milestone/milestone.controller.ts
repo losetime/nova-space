@@ -1,8 +1,9 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, Query, ParseIntPipe, UseGuards } from '@nestjs/common';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { MilestoneService } from './milestone.service';
 import { CreateMilestoneDto, UpdateMilestoneDto, QueryMilestoneDto } from './dto/milestone.dto';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { UserRole } from '../../common/enums/user.enum';
 
 @Controller('milestones')
 export class MilestoneController {
@@ -41,7 +42,7 @@ export class MilestoneController {
   // 管理员接口 - 创建里程碑
   @Post()
   @UseGuards(JwtAuthGuard)
-  @Roles('admin', 'super_admin')
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
   async create(@Body() dto: CreateMilestoneDto) {
     return this.milestoneService.create(dto);
   }
@@ -49,7 +50,7 @@ export class MilestoneController {
   // 管理员接口 - 更新里程碑
   @Put(':id')
   @UseGuards(JwtAuthGuard)
-  @Roles('admin', 'super_admin')
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
   async update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateMilestoneDto) {
     return this.milestoneService.update(id, dto);
   }
@@ -57,7 +58,7 @@ export class MilestoneController {
   // 管理员接口 - 删除里程碑
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
-  @Roles('admin', 'super_admin')
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
   async remove(@Param('id', ParseIntPipe) id: number) {
     return this.milestoneService.remove(id);
   }
