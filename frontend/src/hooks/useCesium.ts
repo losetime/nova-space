@@ -906,22 +906,24 @@ export function useCesium() {
       passTrajectoryEntities.set(maxId, true);
     }
 
-    // 6. 飞到轨迹视图（保持地球居中）
-    const centerIndex = Math.floor(orbitPoints.length / 2);
-    const centerPoint = orbitPoints[centerIndex];
+    // 6. 飞到轨迹视图（确保地球和轨迹都可见）
+    // 计算所有点的包围球，然后调整相机位置
+    const allPoints = [
+      Cesium.Cartesian3.fromDegrees(observer.lng, observer.lat, observer.alt),
+      ...orbitPoints.map(p => Cesium.Cartesian3.fromDegrees(p.lng, p.lat, p.alt))
+    ];
 
-    // 使用观察者位置作为视角中心，确保地球可见
-    viewer.value.camera.flyTo({
-      destination: Cesium.Cartesian3.fromDegrees(
-        centerPoint.lng,
-        centerPoint.lat,
-        20000000 // 20000km 高度，确保地球整体可见
+    // 使用观察者位置作为参考点
+    const observerPosition = Cesium.Cartesian3.fromDegrees(observer.lng, observer.lat, 0);
+    const boundingSphere = Cesium.BoundingSphere.fromPoints(allPoints);
+
+    // 飞到包围球，确保所有内容可见
+    viewer.value.camera.flyToBoundingSphere(boundingSphere, {
+      offset: new Cesium.HeadingPitchRange(
+        Cesium.Math.toRadians(0),   // heading: 正北
+        Cesium.Math.toRadians(-45), // pitch: 俯视45度
+        boundingSphere.radius * 3   // range: 3倍包围球半径，确保地球可见
       ),
-      orientation: {
-        heading: Cesium.Math.toRadians(0),
-        pitch: Cesium.Math.toRadians(-45),
-        roll: 0,
-      },
       duration: 1.5,
     });
   };
