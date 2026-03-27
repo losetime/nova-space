@@ -753,6 +753,14 @@ const getRightPanelIcon = () => {
 
 // 选择卫星后显示详情
 const handleSelectSatellite = (satellite: typeof selectedSatellite.value) => {
+  // 清除之前预测的轨道
+  if (cesium) {
+    cesium.clearAllPredictedOrbits()
+  }
+  // 重置预测组件状态
+  orbitPredictionRef.value?.reset()
+  passPredictionRef.value?.reset()
+
   baseHandleSelectSatellite(satellite)
   showSatelliteDetail()
 }
