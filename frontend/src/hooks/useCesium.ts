@@ -689,12 +689,7 @@ export function useCesium() {
       predictedOrbitEntities.set(pointEntityId, true);
     }
 
-    // 飞到轨道中心位置
-    if (orbitPoints.length > 0) {
-      const centerIndex = Math.floor(orbitPoints.length / 2);
-      const centerPoint = orbitPoints[centerIndex];
-      flyToPosition(centerPoint, orbitPoints[0].alt + 5000000);
-    }
+    // 不自动飞行，保持相机当前位置
   };
 
   // 清除预测轨道

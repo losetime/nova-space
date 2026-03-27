@@ -770,8 +770,10 @@ const handleSatelliteClick = (noradId: string, name: string) => {
   // 从卫星列表中找到对应的卫星
   const satellite = satellites.value.find(s => s.noradId === noradId)
   if (satellite) {
-    // 打开卫星列表面板
-    toggleLeftPanel('satellite-list')
+    // 如果卫星列表面板未打开，才打开它
+    if (activeLeftPanel.value !== 'satellite-list') {
+      toggleLeftPanel('satellite-list')
+    }
     // 选中卫星并显示详情
     handleSelectSatellite(satellite)
   }
