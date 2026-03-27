@@ -191,6 +191,32 @@
                   </svg>
                 </div>
               </div>
+
+              <!-- 操作按钮 -->
+              <div class="pass-actions">
+                <a-tooltip title="在地球上显示轨迹">
+                  <a-button
+                    type="link"
+                    size="small"
+                    class="action-btn"
+                    @click.stop="handlePassClick(pass, index)"
+                  >
+                    <GlobalOutlined />
+                    轨迹
+                  </a-button>
+                </a-tooltip>
+                <a-tooltip title="播放过境动画">
+                  <a-button
+                    type="link"
+                    size="small"
+                    class="action-btn play-btn"
+                    @click.stop="handlePlayAnimation(pass)"
+                  >
+                    <PlayCircleOutlined />
+                    动画
+                  </a-button>
+                </a-tooltip>
+              </div>
             </div>
           </div>
         </div>
@@ -207,6 +233,8 @@ import {
   AimOutlined,
   CalculatorOutlined,
   CalendarOutlined,
+  PlayCircleOutlined,
+  GlobalOutlined,
 } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import { satelliteApi, type PassPrediction, type PassEvent } from '@/api'
@@ -218,6 +246,12 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'show-trajectory': [data: {
+    noradId: string
+    startTime: string
+    endTime: string
+    observer: { lat: number; lng: number; alt: number }
+  }]
+  'play-animation': [data: {
     noradId: string
     startTime: string
     endTime: string
@@ -393,6 +427,18 @@ const handlePassClick = (pass: PassEvent, index: number) => {
       observer: { ...observer.value },
     })
   }
+}
+
+// 播放过境动画
+const handlePlayAnimation = (pass: PassEvent) => {
+  if (!props.satellite) return
+
+  emit('play-animation', {
+    noradId: props.satellite.noradId,
+    startTime: pass.startTime,
+    endTime: pass.endTime,
+    observer: { ...observer.value },
+  })
 }
 
 // 初始化时尝试获取位置
@@ -695,6 +741,35 @@ $text-muted: rgba(255, 255, 255, 0.4);
   margin-top: 10px;
   padding-top: 10px;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.pass-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 4px;
+  margin-top: 10px;
+
+  .action-btn {
+    padding: 4px 8px;
+    height: auto;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+    transition: all 0.2s;
+
+    &:hover {
+      color: $primary;
+      background: rgba($primary, 0.1);
+    }
+
+    &.play-btn:hover {
+      color: #00ff88;
+      background: rgba(0, 255, 136, 0.1);
+    }
+
+    .anticon {
+      margin-right: 4px;
+    }
+  }
 }
 
 .azimuth-track {

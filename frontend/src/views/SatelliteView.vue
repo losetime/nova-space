@@ -424,6 +424,7 @@
               ref="passPredictionRef"
               :satellite="selectedSatellite"
               @show-trajectory="handleShowPassTrajectory"
+              @play-animation="handlePlayPassAnimation"
             />
           </div>
         </aside>
@@ -771,6 +772,9 @@ const handleShowPassTrajectory = async (data: {
   if (!cesium) return
 
   try {
+    // 停止任何正在播放的动画
+    cesium.stopPassAnimation()
+
     // 清除之前的过境轨迹
     cesium.clearPassTrajectory()
 
@@ -798,6 +802,55 @@ const handleShowPassTrajectory = async (data: {
     }
   } catch (error) {
     console.error('获取过境轨迹失败:', error)
+  }
+}
+
+// 播放过境动画
+const handlePlayPassAnimation = async (data: {
+  noradId: string
+  startTime: string
+  endTime: string
+  observer: { lat: number; lng: number; alt: number }
+}) => {
+  if (!cesium) return
+
+  try {
+    // 停止之前的动画
+    cesium.stopPassAnimation()
+
+    // 清除之前的轨迹
+    cesium.clearPassTrajectory()
+
+    // 计算过境时段的轨道数据
+    const startTime = new Date(data.startTime)
+    const endTime = new Date(data.endTime)
+    const durationMinutes = Math.ceil((endTime.getTime() - startTime.getTime()) / 60000)
+
+    const res = await satelliteApi.getOrbit(data.noradId, {
+      startTime: data.startTime,
+      duration: durationMinutes,
+      steps: Math.min(durationMinutes * 2, 200),
+    })
+
+    if (res.data.code === 0 && res.data.data?.orbitPoints) {
+      // 显示过境轨迹
+      cesium.showPassTrajectory(
+        data.noradId,
+        res.data.data.orbitPoints,
+        data.observer,
+        {
+          startTime: data.startTime,
+          endTime: data.endTime,
+        }
+      )
+
+      // 播放动画
+      cesium.playPassAnimation(data.noradId, res.data.data.orbitPoints, {
+        speed: 60, // 60倍速播放
+      })
+    }
+  } catch (error) {
+    console.error('播放过境动画失败:', error)
   }
 }
 

@@ -937,6 +937,184 @@ export function useCesium() {
     passTrajectoryEntities.clear();
   };
 
+  // ==================== 时间轴动画 ====================
+
+  // 动画状态
+  const animationState = ref({
+    isPlaying: false,
+    progress: 0, // 0-100
+    currentTime: '',
+    startTime: '',
+    endTime: '',
+    duration: 0, // 秒
+  });
+
+  // 动画相关实体
+  let animationEntity: Cesium.Entity | null = null;
+  let animationClockCallback: (() => void) | null = null;
+
+  // 播放过境动画
+  const playPassAnimation = (
+    noradId: string,
+    orbitPoints: Array<{ lat: number; lng: number; alt: number; timestamp?: string }>,
+    options?: {
+      speed?: number; // 播放速度倍数，默认 60（1秒=1分钟）
+    }
+  ) => {
+    if (!viewer.value || !orbitPoints.length) return;
+
+    // 停止之前的动画
+    stopPassAnimation();
+
+    const speed = options?.speed || 60; // 默认 60 倍速
+
+    // 创建时间采样位置属性
+    const positionProperty = new Cesium.SampledPositionProperty();
+
+    orbitPoints.forEach((point) => {
+      if (point.timestamp) {
+        const time = Cesium.JulianDate.fromIso8601(point.timestamp);
+        const position = Cesium.Cartesian3.fromDegrees(point.lng, point.lat, point.alt);
+        positionProperty.addSample(time, position);
+      }
+    });
+
+    // 获取时间范围
+    const startTime = Cesium.JulianDate.fromIso8601(orbitPoints[0].timestamp!);
+    const stopTime = Cesium.JulianDate.fromIso8601(orbitPoints[orbitPoints.length - 1].timestamp!);
+
+    // 设置时钟
+    const clock = viewer.value.clock;
+    clock.startTime = startTime.clone();
+    clock.stopTime = stopTime.clone();
+    clock.currentTime = startTime.clone();
+    clock.clockRange = Cesium.ClockRange.LOOP_STOP;
+    clock.multiplier = speed;
+    clock.shouldAnimate = true;
+
+    // 创建移动的卫星实体
+    animationEntity = viewer.value.entities.add({
+      id: `pass_animation_${noradId}`,
+      availability: new Cesium.TimeIntervalCollection([
+        new Cesium.TimeInterval({
+          start: startTime,
+          stop: stopTime,
+        }),
+      ]),
+      position: positionProperty,
+      model: {
+        uri: satelliteModelUrl,
+        minimumPixelSize: 32,
+        maximumScale: 50000,
+        scale: 20000,
+      },
+      path: {
+        resolution: 60,
+        material: new Cesium.PolylineGlowMaterialProperty({
+          glowPower: 0.3,
+          color: Cesium.Color.fromCssColorString("#00ff88"),
+        }),
+        width: 3,
+        leadTime: 0,
+        trailTime: 300, // 显示5分钟的轨迹
+      },
+    });
+
+    // 更新动画状态
+    animationState.value.isPlaying = true;
+    animationState.value.progress = 0;
+    animationState.value.startTime = Cesium.JulianDate.toIso8601(startTime);
+    animationState.value.endTime = Cesium.JulianDate.toIso8601(stopTime);
+    animationState.value.duration = Cesium.JulianDate.secondsDifference(stopTime, startTime);
+
+    // 设置时钟回调更新进度
+    animationClockCallback = () => {
+      if (!viewer.value) return;
+
+      const currentTime = viewer.value.clock.currentTime;
+      const progress = Cesium.JulianDate.secondsDifference(currentTime, startTime) /
+                       Cesium.JulianDate.secondsDifference(stopTime, startTime);
+
+      animationState.value.progress = Math.max(0, Math.min(100, progress * 100));
+      animationState.value.currentTime = Cesium.JulianDate.toIso8601(currentTime);
+
+      // 动画结束时停止
+      if (progress >= 1) {
+        stopPassAnimation();
+      }
+    };
+
+    viewer.value.clock.onTick.addEventListener(animationClockCallback);
+
+    // 飞到轨迹中心
+    const centerIndex = Math.floor(orbitPoints.length / 2);
+    const centerPoint = orbitPoints[centerIndex];
+    viewer.value.camera.flyTo({
+      destination: Cesium.Cartesian3.fromDegrees(
+        centerPoint.lng,
+        centerPoint.lat,
+        centerPoint.alt + 1000000
+      ),
+      orientation: {
+        heading: Cesium.Math.toRadians(0),
+        pitch: Cesium.Math.toRadians(-30),
+        roll: 0,
+      },
+      duration: 1,
+    });
+  };
+
+  // 停止动画
+  const stopPassAnimation = () => {
+    if (!viewer.value) return;
+
+    // 移除时钟回调
+    if (animationClockCallback) {
+      viewer.value.clock.onTick.removeEventListener(animationClockCallback);
+      animationClockCallback = null;
+    }
+
+    // 移除动画实体
+    if (animationEntity) {
+      viewer.value.entities.remove(animationEntity);
+      animationEntity = null;
+    }
+
+    // 停止时钟动画
+    viewer.value.clock.shouldAnimate = false;
+
+    // 更新状态
+    animationState.value.isPlaying = false;
+  };
+
+  // 暂停/继续动画
+  const toggleAnimationPause = () => {
+    if (!viewer.value) return;
+    viewer.value.clock.shouldAnimate = !viewer.value.clock.shouldAnimate;
+    animationState.value.isPlaying = viewer.value.clock.shouldAnimate;
+  };
+
+  // 设置动画进度（0-100）
+  const setAnimationProgress = (progress: number) => {
+    if (!viewer.value) return;
+
+    const startTime = viewer.value.clock.startTime;
+    const stopTime = viewer.value.clock.stopTime;
+    const totalSeconds = Cesium.JulianDate.secondsDifference(stopTime, startTime);
+    const targetSeconds = (progress / 100) * totalSeconds;
+
+    const newTime = Cesium.JulianDate.addSeconds(startTime, targetSeconds, new Cesium.JulianDate());
+    viewer.value.clock.currentTime = newTime;
+    animationState.value.progress = progress;
+    animationState.value.currentTime = Cesium.JulianDate.toIso8601(newTime);
+  };
+
+  // 设置播放速度
+  const setAnimationSpeed = (speed: number) => {
+    if (!viewer.value) return;
+    viewer.value.clock.multiplier = speed;
+  };
+
   // 飞到指定位置
   const flyToPosition = (
     position: { lat: number; lng: number; alt: number },
@@ -1083,6 +1261,12 @@ export function useCesium() {
     clearAllPredictedOrbits,
     showPassTrajectory,
     clearPassTrajectory,
+    animationState,
+    playPassAnimation,
+    stopPassAnimation,
+    toggleAnimationPause,
+    setAnimationProgress,
+    setAnimationSpeed,
     flyToPosition,
     destroyCesium,
     setOnSatelliteClick,
