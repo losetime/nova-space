@@ -691,4 +691,52 @@ export const pushApi = {
   testPush: () => api.post<ApiResponse<{ success: boolean; message: string }>>('/push/test'),
 }
 
+// 里程碑
+export interface Milestone {
+  id: number
+  title: string
+  description: string
+  content?: string
+  eventDate: string
+  category: 'launch' | 'recovery' | 'orbit' | 'mission' | 'other'
+  cover?: string
+  media?: any[]
+  relatedSatelliteNoradId?: string
+  importance: number
+  location?: string
+  organizer?: string
+  createdAt: string
+  updatedAt: string
+}
+
+// 里程碑 API
+export const milestoneApi = {
+  // 获取里程碑列表
+  getList: (params?: { category?: string; page?: number; pageSize?: number }) =>
+    api.get<ApiResponse<{ list: Milestone[]; total: number; page: number; pageSize: number }>>('/milestones', { params }),
+
+  // 获取时间线数据（按年代分组）
+  getTimeline: () => api.get<ApiResponse<{ decade: string; items: Milestone[] }[]>>('/milestones/timeline'),
+
+  // 获取重要里程碑
+  getFeatured: (limit?: number) =>
+    api.get<ApiResponse<Milestone[]>>('/milestones/featured', { params: { limit } }),
+
+  // 获取分类统计
+  getCategories: () => api.get<ApiResponse<{ category: string; count: number }[]>>('/milestones/categories'),
+
+  // 获取里程碑详情
+  getDetail: (id: number) => api.get<ApiResponse<Milestone>>(`/milestones/${id}`),
+
+  // 创建里程碑（管理员）
+  create: (data: Partial<Milestone>) => api.post<ApiResponse<Milestone>>('/milestones', data),
+
+  // 更新里程碑（管理员）
+  update: (id: number, data: Partial<Milestone>) =>
+    api.put<ApiResponse<Milestone>>(`/milestones/${id}`, data),
+
+  // 删除里程碑（管理员）
+  delete: (id: number) => api.delete<ApiResponse<{ success: boolean }>>(`/milestones/${id}`),
+}
+
 export default api

@@ -113,6 +113,7 @@ import {
   CommentOutlined,
   ThunderboltOutlined,
   BellOutlined,
+  RocketOutlined,
 } from "@ant-design/icons-vue";
 
 const route = useRoute();
@@ -137,6 +138,7 @@ const navItems = [
   { name: "空间天气", path: "/space-weather", icon: ThunderboltOutlined },
   { name: "航天科普", path: "/education", icon: BookOutlined },
   { name: "航天情报", path: "/intelligence", icon: FileTextOutlined },
+  { name: "发展里程碑", path: "/milestone", icon: RocketOutlined },
 ];
 
 const handleMenuClick = ({ key }: { key: string }) => {

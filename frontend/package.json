@@ -20,7 +20,7 @@
     "axios": "^1.13.6",
     "cesium": "^1.139.0",
     "flag-icons": "^7.5.0",
-    "marked": "^17.0.4",
+    "marked": "^17.0.5",
     "pinia": "^3.0.4",
     "vite-plugin-cesium": "^1.2.23",
     "vue": "^3.5.29",
