@@ -64,6 +64,8 @@ class SatelliteRenderer {
   private hoverHandler: Cesium.ScreenSpaceEventHandler | null = null;
   private hoveredNoradId: string | null = null;
   private hoverLabel: Cesium.Label | null = null;
+  private lastHoverCheckTime = 0; // 节流时间戳
+  private readonly HOVER_THROTTLE_MS = 50; // 节流间隔（毫秒）
 
   // 空间网格索引（用于悬停检测优化）
   private spatialGrid: Map<string, Set<string>> = new Map();
@@ -192,8 +194,15 @@ class SatelliteRenderer {
 
     this.hoverHandler = new Cesium.ScreenSpaceEventHandler(this.viewer.scene.canvas);
 
-    // 处理鼠标移动事件
+    // 处理鼠标移动事件（带节流）
     this.hoverHandler.setInputAction((movement: Cesium.ScreenSpaceEventHandler.MotionEvent) => {
+      // 节流检查：距离上次检测不足 50ms 则跳过
+      const now = performance.now();
+      if (now - this.lastHoverCheckTime < this.HOVER_THROTTLE_MS) {
+        return;
+      }
+      this.lastHoverCheckTime = now;
+
       const mousePosition = movement.endPosition;
       const nearbySatellite = this.findNearbySatelliteForHover(mousePosition);
 
