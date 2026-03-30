@@ -81,50 +81,9 @@ class SatelliteRenderer {
   // 缓存上一次的卫星 ID 集合（用于增量更新）
   private lastSatelliteIds: Set<string> = new Set();
 
-  // 相机事件监听器
-  private cameraListenerRemover: (() => void) | null = null;
-
-  // 可见卫星计数
-  visibleCount = 0;
-
   constructor(viewer: Cesium.Viewer) {
     this.viewer = viewer;
     this.initialize();
-  }
-
-  // 检测卫星是否可见（屏幕范围内）
-  private isSatelliteVisible(position: Cesium.Cartesian3): boolean {
-    // 屏幕范围检测
-    const screenPos = Cesium.SceneTransforms.worldToWindowCoordinates(
-      this.viewer.scene, position
-    );
-
-    // 如果无法转换为屏幕坐标，说明在视野外或被地球遮挡
-    if (!screenPos) return false;
-
-    const canvas = this.viewer.scene.canvas;
-    const margin = 100; // 边缘余量
-
-    return screenPos.x >= -margin &&
-           screenPos.x <= canvas.width + margin &&
-           screenPos.y >= -margin &&
-           screenPos.y <= canvas.height + margin;
-  }
-
-  // 根据相机高度决定渲染策略（LOD）
-  private shouldRenderSatellite(alt: number, cameraHeight: number): boolean {
-    // 超远视角（> 50000 km）：只渲染 GEO 卫星
-    if (cameraHeight > 50000000) {
-      return alt >= 35000000; // GEO
-    }
-
-    // 远视角（> 20000 km）：渲染 MEO + GEO
-    if (cameraHeight > 20000000) {
-      return alt >= 2000000; // MEO+
-    }
-
-    // 近视角：渲染所有
-    return true;
   }
 
   // 初始化 - 创建两个集合
@@ -142,24 +101,6 @@ class SatelliteRenderer {
 
     // 4. 设置悬停事件处理
     this.setupHoverHandler();
-
-    // 5. 设置相机移动监听（更新可见性）
-    this.setupCameraListener();
-  }
-
-  // 设置相机移动监听
-  private setupCameraListener() {
-    // 使用节流避免频繁更新
-    let lastUpdateTime = 0;
-    const updateInterval = 200; // 200ms 节流
-
-    this.cameraListenerRemover = this.viewer.camera.changed.addEventListener(() => {
-      const now = Date.now();
-      if (now - lastUpdateTime > updateInterval) {
-        lastUpdateTime = now;
-        this.updateVisibility();
-      }
-    });
   }
 
   // 设置点击事件处理
@@ -400,18 +341,25 @@ class SatelliteRenderer {
     }
   }
 
-  // 批量更新卫星位置（增量更新 + 可见性优化）
+  // 批量更新卫星位置（增量更新优化）
   updateSatellites(satellites: Satellite[], batchSize: number = 1000) {
     const currentIds = new Set(satellites.map((s) => s.noradId));
-    const cameraHeight = this.viewer.camera.positionCartographic.height;
 
     // 增量更新：只处理新增和删除的卫星
     const idsToRemove: string[] = [];
+    const idsToAdd: Satellite[] = [];
 
     // 找出需要删除的卫星
     this.lastSatelliteIds.forEach(id => {
       if (!currentIds.has(id)) {
         idsToRemove.push(id);
+      }
+    });
+
+    // 找出需要新增的卫星
+    satellites.forEach(sat => {
+      if (!this.lastSatelliteIds.has(sat.noradId)) {
+        idsToAdd.push(sat);
       }
     });
 
@@ -425,9 +373,7 @@ class SatelliteRenderer {
       this.satellitePositions.delete(id);
     });
 
-    // 更新所有卫星
-    this.visibleCount = 0;
-
+    // 更新所有现有卫星的位置（必须更新，因为卫星在运动）
     satellites.forEach(sat => {
       const position = Cesium.Cartesian3.fromDegrees(
         sat.position.lng,
@@ -435,21 +381,13 @@ class SatelliteRenderer {
         sat.position.alt,
       );
 
-      // LOD 检测（根据相机高度决定是否渲染）
-      const shouldRender = this.shouldRenderSatellite(sat.position.alt, cameraHeight);
-
-      // 可见性检测
-      const isVisible = shouldRender && this.isSatelliteVisible(position);
-
       // 获取颜色（基于分类方式）
       const color = this.getSatelliteColor(sat);
 
       if (this.pointMap.has(sat.noradId)) {
-        // 更新现有点的位置和可见性
+        // 更新现有点的位置
         const point = this.pointMap.get(sat.noradId)!;
         point.position = position;
-        point.show = isVisible;
-
         // 更新颜色
         if (sat.noradId !== this.selectedNoradId && sat.noradId !== this.hoveredNoradId) {
           point.color = color;
@@ -470,12 +408,9 @@ class SatelliteRenderer {
           position,
           pixelSize: this.DEFAULT_PIXEL_SIZE,
           color,
-          show: isVisible,
         });
         this.pointMap.set(sat.noradId, point);
       }
-
-      if (isVisible) this.visibleCount++;
 
       // 存储卫星位置和名称（用于选中逻辑）
       this.satellitePositions.set(sat.noradId, { name: sat.name, position, alt: sat.position.alt });
@@ -484,36 +419,8 @@ class SatelliteRenderer {
     // 更新缓存
     this.lastSatelliteIds = currentIds;
 
-    // 更新空间网格索引（仅用于悬停检测）
+    // 更新空间网格索引（用于悬停检测优化）
     this.updateSpatialGrid();
-  }
-
-  // 相机移动时更新可见性
-  updateVisibility() {
-    const cameraHeight = this.viewer.camera.positionCartographic.height;
-    this.visibleCount = 0;
-
-    this.satellitePositions.forEach((satInfo, noradId) => {
-      const point = this.pointMap.get(noradId);
-      if (!point) return;
-
-      // LOD 检测
-      const shouldRender = this.shouldRenderSatellite(satInfo.alt, cameraHeight);
-
-      // 可见性检测
-      const isVisible = shouldRender && this.isSatelliteVisible(satInfo.position);
-      point.show = isVisible;
-
-      if (isVisible) this.visibleCount++;
-    });
-
-    // 更新空间网格索引
-    this.updateSpatialGrid();
-  }
-
-  // 获取可见卫星数量
-  getVisibleCount(): number {
-    return this.visibleCount;
   }
 
   // 获取卫星颜色（基于分类方式）
@@ -674,10 +581,6 @@ class SatelliteRenderer {
 
   // 销毁
   destroy() {
-    if (this.cameraListenerRemover) {
-      this.cameraListenerRemover();
-      this.cameraListenerRemover = null;
-    }
     if (this.clickHandler) {
       this.clickHandler.destroy();
       this.clickHandler = null;
@@ -1578,6 +1481,5 @@ export function useCesium() {
     setOnSatelliteClick,
     setColorScheme,
     getLegend,
-    getVisibleCount: () => satelliteRenderer.value?.getVisibleCount() ?? 0,
   };
 }
