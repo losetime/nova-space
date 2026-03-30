@@ -58,10 +58,10 @@ export class User {
   @Column({ default: false })
   isVerified: boolean;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, name: 'wechatopenid' })
   wechatOpenId: string;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, name: 'wechatunionid' })
   wechatUnionId: string;
 
   @Column({ default: true })
