@@ -1,6 +1,7 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { SatelliteTle } from '../entities/satellite-tle.entity';
 import { SatelliteMetadataEntity } from '../entities/satellite-metadata.entity';
 import type { TLEData, SatelliteMetadata } from '../interfaces/satellite.interface';
@@ -23,11 +24,20 @@ export class SatelliteDataService implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
+    await this.refreshFromDatabase();
+  }
+
+  /**
+   * 从数据库刷新数据到内存
+   * 启动时执行，每小时自动刷新
+   */
+  @Cron(CronExpression.EVERY_HOUR)
+  async refreshFromDatabase(): Promise<void> {
     const tleCount = await this.tleRepository.count();
 
     if (tleCount > 0) {
       const metadataCount = await this.metadataRepository.count();
-      this.logger.log(`从数据库加载卫星数据: ${tleCount} TLE, ${metadataCount} 元数据`);
+      this.logger.log(`从数据库刷新卫星数据: ${tleCount} TLE, ${metadataCount} 元数据`);
       await this.loadFromDatabase();
     } else {
       this.logger.warn('数据库中没有卫星数据，请通过管理接口导入数据');

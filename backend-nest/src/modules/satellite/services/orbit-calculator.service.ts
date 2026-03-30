@@ -1,4 +1,5 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import * as satellite from 'satellite.js';
 import type { TLEData, SatellitePosition, OrbitPoint, SatelliteData, OrbitPrediction, PositionPrediction, ObserverPosition, PassEvent, PassPrediction } from '../interfaces/satellite.interface';
 import { SatelliteDataService } from './satellite-data.service';
@@ -38,6 +39,15 @@ export class OrbitCalculatorService implements OnModuleInit {
     }
 
     this.logger.warn('数据库中没有卫星数据');
+    this.loadSatellites();
+  }
+
+  /**
+   * 每小时刷新卫星数据（在整点后 1 分钟执行）
+   */
+  @Cron('1 * * * *')
+  refreshSatellites(): void {
+    this.logger.log('定时刷新卫星数据');
     this.loadSatellites();
   }
 
