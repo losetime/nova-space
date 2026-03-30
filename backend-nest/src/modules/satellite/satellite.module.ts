@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { SatelliteController } from './satellite.controller';
-import { SpaceTrackService } from './services/space-track.service';
+import { SatelliteDataService } from './services/satellite-data.service';
 import { OrbitCalculatorService } from './services/orbit-calculator.service';
 import { SatelliteFavoriteService } from './services/satellite-favorite.service';
 import { EsaDiscosService } from './services/esa-discos.service';
@@ -13,12 +13,12 @@ import { SatelliteTle, SatelliteMetadataEntity } from './entities';
   imports: [TypeOrmModule.forFeature([UserFavorite, SatelliteTle, SatelliteMetadataEntity])],
   controllers: [SatelliteController],
   providers: [
-    SpaceTrackService,
+    SatelliteDataService,
     OrbitCalculatorService,
     SatelliteFavoriteService,
     EsaDiscosService,
     SatelliteGateway,
   ],
-  exports: [OrbitCalculatorService, SpaceTrackService, SatelliteFavoriteService, EsaDiscosService],
+  exports: [OrbitCalculatorService, SatelliteDataService, SatelliteFavoriteService, EsaDiscosService],
 })
 export class SatelliteModule {}

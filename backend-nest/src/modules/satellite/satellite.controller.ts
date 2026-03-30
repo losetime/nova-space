@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Delete, Param, Query, Logger, UseGuards, Req } from '@nestjs/common';
 import { OrbitCalculatorService } from './services/orbit-calculator.service';
-import { SpaceTrackService } from './services/space-track.service';
+import { SatelliteDataService } from './services/satellite-data.service';
 import { SatelliteFavoriteService } from './services/satellite-favorite.service';
 import { EsaDiscosService } from './services/esa-discos.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -17,33 +17,10 @@ export class SatelliteController {
 
   constructor(
     private readonly orbitCalculator: OrbitCalculatorService,
-    private readonly spaceTrackService: SpaceTrackService,
+    private readonly satelliteDataService: SatelliteDataService,
     private readonly favoriteService: SatelliteFavoriteService,
     private readonly esaDiscosService: EsaDiscosService,
   ) {}
-
-  /**
-   * 手动刷新卫星数据
-   * POST /api/satellites/refresh
-   */
-  @Post('refresh')
-  async refreshData() {
-    this.logger.log('手动触发卫星数据刷新');
-    try {
-      await this.spaceTrackService.refreshAllData();
-      return {
-        code: 0,
-        data: null,
-        message: '卫星数据刷新成功',
-      };
-    } catch (error) {
-      return {
-        code: -1,
-        data: null,
-        message: `刷新失败: ${error.message}`,
-      };
-    }
-  }
 
   /**
    * 获取所有卫星的当前位置
@@ -74,7 +51,7 @@ export class SatelliteController {
     @Query('limit') limit?: string,
   ) {
     const searchLimit = Math.min(Math.max(parseInt(limit || '50') || 50, 1), 500);
-    const allTLEs = this.spaceTrackService.getCachedTLEs();
+    const allTLEs = this.satelliteDataService.getCachedTLEs();
 
     let results = allTLEs;
     if (name) {
@@ -90,7 +67,7 @@ export class SatelliteController {
     // 批量获取元数据
     const satellites = await Promise.all(
       limitedResults.map(async (tle) => {
-        const metadata = await this.spaceTrackService.getSatelliteMetadata(tle.noradId);
+        const metadata = await this.satelliteDataService.getSatelliteMetadata(tle.noradId);
         return {
           noradId: tle.noradId,
           name: tle.name,
@@ -116,7 +93,7 @@ export class SatelliteController {
    */
   @Get('stats')
   async getStats() {
-    const metadata = await this.spaceTrackService.getAllMetadata();
+    const metadata = await this.satelliteDataService.getAllMetadata();
     return {
       code: 0,
       data: {
@@ -137,10 +114,10 @@ export class SatelliteController {
     this.logger.log('获取国家列表');
 
     // 获取 TLE 数据中的 NORAD ID 集合
-    const tleData = this.spaceTrackService.getCachedTLEs();
+    const tleData = this.satelliteDataService.getCachedTLEs();
     const tleNoradIds = new Set(tleData.map(tle => tle.noradId));
 
-    const metadata = await this.spaceTrackService.getAllMetadata();
+    const metadata = await this.satelliteDataService.getAllMetadata();
     const countryCount = new Map<string, number>();
     let matchedCount = 0;
     let noCountryCount = 0;
@@ -184,7 +161,7 @@ export class SatelliteController {
   @Get('purposes')
   async getPurposes() {
     this.logger.log('获取用途列表');
-    const purposes = await this.spaceTrackService.getPurposeCounts();
+    const purposes = await this.satelliteDataService.getPurposeCounts();
     return {
       code: 0,
       data: purposes,
@@ -199,7 +176,7 @@ export class SatelliteController {
   @Get('operators')
   async getOperators() {
     this.logger.log('获取运营商列表');
-    const operators = await this.spaceTrackService.getOperatorCounts();
+    const operators = await this.satelliteDataService.getOperatorCounts();
     return {
       code: 0,
       data: operators,
@@ -220,7 +197,7 @@ export class SatelliteController {
     // 获取卫星元数据
     const result = await Promise.all(
       favorites.map(async (fav) => {
-        const metadata = await this.spaceTrackService.getSatelliteMetadata(fav.targetId);
+        const metadata = await this.satelliteDataService.getSatelliteMetadata(fav.targetId);
         return {
           noradId: fav.targetId,
           name: metadata?.name || `卫星 ${fav.targetId}`,

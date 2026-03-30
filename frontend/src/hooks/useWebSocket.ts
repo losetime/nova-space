@@ -1,4 +1,5 @@
 import { ref, onUnmounted } from 'vue'
+import { useThrottleFn } from '@vueuse/core'
 
 export interface Satellite {
   noradId: string
@@ -28,6 +29,18 @@ export function useWebSocket() {
   const wsUrl = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws/satellites`
   const apiUrl = `${window.location.origin}/api/satellites`
 
+  // 内部数据缓冲（节流用）
+  let pendingData: Satellite[] = []
+
+  // 节流更新函数 - 最多每 10 秒更新一次 UI
+  const throttledUpdate = useThrottleFn(() => {
+    if (pendingData.length > 0) {
+      satellites.value = pendingData
+      satelliteCount.value = pendingData.length
+      pendingData = []
+    }
+  }, 10000)
+
   const initWebSocket = () => {
     if (isInitialized.value) return
 
@@ -45,9 +58,10 @@ export function useWebSocket() {
           const data = JSON.parse(event.data)
 
           if (data.type === 'satellites') {
-            satellites.value = data.data
-            satelliteCount.value = data.data.length
+            // 先存入缓冲区，通过节流更新 UI
+            pendingData = data.data
             lastUpdate.value = new Date(data.timestamp).toLocaleTimeString()
+            throttledUpdate()
           }
         } catch (error) {
           console.error('解析 WebSocket 消息失败:', error)
@@ -100,9 +114,10 @@ export function useWebSocket() {
           const data = JSON.parse(event.data)
 
           if (data.type === 'satellites') {
-            satellites.value = data.data
-            satelliteCount.value = data.data.length
+            // 先存入缓冲区，通过节流更新 UI
+            pendingData = data.data
             lastUpdate.value = new Date(data.timestamp).toLocaleTimeString()
+            throttledUpdate()
           }
         } catch (error) {
           console.error('解析 WebSocket 消息失败:', error)

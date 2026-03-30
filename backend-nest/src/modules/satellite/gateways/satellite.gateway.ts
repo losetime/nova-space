@@ -34,7 +34,7 @@ export class SatelliteGateway implements OnGatewayInit, OnGatewayConnection, OnG
     private readonly orbitCalculator: OrbitCalculatorService,
     private readonly configService: ConfigService,
   ) {
-    this.broadcastIntervalMs = this.configService.get<number>('satellite.broadcastInterval', 5000);
+    this.broadcastIntervalMs = this.configService.get<number>('app.satellite.broadcastInterval', 5000);
   }
 
   afterInit(server: Server) {

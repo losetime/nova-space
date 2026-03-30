@@ -868,7 +868,7 @@ const handleSkyView = (observer: { lat: number; lng: number; alt: number }) => {
   cesium.flyToSkyView(observer)
 }
 
-// 监听筛选后的卫星数据变化，更新 Cesium（使用批量更新提高性能）
+// 监听筛选后的卫星数据变化，更新 Cesium（移除 deep watch，只监听数组引用变化）
 watch(filteredSatellites, (newSatellites) => {
   if (newSatellites && newSatellites.length > 0) {
     // 使用批量更新替代逐个更新，大幅提升性能
@@ -877,7 +877,7 @@ watch(filteredSatellites, (newSatellites) => {
     // 当筛选结果为空时，清除所有卫星
     cesium.clearAllSatellites?.()
   }
-}, { deep: true })
+})
 
 // 监听颜色分类变化
 watch(colorScheme, (newScheme) => {

@@ -1,7 +1,7 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import * as satellite from 'satellite.js';
 import type { TLEData, SatellitePosition, OrbitPoint, SatelliteData, OrbitPrediction, PositionPrediction, ObserverPosition, PassEvent, PassPrediction } from '../interfaces/satellite.interface';
-import { SpaceTrackService } from './space-track.service';
+import { SatelliteDataService } from './satellite-data.service';
 
 // 常量定义
 const EARTH_RADIUS_KM = 6371; // 地球半径 (km)
@@ -16,29 +16,28 @@ export class OrbitCalculatorService implements OnModuleInit {
   private readonly logger = new Logger(OrbitCalculatorService.name);
   private satellites: Map<string, SatelliteData> = new Map();
 
-  constructor(private readonly spaceTrackService: SpaceTrackService) {}
+  constructor(private readonly satelliteDataService: SatelliteDataService) {}
 
   async onModuleInit() {
-    // 等待 SpaceTrackService 加载完数据后初始化
-    // 使用轮询检查，最多等待 180 秒（首次下载数据需要时间）
-    const maxWaitMs = 180000;
+    // 等待 SatelliteDataService 加载完数据后初始化
+    const maxWaitMs = 30000; // 最多等待 30 秒
     const checkIntervalMs = 1000;
     let waited = 0;
 
     while (waited < maxWaitMs) {
-      const tles = this.spaceTrackService.getCachedTLEs();
+      const tles = this.satelliteDataService.getCachedTLEs();
       if (tles.length > 0) {
         this.loadSatellites();
         return;
       }
       await new Promise(resolve => setTimeout(resolve, checkIntervalMs));
       waited += checkIntervalMs;
-      if (waited % 10000 === 0) {
-        this.logger.log(`等待 SpaceTrackService 数据加载... (${waited / 1000}s)`);
+      if (waited % 5000 === 0) {
+        this.logger.log(`等待 SatelliteDataService 数据加载... (${waited / 1000}s)`);
       }
     }
 
-    this.logger.warn('等待 SpaceTrackService 数据加载超时，尝试使用现有数据');
+    this.logger.warn('数据库中没有卫星数据');
     this.loadSatellites();
   }
 
@@ -46,7 +45,7 @@ export class OrbitCalculatorService implements OnModuleInit {
    * 加载卫星数据
    */
   loadSatellites(): void {
-    const tles = this.spaceTrackService.getCachedTLEs();
+    const tles = this.satelliteDataService.getCachedTLEs();
     this.satellites.clear();
 
     tles.forEach((tle) => {
@@ -78,7 +77,7 @@ export class OrbitCalculatorService implements OnModuleInit {
   calculateAllSatellitesPosition(): SatellitePosition[] {
     const now = new Date();
     const positionData: SatellitePosition[] = [];
-    const metadata = this.spaceTrackService.getCachedMetadata();
+    const metadata = this.satelliteDataService.getCachedMetadata();
 
     this.satellites.forEach((sat, noradId) => {
       try {
