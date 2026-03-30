@@ -710,7 +710,7 @@ export function useCesium() {
     const polyline = orbitCollection.add({
       show: true,
       positions: positions,
-      width: 2,
+      width: 1,
       material: Cesium.Material.fromType('Color', {
         color: Cesium.Color.CYAN
       }),
@@ -740,7 +740,7 @@ export function useCesium() {
       id: orbitEntityId,
       polyline: {
         positions: positions,
-        width: 3,
+        width: 1,
         material: new Cesium.PolylineGlowMaterialProperty({
           glowPower: 0.3,
           color: Cesium.Color.fromCssColorString("#a855f7"),
@@ -872,7 +872,7 @@ export function useCesium() {
       id: trajectoryId,
       polyline: {
         positions: positions,
-        width: 4,
+        width: 1,
         material: new Cesium.PolylineGlowMaterialProperty({
           glowPower: 0.4,
           color: Cesium.Color.fromCssColorString("#00ff88"),
@@ -1112,7 +1112,7 @@ export function useCesium() {
           glowPower: 0.3,
           color: Cesium.Color.fromCssColorString("#00ff88"),
         }),
-        width: 3,
+        width: 1,
         leadTime: 0,
         trailTime: 300, // 显示5分钟的轨迹
       },
