@@ -746,6 +746,8 @@ export function useCesium() {
     const step = Math.max(1, Math.floor(orbitPoints.length / 20));
     for (let i = 0; i < orbitPoints.length; i += step) {
       const point = orbitPoints[i];
+      if (!point) continue;
+
       const pointEntityId = `predicted_point_${noradId}_${i}`;
 
       viewer.value.entities.add({
@@ -900,10 +902,11 @@ export function useCesium() {
     // 3. 标记起始点
     if (orbitPoints.length > 0) {
       const startPoint = orbitPoints[0];
-      const startId = `pass_start_${noradId}`;
-      viewer.value.entities.add({
-        id: startId,
-        position: Cesium.Cartesian3.fromDegrees(startPoint.lng, startPoint.lat, startPoint.alt),
+      if (startPoint) {
+        const startId = `pass_start_${noradId}`;
+        viewer.value.entities.add({
+          id: startId,
+          position: Cesium.Cartesian3.fromDegrees(startPoint.lng, startPoint.lat, startPoint.alt),
         point: {
           pixelSize: 8,
           color: Cesium.Color.fromCssColorString("#3b82f6"),
@@ -922,15 +925,17 @@ export function useCesium() {
         },
       });
       passTrajectoryEntities.set(startId, true);
+      }
     }
 
     // 4. 标记结束点
     if (orbitPoints.length > 1) {
       const endPoint = orbitPoints[orbitPoints.length - 1];
-      const endId = `pass_end_${noradId}`;
-      viewer.value.entities.add({
-        id: endId,
-        position: Cesium.Cartesian3.fromDegrees(endPoint.lng, endPoint.lat, endPoint.alt),
+      if (endPoint) {
+        const endId = `pass_end_${noradId}`;
+        viewer.value.entities.add({
+          id: endId,
+          position: Cesium.Cartesian3.fromDegrees(endPoint.lng, endPoint.lat, endPoint.alt),
         point: {
           pixelSize: 8,
           color: Cesium.Color.fromCssColorString("#3b82f6"),
@@ -949,16 +954,18 @@ export function useCesium() {
         },
       });
       passTrajectoryEntities.set(endId, true);
+      }
     }
 
     // 5. 标记最高点（轨道中点附近）
     const midIndex = Math.floor(orbitPoints.length / 2);
     if (midIndex > 0 && midIndex < orbitPoints.length) {
       const maxPoint = orbitPoints[midIndex];
-      const maxId = `pass_max_${noradId}`;
-      viewer.value.entities.add({
-        id: maxId,
-        position: Cesium.Cartesian3.fromDegrees(maxPoint.lng, maxPoint.lat, maxPoint.alt),
+      if (maxPoint) {
+        const maxId = `pass_max_${noradId}`;
+        viewer.value.entities.add({
+          id: maxId,
+          position: Cesium.Cartesian3.fromDegrees(maxPoint.lng, maxPoint.lat, maxPoint.alt),
         point: {
           pixelSize: 10,
           color: Cesium.Color.fromCssColorString("#00ff88"),
@@ -977,6 +984,7 @@ export function useCesium() {
         },
       });
       passTrajectoryEntities.set(maxId, true);
+      }
     }
 
     // 6. 飞到轨迹视图（确保地球和轨迹都可见）
@@ -1049,7 +1057,7 @@ export function useCesium() {
     const positionProperty = new Cesium.SampledPositionProperty();
 
     orbitPoints.forEach((point) => {
-      if (point.timestamp) {
+      if (point && point.timestamp) {
         const time = Cesium.JulianDate.fromIso8601(point.timestamp);
         const position = Cesium.Cartesian3.fromDegrees(point.lng, point.lat, point.alt);
         positionProperty.addSample(time, position);
@@ -1057,8 +1065,12 @@ export function useCesium() {
     });
 
     // 获取时间范围
-    const startTime = Cesium.JulianDate.fromIso8601(orbitPoints[0].timestamp!);
-    const stopTime = Cesium.JulianDate.fromIso8601(orbitPoints[orbitPoints.length - 1].timestamp!);
+    const firstPoint = orbitPoints[0];
+    const lastPoint = orbitPoints[orbitPoints.length - 1];
+    if (!firstPoint?.timestamp || !lastPoint?.timestamp) return;
+
+    const startTime = Cesium.JulianDate.fromIso8601(firstPoint.timestamp);
+    const stopTime = Cesium.JulianDate.fromIso8601(lastPoint.timestamp);
 
     // 设置时钟
     const clock = viewer.value.clock;
@@ -1176,152 +1188,6 @@ export function useCesium() {
   const setAnimationSpeed = (speed: number) => {
     if (!viewer.value) return;
     viewer.value.clock.multiplier = speed;
-  };
-
-  // ==================== 天空投影视角 ====================
-
-  // 天空投影相关实体
-  const skyViewEntities = new Map<string, boolean>();
-
-  // 切换到天空投影视角
-  const flyToSkyView = (observer: { lat: number; lng: number; alt: number }) => {
-    if (!viewer.value) return;
-
-    // 清除之前的天空投影标记
-    clearSkyView();
-
-    // 相机飞到观察者位置，仰视天空
-    // 将相机放在观察者上方约 100 米处，向下看
-    viewer.value.camera.flyTo({
-      destination: Cesium.Cartesian3.fromDegrees(
-        observer.lng,
-        observer.lat,
-        observer.alt + 100 // 观察者上方 100 米
-      ),
-      orientation: {
-        heading: Cesium.Math.toRadians(0),
-        pitch: Cesium.Math.toRadians(-90), // 仰视天空
-        roll: 0,
-      },
-      duration: 2,
-    });
-
-    // 绘制地平圈参考线
-    drawHorizonCircle(observer);
-
-    // 绘制方位角参考线
-    drawAzimuthLines(observer);
-
-    // 标记观察者位置
-    const observerId = 'sky_observer';
-    viewer.value.entities.add({
-      id: observerId,
-      position: Cesium.Cartesian3.fromDegrees(observer.lng, observer.lat, observer.alt),
-      point: {
-        pixelSize: 8,
-        color: Cesium.Color.YELLOW,
-        outlineColor: Cesium.Color.WHITE,
-        outlineWidth: 2,
-      },
-    });
-    skyViewEntities.set(observerId, true);
-  };
-
-  // 绘制地平圈（高度角 0° 的圆）
-  const drawHorizonCircle = (observer: { lat: number; lng: number; alt: number }) => {
-    if (!viewer.value) return;
-
-    // 地平圈半径（根据观察者高度计算，约 5km）
-    const radius = 5000;
-    const points: Cesium.Cartesian3[] = [];
-
-    for (let i = 0; i <= 360; i += 5) {
-      const heading = Cesium.Math.toRadians(i);
-      // 使用地面距离计算
-      const position = Cesium.Cartesian3.fromDegrees(
-        observer.lng + (radius * Math.sin(heading)) / 111000,
-        observer.lat + (radius * Math.cos(heading)) / 111000,
-        observer.alt
-      );
-      points.push(position);
-    }
-
-    const horizonId = 'sky_horizon';
-    viewer.value.entities.add({
-      id: horizonId,
-      polyline: {
-        positions: points,
-        width: 2,
-        material: Cesium.Color.CYAN.withAlpha(0.5),
-        clampToGround: false,
-      },
-    });
-    skyViewEntities.set(horizonId, true);
-  };
-
-  // 绘制方位角参考线（北、东、南、西）
-  const drawAzimuthLines = (observer: { lat: number; lng: number; alt: number }) => {
-    if (!viewer.value) return;
-
-    const radius = 5000; // 与地平圈相同
-    const directions = [
-      { angle: 0, label: '北' },
-      { angle: 90, label: '东' },
-      { angle: 180, label: '南' },
-      { angle: 270, label: '西' },
-    ];
-
-    directions.forEach(({ angle, label }) => {
-      const rad = Cesium.Math.toRadians(angle);
-      const endLng = observer.lng + (radius * Math.sin(rad)) / 111000;
-      const endLat = observer.lat + (radius * Math.cos(rad)) / 111000;
-
-      // 绘制方位线
-      const lineId = `sky_azimuth_${angle}`;
-      viewer.value!.entities.add({
-        id: lineId,
-        polyline: {
-          positions: [
-            Cesium.Cartesian3.fromDegrees(observer.lng, observer.lat, observer.alt),
-            Cesium.Cartesian3.fromDegrees(endLng, endLat, observer.alt),
-          ],
-          width: 1,
-          material: Cesium.Color.WHITE.withAlpha(0.3),
-        },
-      });
-      skyViewEntities.set(lineId, true);
-
-      // 添加方位标签
-      const labelId = `sky_label_${angle}`;
-      viewer.value!.entities.add({
-        id: labelId,
-        position: Cesium.Cartesian3.fromDegrees(endLng, endLat, observer.alt + 10),
-        label: {
-          text: label,
-          font: '14px sans-serif',
-          fillColor: Cesium.Color.CYAN,
-          outlineColor: Cesium.Color.BLACK,
-          outlineWidth: 2,
-          style: Cesium.LabelStyle.FILL_AND_OUTLINE,
-          horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
-          verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
-        },
-      });
-      skyViewEntities.set(labelId, true);
-    });
-  };
-
-  // 清除天空投影标记
-  const clearSkyView = () => {
-    if (!viewer.value) return;
-
-    skyViewEntities.forEach((_, key) => {
-      const entity = viewer.value!.entities.getById(key);
-      if (entity) {
-        viewer.value!.entities.remove(entity);
-      }
-    });
-    skyViewEntities.clear();
   };
 
   // 飞到指定位置
@@ -1474,8 +1340,6 @@ export function useCesium() {
     toggleAnimationPause,
     setAnimationProgress,
     setAnimationSpeed,
-    flyToSkyView,
-    clearSkyView,
     flyToPosition,
     destroyCesium,
     setOnSatelliteClick,

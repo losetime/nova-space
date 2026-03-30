@@ -102,16 +102,6 @@
           <template #icon><CalculatorOutlined /></template>
           开始预测
         </a-button>
-        <a-tooltip title="切换到天空投影视角（从观察者位置仰视天空）">
-          <a-button
-            class="sky-view-btn"
-            :disabled="!isValidLocation"
-            @click="handleSkyView"
-          >
-            <CloudOutlined />
-            天空视角
-          </a-button>
-        </a-tooltip>
       </div>
 
       <!-- 预测结果 -->
@@ -247,7 +237,6 @@ import {
   CalendarOutlined,
   PlayCircleOutlined,
   GlobalOutlined,
-  CloudOutlined,
 } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import { satelliteApi, type PassPrediction, type PassEvent } from '@/api'
@@ -270,7 +259,6 @@ const emit = defineEmits<{
     endTime: string
     observer: { lat: number; lng: number; alt: number }
   }]
-  'sky-view': [observer: { lat: number; lng: number; alt: number }]
 }>()
 
 // 选中的过境索引
@@ -455,11 +443,6 @@ const handlePlayAnimation = (pass: PassEvent) => {
   })
 }
 
-// 切换到天空视角
-const handleSkyView = () => {
-  emit('sky-view', { ...observer.value })
-}
-
 // 初始化时尝试获取位置
 onMounted(() => {
   // 默认使用北京
@@ -614,25 +597,6 @@ $text-muted: rgba(255, 255, 255, 0.4);
 
     &:hover {
       opacity: 0.9;
-    }
-
-    &:disabled {
-      opacity: 0.5;
-    }
-  }
-
-  .sky-view-btn {
-    height: 40px;
-    background: rgba(0, 255, 136, 0.1);
-    border: 1px solid rgba(0, 255, 136, 0.3);
-    border-radius: 8px;
-    color: #00ff88;
-    font-weight: 500;
-
-    &:hover {
-      background: rgba(0, 255, 136, 0.2);
-      border-color: rgba(0, 255, 136, 0.5);
-      color: #00ff88;
     }
 
     &:disabled {
