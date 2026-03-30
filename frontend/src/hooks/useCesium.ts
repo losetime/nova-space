@@ -64,8 +64,8 @@ class SatelliteRenderer {
   private hoverHandler: Cesium.ScreenSpaceEventHandler | null = null;
   private hoveredNoradId: string | null = null;
   private hoverLabel: Cesium.Label | null = null;
-  private lastHoverCheckTime = 0; // 节流时间戳
-  private readonly HOVER_THROTTLE_MS = 50; // 节流间隔（毫秒）
+  private hoverDebounceTimer: number | null = null; // 防抖定时器
+  private readonly HOVER_DEBOUNCE_MS = 100; // 防抖间隔（毫秒）
 
   // 空间网格索引（用于悬停检测优化）
   private spatialGrid: Map<string, Set<string>> = new Map();
@@ -194,32 +194,35 @@ class SatelliteRenderer {
 
     this.hoverHandler = new Cesium.ScreenSpaceEventHandler(this.viewer.scene.canvas);
 
-    // 处理鼠标移动事件（带节流）
+    // 处理鼠标移动事件（带防抖）
     this.hoverHandler.setInputAction((movement: Cesium.ScreenSpaceEventHandler.MotionEvent) => {
-      // 节流检查：距离上次检测不足 50ms 则跳过
-      const now = performance.now();
-      if (now - this.lastHoverCheckTime < this.HOVER_THROTTLE_MS) {
-        return;
+      // 清除之前的定时器
+      if (this.hoverDebounceTimer !== null) {
+        clearTimeout(this.hoverDebounceTimer);
       }
-      this.lastHoverCheckTime = now;
 
-      const mousePosition = movement.endPosition;
-      const nearbySatellite = this.findNearbySatelliteForHover(mousePosition);
+      // 设置新的防抖定时器
+      this.hoverDebounceTimer = window.setTimeout(() => {
+        this.hoverDebounceTimer = null;
 
-      if (nearbySatellite !== this.hoveredNoradId) {
-        // 取消之前的高亮
-        if (this.hoveredNoradId) {
-          this.unhighlightSatellite(this.hoveredNoradId);
+        const mousePosition = movement.endPosition;
+        const nearbySatellite = this.findNearbySatelliteForHover(mousePosition);
+
+        if (nearbySatellite !== this.hoveredNoradId) {
+          // 取消之前的高亮
+          if (this.hoveredNoradId) {
+            this.unhighlightSatellite(this.hoveredNoradId);
+          }
+
+          // 高亮新的卫星
+          if (nearbySatellite) {
+            this.highlightSatellite(nearbySatellite);
+            this.hoveredNoradId = nearbySatellite;
+          } else {
+            this.hoveredNoradId = null;
+          }
         }
-
-        // 高亮新的卫星
-        if (nearbySatellite) {
-          this.highlightSatellite(nearbySatellite);
-          this.hoveredNoradId = nearbySatellite;
-        } else {
-          this.hoveredNoradId = null;
-        }
-      }
+      }, this.HOVER_DEBOUNCE_MS);
     }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
   }
 
@@ -590,6 +593,11 @@ class SatelliteRenderer {
 
   // 销毁
   destroy() {
+    // 清除防抖定时器
+    if (this.hoverDebounceTimer !== null) {
+      clearTimeout(this.hoverDebounceTimer);
+      this.hoverDebounceTimer = null;
+    }
     if (this.clickHandler) {
       this.clickHandler.destroy();
       this.clickHandler = null;
