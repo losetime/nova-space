@@ -183,3 +183,52 @@ export interface PassPrediction {
   endDate: string;
   totalPasses: number;
 }
+
+/**
+ * 轨道段（按日照状态分段）
+ */
+export interface OrbitSegment {
+  startTime: string;
+  endTime: string;
+  status: 'sunlight' | 'eclipse';
+  points: OrbitPoint[];
+}
+
+/**
+ * 日照分析结果接口
+ */
+export interface SunlightAnalysis {
+  noradId: string;
+  name: string;
+  analysisStartTime: string;
+  analysisEndTime: string;
+  orbitalPeriod: number;      // 轨道周期（分钟）
+  sunlightRatio: number;      // 日照比例 (0-1)
+  sunlightDuration: number;   // 日照时间（分钟）
+  eclipseDuration: number;    // 阴影时间（分钟）
+  currentStatus: 'sunlight' | 'eclipse';  // 当前日照状态
+  nextEclipseEntry?: string;  // 下次进入阴影区时间
+  nextEclipseExit?: string;   // 下次离开阴影区时间
+  timeToNextEvent?: number;   // 到下次事件的时间（分钟）
+  orbitSegments: OrbitSegment[];
+}
+
+/**
+ * 实时日照状态接口
+ */
+export interface SunlightStatus {
+  noradId: string;
+  name: string;
+  timestamp: string;
+  status: 'sunlight' | 'eclipse';
+  sunDirection?: {            // 太阳方向向量（从卫星指向太阳，单位向量）
+    x: number;
+    y: number;
+    z: number;
+  };
+  nextEvent?: {
+    type: 'entry' | 'exit';
+    time: string;
+    minutesUntil: number;
+  };
+}

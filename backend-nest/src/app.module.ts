@@ -19,6 +19,10 @@ import { FeedbackModule } from './modules/feedback/feedback.module';
 import { SpaceWeatherModule } from './modules/space-weather/space-weather.module';
 import { PushModule } from './modules/push/push.module';
 import { MilestoneModule } from './modules/milestone/milestone.module';
+import { SatelliteTle } from './modules/satellite/entities/satellite-tle.entity';
+import { SatelliteMetadataEntity } from './modules/satellite/entities/satellite-metadata.entity';
+import { User } from './common/entities/user.entity';
+import { Article } from './modules/education/entities/article.entity';
 import appConfig from './config/app.config';
 
 @Module({
@@ -43,6 +47,7 @@ import appConfig from './config/app.config';
       }),
       inject: [ConfigService],
     }),
+    TypeOrmModule.forFeature([SatelliteTle, SatelliteMetadataEntity, User, Article]),
     UserModule,
     AuthModule,
     SubscriptionModule,

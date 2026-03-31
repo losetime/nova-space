@@ -346,6 +346,49 @@ export interface PassPrediction {
   totalPasses: number
 }
 
+// 轨道段（按日照状态分段）
+export interface OrbitSegment {
+  startTime: string
+  endTime: string
+  status: 'sunlight' | 'eclipse'
+  points: OrbitPoint[]
+}
+
+// 日照分析结果
+export interface SunlightAnalysis {
+  noradId: string
+  name: string
+  analysisStartTime: string
+  analysisEndTime: string
+  orbitalPeriod: number
+  sunlightRatio: number
+  sunlightDuration: number
+  eclipseDuration: number
+  currentStatus: 'sunlight' | 'eclipse'
+  nextEclipseEntry?: string
+  nextEclipseExit?: string
+  timeToNextEvent?: number
+  orbitSegments: OrbitSegment[]
+}
+
+// 实时日照状态
+export interface SunlightStatus {
+  noradId: string
+  name: string
+  timestamp: string
+  status: 'sunlight' | 'eclipse'
+  sunDirection?: {
+    x: number
+    y: number
+    z: number
+  }
+  nextEvent?: {
+    type: 'entry' | 'exit'
+    time: string
+    minutesUntil: number
+  }
+}
+
 // 卫星详情数据
 export interface SatelliteDetail {
   noradId: string
@@ -463,6 +506,17 @@ export const satelliteApi = {
   // 获取用户关注的卫星列表
   getFavorites: () =>
     api.get<ApiResponse<SatelliteFavorite[]>>('/satellites/favorites'),
+
+  // 日照分析
+  analyzeSunlight: (noradId: string | number, params?: {
+    startTime?: string
+    duration?: number
+  }) =>
+    api.get<ApiResponse<SunlightAnalysis>>(`/satellites/${noradId}/sunlight`, { params }),
+
+  // 实时日照状态
+  getSunlightStatus: (noradId: string | number) =>
+    api.get<ApiResponse<SunlightStatus>>(`/satellites/${noradId}/sunlight/status`),
 }
 
 // 关注的卫星
@@ -631,6 +685,20 @@ export interface PushSubscription {
   lastPushAt: string | null
   createdAt: string
   updatedAt: string
+}
+
+// 首页统计数据
+export interface HomeStats {
+  satellites: number
+  countries: number
+  articles: number
+  users: number
+}
+
+// 统计 API
+export const statsApi = {
+  // 获取首页统计数据
+  getHomeStats: () => api.get<ApiResponse<HomeStats>>('/stats'),
 }
 
 // 推送订阅 API

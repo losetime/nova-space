@@ -37,298 +37,319 @@
 
     <!-- 基本信息 -->
     <div class="section" v-if="metadata">
-      <div class="section-header">
-        <InfoCircleOutlined class="section-icon" />
-        <span>基本信息</span>
+      <div class="section-header" @click="expandedSections.basic = !expandedSections.basic">
+        <div class="header-left">
+          <InfoCircleOutlined class="section-icon" />
+          <span>基本信息</span>
+        </div>
+        <DownOutlined :class="['expand-icon', { expanded: expandedSections.basic }]" />
       </div>
-      <div class="info-grid">
-        <div class="info-item">
-          <span class="info-label">对象类型</span>
-          <span
-            v-if="metadata.objectType"
-            :class="['info-value', 'type-badge', getObjectTypeClass(metadata.objectType)]"
-          >
-            {{ getObjectTypeLabel(metadata.objectType) }}
-          </span>
-          <span v-else class="info-value">--</span>
+      <transition name="collapse">
+        <div v-show="expandedSections.basic" class="section-content">
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="info-label">对象类型</span>
+              <span
+                v-if="metadata.objectType"
+                :class="['info-value', 'type-badge', getObjectTypeClass(metadata.objectType)]"
+              >
+                {{ getObjectTypeLabel(metadata.objectType) }}
+              </span>
+              <span v-else class="info-value">--</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">ESA分类</span>
+              <span class="info-value">{{ metadata.objectClass || "--" }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">所属国家/组织</span>
+              <span v-if="metadata.countryCode" class="info-value">
+                <FlagIcon
+                  :code="metadata.countryCode"
+                  :country-name="getCountryName(metadata.countryCode)"
+                  class="country-flag"
+                />
+                {{ getCountryName(metadata.countryCode) }}
+              </span>
+              <span v-else class="info-value">--</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">发射日期</span>
+              <span class="info-value">{{
+                metadata.launchDate ? formatDate(metadata.launchDate) : "--"
+              }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">首次轨道历元</span>
+              <span class="info-value">{{
+                metadata.firstEpoch ? formatDate(metadata.firstEpoch) : "--"
+              }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">发射地点</span>
+              <span class="info-value">{{
+                metadata.launchSite ? getLaunchSiteName(metadata.launchSite) : "--"
+              }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">运载工具</span>
+              <span class="info-value">{{ metadata.launchVehicle || "--" }}</span>
+            </div>
+            <div class="info-item" v-if="metadata.flightNo">
+              <span class="info-label">发射序号</span>
+              <span class="info-value">{{ metadata.flightNo }}</span>
+            </div>
+            <div class="info-item" v-if="metadata.cosparLaunchNo">
+              <span class="info-label">发射编号</span>
+              <span class="info-value">{{ metadata.cosparLaunchNo }}</span>
+            </div>
+            <div class="info-item" v-if="metadata.launchSiteName">
+              <span class="info-label">发射场</span>
+              <span class="info-value">{{ metadata.launchSiteName }}</span>
+            </div>
+            <div class="info-item" v-if="metadata.launchFailure !== undefined">
+              <span class="info-label">发射状态</span>
+              <span
+                :class="['info-value', 'status-badge', metadata.launchFailure ? 'decayed' : 'active']"
+              >
+                {{ metadata.launchFailure ? "发射失败" : "发射成功" }}
+              </span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">COSPAR编号</span>
+              <span class="info-value">{{ metadata.cosparId || "--" }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">任务</span>
+              <span class="info-value mission">{{ metadata.mission || "--" }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">运营商</span>
+              <span class="info-value">{{ metadata.operator || "--" }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">用途</span>
+              <span class="info-value">{{ metadata.purpose || "--" }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">发射质量</span>
+              <span class="info-value"
+                >{{ metadata.launchMass ? metadata.launchMass.toLocaleString() : "--" }} kg</span
+              >
+            </div>
+            <div class="info-item">
+              <span class="info-label">形状</span>
+              <span class="info-value">{{ metadata.shape || "--" }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">尺寸/跨度</span>
+              <span class="info-value">{{
+                metadata.dimensions || (metadata.span ? `${metadata.span} m` : "--")
+              }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">平台</span>
+              <span class="info-value">{{ metadata.platform || "--" }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">设计寿命</span>
+              <span class="info-value">{{ metadata.lifetime || "--" }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">预测衰减日期</span>
+              <span class="info-value">{{
+                metadata.predDecayDate ? formatDate(metadata.predDecayDate) : "--"
+              }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">雷达截面</span>
+              <span
+                v-if="metadata.rcs"
+                :class="['info-value', 'rcs-badge', getRcsClass(metadata.rcs)]"
+                >{{ metadata.rcs }}</span
+              >
+              <span v-else class="info-value">--</span>
+            </div>
+          </div>
         </div>
-        <div class="info-item">
-          <span class="info-label">ESA分类</span>
-          <span class="info-value">{{ metadata.objectClass || "--" }}</span>
-        </div>
-        <div class="info-item">
-          <span class="info-label">所属国家/组织</span>
-          <span v-if="metadata.countryCode" class="info-value">
-            <FlagIcon
-              :code="metadata.countryCode"
-              :country-name="getCountryName(metadata.countryCode)"
-              class="country-flag"
-            />
-            {{ getCountryName(metadata.countryCode) }}
-          </span>
-          <span v-else class="info-value">--</span>
-        </div>
-        <div class="info-item">
-          <span class="info-label">发射日期</span>
-          <span class="info-value">{{
-            metadata.launchDate ? formatDate(metadata.launchDate) : "--"
-          }}</span>
-        </div>
-        <div class="info-item">
-          <span class="info-label">首次轨道历元</span>
-          <span class="info-value">{{
-            metadata.firstEpoch ? formatDate(metadata.firstEpoch) : "--"
-          }}</span>
-        </div>
-        <div class="info-item">
-          <span class="info-label">发射地点</span>
-          <span class="info-value">{{
-            metadata.launchSite ? getLaunchSiteName(metadata.launchSite) : "--"
-          }}</span>
-        </div>
-        <div class="info-item">
-          <span class="info-label">运载工具</span>
-          <span class="info-value">{{ metadata.launchVehicle || "--" }}</span>
-        </div>
-        <div class="info-item" v-if="metadata.flightNo">
-          <span class="info-label">发射序号</span>
-          <span class="info-value">{{ metadata.flightNo }}</span>
-        </div>
-        <div class="info-item" v-if="metadata.cosparLaunchNo">
-          <span class="info-label">发射编号</span>
-          <span class="info-value">{{ metadata.cosparLaunchNo }}</span>
-        </div>
-        <div class="info-item" v-if="metadata.launchSiteName">
-          <span class="info-label">发射场</span>
-          <span class="info-value">{{ metadata.launchSiteName }}</span>
-        </div>
-        <div class="info-item" v-if="metadata.launchFailure !== undefined">
-          <span class="info-label">发射状态</span>
-          <span
-            :class="['info-value', 'status-badge', metadata.launchFailure ? 'decayed' : 'active']"
-          >
-            {{ metadata.launchFailure ? "发射失败" : "发射成功" }}
-          </span>
-        </div>
-        <div class="info-item">
-          <span class="info-label">COSPAR编号</span>
-          <span class="info-value">{{ metadata.cosparId || "--" }}</span>
-        </div>
-        <div class="info-item">
-          <span class="info-label">任务</span>
-          <span class="info-value mission">{{ metadata.mission || "--" }}</span>
-        </div>
-        <div class="info-item">
-          <span class="info-label">运营商</span>
-          <span class="info-value">{{ metadata.operator || "--" }}</span>
-        </div>
-        <div class="info-item">
-          <span class="info-label">用途</span>
-          <span class="info-value">{{ metadata.purpose || "--" }}</span>
-        </div>
-        <div class="info-item">
-          <span class="info-label">发射质量</span>
-          <span class="info-value"
-            >{{ metadata.launchMass ? metadata.launchMass.toLocaleString() : "--" }} kg</span
-          >
-        </div>
-        <div class="info-item">
-          <span class="info-label">形状</span>
-          <span class="info-value">{{ metadata.shape || "--" }}</span>
-        </div>
-        <div class="info-item">
-          <span class="info-label">尺寸/跨度</span>
-          <span class="info-value">{{
-            metadata.dimensions || (metadata.span ? `${metadata.span} m` : "--")
-          }}</span>
-        </div>
-        <div class="info-item">
-          <span class="info-label">平台</span>
-          <span class="info-value">{{ metadata.platform || "--" }}</span>
-        </div>
-        <div class="info-item">
-          <span class="info-label">设计寿命</span>
-          <span class="info-value">{{ metadata.lifetime || "--" }}</span>
-        </div>
-        <div class="info-item">
-          <span class="info-label">预测衰减日期</span>
-          <span class="info-value">{{
-            metadata.predDecayDate ? formatDate(metadata.predDecayDate) : "--"
-          }}</span>
-        </div>
-        <div class="info-item">
-          <span class="info-label">雷达截面</span>
-          <span
-            v-if="metadata.rcs"
-            :class="['info-value', 'rcs-badge', getRcsClass(metadata.rcs)]"
-            >{{ metadata.rcs }}</span
-          >
-          <span v-else class="info-value">--</span>
-        </div>
-      </div>
+      </transition>
     </div>
 
     <!-- 轨道参数 -->
     <div class="section" v-if="satellite?.position">
-      <div class="section-header">
-        <CompassOutlined class="section-icon" />
-        <span>轨道参数</span>
+      <div class="section-header" @click="expandedSections.orbit = !expandedSections.orbit">
+        <div class="header-left">
+          <CompassOutlined class="section-icon" />
+          <span>轨道参数</span>
+        </div>
+        <DownOutlined :class="['expand-icon', { expanded: expandedSections.orbit }]" />
       </div>
-      <div class="param-grid">
-        <div class="param-card">
-          <div class="param-icon lng">
-            <EnvironmentOutlined />
-          </div>
-          <div class="param-content">
-            <label>经度</label>
-            <span class="param-value">{{ formatNumber(satellite.position.lng, 4) }}°</span>
-          </div>
-        </div>
-        <div class="param-card">
-          <div class="param-icon lat">
-            <EnvironmentOutlined />
-          </div>
-          <div class="param-content">
-            <label>纬度</label>
-            <span class="param-value">{{ formatNumber(satellite.position.lat, 4) }}°</span>
-          </div>
-        </div>
-        <div class="param-card">
-          <div class="param-icon alt">
-            <RocketOutlined />
-          </div>
-          <div class="param-content">
-            <label>轨道高度</label>
-            <span class="param-value">{{ formatNumber(satellite.position.alt / 1000, 0) }} km</span>
-          </div>
-        </div>
-        <div class="param-card">
-          <div class="param-icon orbit">
-            <GlobalOutlined />
-          </div>
-          <div class="param-content">
-            <label>轨道类型</label>
-            <span :class="['param-value', 'orbit-type', getOrbitClass(satellite.position.alt)]">
-              {{ getOrbitType(satellite.position.alt) }}
-            </span>
-          </div>
-        </div>
-      </div>
-      <!-- 轨道特征（来自元数据） -->
-      <div class="orbit-features" v-if="metadata">
-        <div class="feature-item">
-          <div class="feature-icon"><ThunderboltOutlined /></div>
-          <div class="feature-content">
-            <div class="feature-labels">
-              <span>近地点</span>
-              <span>远地点</span>
+      <transition name="collapse">
+        <div v-show="expandedSections.orbit" class="section-content">
+          <div class="param-grid">
+            <div class="param-card">
+              <div class="param-icon lng">
+                <EnvironmentOutlined />
+              </div>
+              <div class="param-content">
+                <label>经度</label>
+                <span class="param-value">{{ formatNumber(satellite.position.lng, 4) }}°</span>
+              </div>
             </div>
-            <div class="feature-values">
-              <span>{{ metadata.perigee ? `${metadata.perigee.toLocaleString()} km` : "--" }}</span>
-              <span>{{ metadata.apogee ? `${metadata.apogee.toLocaleString()} km` : "--" }}</span>
+            <div class="param-card">
+              <div class="param-icon lat">
+                <EnvironmentOutlined />
+              </div>
+              <div class="param-content">
+                <label>纬度</label>
+                <span class="param-value">{{ formatNumber(satellite.position.lat, 4) }}°</span>
+              </div>
+            </div>
+            <div class="param-card">
+              <div class="param-icon alt">
+                <RocketOutlined />
+              </div>
+              <div class="param-content">
+                <label>轨道高度</label>
+                <span class="param-value">{{ formatNumber(satellite.position.alt / 1000, 0) }} km</span>
+              </div>
+            </div>
+            <div class="param-card">
+              <div class="param-icon orbit">
+                <GlobalOutlined />
+              </div>
+              <div class="param-content">
+                <label>轨道类型</label>
+                <span :class="['param-value', 'orbit-type', getOrbitClass(satellite.position.alt)]">
+                  {{ getOrbitType(satellite.position.alt) }}
+                </span>
+              </div>
             </div>
           </div>
-        </div>
-        <div class="feature-item">
-          <div class="feature-icon"><ClockCircleOutlined /></div>
-          <div class="feature-content">
-            <div class="feature-row">
-              <span class="feature-label">轨道周期</span>
-              <span class="feature-value">{{
-                metadata.period != null ? `${metadata.period.toFixed(1)} 分钟` : "--"
-              }}</span>
+          <!-- 轨道特征（来自元数据） -->
+          <div class="orbit-features" v-if="metadata">
+            <div class="feature-item">
+              <div class="feature-icon"><ThunderboltOutlined /></div>
+              <div class="feature-content">
+                <div class="feature-labels">
+                  <span>近地点</span>
+                  <span>远地点</span>
+                </div>
+                <div class="feature-values">
+                  <span>{{ metadata.perigee ? `${metadata.perigee.toLocaleString()} km` : "--" }}</span>
+                  <span>{{ metadata.apogee ? `${metadata.apogee.toLocaleString()} km` : "--" }}</span>
+                </div>
+              </div>
+            </div>
+            <div class="feature-item">
+              <div class="feature-icon"><ClockCircleOutlined /></div>
+              <div class="feature-content">
+                <div class="feature-row">
+                  <span class="feature-label">轨道周期</span>
+                  <span class="feature-value">{{
+                    metadata.period != null ? `${metadata.period.toFixed(1)} 分钟` : "--"
+                  }}</span>
+                </div>
+              </div>
+            </div>
+            <div class="feature-item">
+              <div class="feature-icon"><AimOutlined /></div>
+              <div class="feature-content">
+                <div class="feature-row">
+                  <span class="feature-label">轨道倾角</span>
+                  <span class="feature-value">{{
+                    metadata.inclination != null ? `${metadata.inclination.toFixed(2)}°` : "--"
+                  }}</span>
+                </div>
+              </div>
+            </div>
+            <div class="feature-item">
+              <div class="feature-icon"><RadiusSettingOutlined /></div>
+              <div class="feature-content">
+                <div class="feature-row">
+                  <span class="feature-label">偏心率</span>
+                  <span class="feature-value">{{
+                    metadata.eccentricity != null ? metadata.eccentricity.toFixed(6) : "--"
+                  }}</span>
+                </div>
+              </div>
+            </div>
+            <div class="feature-item">
+              <div class="feature-icon"><CompassOutlined /></div>
+              <div class="feature-content">
+                <div class="feature-row">
+                  <span class="feature-label">升交点赤经</span>
+                  <span class="feature-value">{{
+                    metadata.raan != null ? `${metadata.raan.toFixed(2)}°` : "--"
+                  }}</span>
+                </div>
+              </div>
+            </div>
+            <div class="feature-item">
+              <div class="feature-icon"><AimOutlined /></div>
+              <div class="feature-content">
+                <div class="feature-row">
+                  <span class="feature-label">近地点幅角</span>
+                  <span class="feature-value">{{
+                    metadata.argOfPerigee != null ? `${metadata.argOfPerigee.toFixed(2)}°` : "--"
+                  }}</span>
+                </div>
+              </div>
+            </div>
+            <div class="feature-item">
+              <div class="feature-icon"><ClockCircleOutlined /></div>
+              <div class="feature-content">
+                <div class="feature-row">
+                  <span class="feature-label">TLE数据年龄</span>
+                  <span
+                    :class="[
+                      'feature-value',
+                      {
+                        warning: metadata.tleAge != null && metadata.tleAge > 7,
+                        old: metadata.tleAge != null && metadata.tleAge > 14,
+                      },
+                    ]"
+                  >
+                    {{ metadata.tleAge !== undefined ? `${metadata.tleAge} 天` : "--" }}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-        <div class="feature-item">
-          <div class="feature-icon"><AimOutlined /></div>
-          <div class="feature-content">
-            <div class="feature-row">
-              <span class="feature-label">轨道倾角</span>
-              <span class="feature-value">{{
-                metadata.inclination != null ? `${metadata.inclination.toFixed(2)}°` : "--"
-              }}</span>
-            </div>
-          </div>
-        </div>
-        <div class="feature-item">
-          <div class="feature-icon"><RadiusSettingOutlined /></div>
-          <div class="feature-content">
-            <div class="feature-row">
-              <span class="feature-label">偏心率</span>
-              <span class="feature-value">{{
-                metadata.eccentricity != null ? metadata.eccentricity.toFixed(6) : "--"
-              }}</span>
-            </div>
-          </div>
-        </div>
-        <div class="feature-item">
-          <div class="feature-icon"><CompassOutlined /></div>
-          <div class="feature-content">
-            <div class="feature-row">
-              <span class="feature-label">升交点赤经</span>
-              <span class="feature-value">{{
-                metadata.raan != null ? `${metadata.raan.toFixed(2)}°` : "--"
-              }}</span>
-            </div>
-          </div>
-        </div>
-        <div class="feature-item">
-          <div class="feature-icon"><AimOutlined /></div>
-          <div class="feature-content">
-            <div class="feature-row">
-              <span class="feature-label">近地点幅角</span>
-              <span class="feature-value">{{
-                metadata.argOfPerigee != null ? `${metadata.argOfPerigee.toFixed(2)}°` : "--"
-              }}</span>
-            </div>
-          </div>
-        </div>
-        <div class="feature-item">
-          <div class="feature-icon"><ClockCircleOutlined /></div>
-          <div class="feature-content">
-            <div class="feature-row">
-              <span class="feature-label">TLE数据年龄</span>
-              <span
-                :class="[
-                  'feature-value',
-                  {
-                    warning: metadata.tleAge != null && metadata.tleAge > 7,
-                    old: metadata.tleAge != null && metadata.tleAge > 14,
-                  },
-                ]"
-              >
-                {{ metadata.tleAge !== undefined ? `${metadata.tleAge} 天` : "--" }}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
+      </transition>
     </div>
 
     <!-- 状态信息 -->
     <div class="section">
-      <div class="section-header">
-        <DashboardOutlined class="section-icon" />
-        <span>运行状态</span>
+      <div class="section-header" @click="expandedSections.status = !expandedSections.status">
+        <div class="header-left">
+          <DashboardOutlined class="section-icon" />
+          <span>运行状态</span>
+        </div>
+        <DownOutlined :class="['expand-icon', { expanded: expandedSections.status }]" />
       </div>
-      <div class="status-panel">
-        <div
-          class="status-indicator"
-          :class="{ active: !metadata?.decayDate, decayed: !!metadata?.decayDate }"
-        >
-          <span class="indicator-dot"></span>
-          <span class="indicator-text">{{ metadata?.decayDate ? "已衰减" : "运行中" }}</span>
+      <transition name="collapse">
+        <div v-show="expandedSections.status" class="section-content">
+          <div class="status-panel">
+            <div
+              class="status-indicator"
+              :class="{ active: !metadata?.decayDate, decayed: !!metadata?.decayDate }"
+            >
+              <span class="indicator-dot"></span>
+              <span class="indicator-text">{{ metadata?.decayDate ? "已衰减" : "运行中" }}</span>
+            </div>
+            <div class="status-time-row">
+              <span class="status-label">数据更新时间</span>
+              <span class="status-time">{{ formatTime(satellite.timestamp) }}</span>
+            </div>
+            <div class="decay-warning" v-if="metadata?.decayDate">
+              <WarningOutlined />
+              <span>该卫星已于 {{ formatDate(metadata.decayDate) }} 坠落大气层</span>
+            </div>
+          </div>
         </div>
-        <div class="status-time-row">
-          <span class="status-label">数据更新时间</span>
-          <span class="status-time">{{ formatTime(satellite.timestamp) }}</span>
-        </div>
-        <div class="decay-warning" v-if="metadata?.decayDate">
-          <WarningOutlined />
-          <span>该卫星已于 {{ formatDate(metadata.decayDate) }} 坠落大气层</span>
-        </div>
-      </div>
+      </transition>
     </div>
   </div>
 
@@ -363,6 +384,7 @@ import {
   StarFilled,
   LoadingOutlined,
   RadiusSettingOutlined,
+  DownOutlined,
 } from "@ant-design/icons-vue";
 import type { Satellite } from "@/hooks/useWebSocket";
 import FlagIcon from "@/components/FlagIcon.vue";
@@ -421,6 +443,13 @@ interface Props {
 }
 
 const props = defineProps<Props>();
+
+// 折叠状态
+const expandedSections = ref({
+  basic: true,
+  orbit: true,
+  status: true,
+});
 
 watch(
   () => props.metadata,
@@ -847,22 +876,52 @@ const getRcsClass = (rcs: string): string => {
 
 // 区块
 .section {
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .section-header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.8);
-  margin-bottom: 12px;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: rgba(0, 212, 255, 0.04);
+  border: 1px solid rgba(0, 212, 255, 0.08);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba(0, 212, 255, 0.08);
+    border-color: rgba(0, 212, 255, 0.15);
+  }
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.8);
+  }
 
   .section-icon {
     font-size: 14px;
     color: #00d4ff;
   }
+
+  .expand-icon {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.4);
+    transition: transform 0.2s ease;
+
+    &.expanded {
+      transform: rotate(180deg);
+    }
+  }
+}
+
+.section-content {
+  padding-top: 12px;
 }
 
 // 基本信息网格
@@ -1355,5 +1414,25 @@ const getRcsClass = (rcs: string): string => {
   to {
     transform: rotate(360deg);
   }
+}
+
+// 折叠动画
+.collapse-enter-active,
+.collapse-leave-active {
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.collapse-enter-from,
+.collapse-leave-to {
+  opacity: 0;
+  max-height: 0;
+  padding-top: 0;
+}
+
+.collapse-enter-to,
+.collapse-leave-from {
+  opacity: 1;
+  max-height: 2000px;
 }
 </style>

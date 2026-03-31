@@ -4,7 +4,7 @@ import { ref } from 'vue'
 export type LeftPanelType = 'none' | 'satellite-list' | 'filter'
 
 // 右侧面板类型
-export type RightPanelType = 'none' | 'orbit' | 'transit' | 'detail'
+export type RightPanelType = 'none' | 'orbit' | 'transit' | 'detail' | 'sunlight'
 
 export function usePanel() {
   // 左侧当前激活的面板

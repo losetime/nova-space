@@ -1,7 +1,7 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import * as satellite from 'satellite.js';
-import type { TLEData, SatellitePosition, OrbitPoint, SatelliteData, OrbitPrediction, PositionPrediction, ObserverPosition, PassEvent, PassPrediction } from '../interfaces/satellite.interface';
+import type { TLEData, SatellitePosition, OrbitPoint, SatelliteData, OrbitPrediction, PositionPrediction, ObserverPosition, PassEvent, PassPrediction, SunlightAnalysis, SunlightStatus, OrbitSegment } from '../interfaces/satellite.interface';
 import { SatelliteDataService } from './satellite-data.service';
 
 // 常量定义
@@ -646,5 +646,176 @@ export class OrbitCalculatorService implements OnModuleInit {
     // 如果垂直距离大于地球半径，卫星在阴影锥之外，仍被照亮
     // 否则卫星在地球阴影中（本影区）
     return perpDist > EARTH_RADIUS_KM;
+  }
+
+  /**
+   * 计算太阳位置（ECI坐标系，单位km）
+   */
+  private calculateSunPosition(time: Date): { x: number; y: number; z: number } {
+    const jday = satellite.jday(time);
+    const sunPosAU = satellite.sunPos(jday);
+    return {
+      x: sunPosAU.rsun[0] * AU_TO_KM,
+      y: sunPosAU.rsun[1] * AU_TO_KM,
+      z: sunPosAU.rsun[2] * AU_TO_KM,
+    };
+  }
+
+  /**
+   * 日照分析
+   * @param noradId 卫星 NORAD ID
+   * @param startTime 分析开始时间
+   * @param durationMinutes 分析时长（分钟）
+   */
+  analyzeSunlight(
+    noradId: string,
+    startTime: Date,
+    durationMinutes: number,
+  ): SunlightAnalysis | null {
+    const sat = this.satellites.get(noradId);
+    if (!sat) return null;
+
+    const orbitalPeriod = this.calculateOrbitalPeriod(sat);
+    const steps = Math.min(durationMinutes * 2, 200); // 每分钟2个采样点，最多200点
+    const intervalMs = (durationMinutes * 60 * 1000) / steps;
+
+    const orbitSegments: OrbitSegment[] = [];
+    let currentSegment: OrbitSegment | null = null;
+    let sunlightCount = 0;
+    let eclipseCount = 0;
+
+    const now = new Date();
+    let currentStatus: 'sunlight' | 'eclipse' = 'sunlight';
+    let nextEntryTime: Date | null = null;
+    let nextExitTime: Date | null = null;
+    let foundCurrentStatus = false;
+
+    for (let i = 0; i <= steps; i++) {
+      const time = new Date(startTime.getTime() + i * intervalMs);
+      const point = this.calculateOrbitPoint(sat, time);
+      if (!point) continue;
+
+      // 计算日照状态
+      const sunPos = this.calculateSunPosition(time);
+      const eci = satellite.propagate(sat.satrec, time);
+
+      if (!eci?.position) continue;
+
+      const isIlluminated = this.isSatelliteIlluminated(eci.position, sunPos);
+      const status = isIlluminated ? 'sunlight' : 'eclipse';
+
+      // 更新当前状态（找到当前时间点）
+      if (!foundCurrentStatus && time >= now) {
+        currentStatus = status;
+        foundCurrentStatus = true;
+      }
+
+      // 统计日照/阴影点数
+      if (isIlluminated) sunlightCount++;
+      else eclipseCount++;
+
+      // 预测下次阴影事件（从当前时间开始找第一个状态变化）
+      if (time >= now) {
+        if (status === 'eclipse' && !nextEntryTime && currentStatus === 'sunlight') {
+          nextEntryTime = time;
+        }
+        if (status === 'sunlight' && nextEntryTime && !nextExitTime) {
+          nextExitTime = time;
+        }
+      }
+
+      // 构建轨道段
+      if (!currentSegment) {
+        currentSegment = {
+          startTime: time.toISOString(),
+          endTime: time.toISOString(),
+          status,
+          points: [point],
+        };
+      } else if (currentSegment.status === status) {
+        currentSegment.endTime = time.toISOString();
+        currentSegment.points.push(point);
+      } else {
+        // 状态切换，保存当前段，开始新段
+        orbitSegments.push(currentSegment);
+        currentSegment = {
+          startTime: time.toISOString(),
+          endTime: time.toISOString(),
+          status,
+          points: [point],
+        };
+      }
+    }
+
+    // 保存最后一个段
+    if (currentSegment) {
+      orbitSegments.push(currentSegment);
+    }
+
+    const totalPoints = sunlightCount + eclipseCount;
+    const sunlightRatio = totalPoints > 0 ? sunlightCount / totalPoints : 0;
+    const sunlightDuration = Math.round(sunlightRatio * durationMinutes);
+    const eclipseDuration = Math.round((1 - sunlightRatio) * durationMinutes);
+
+    // 计算到下次事件的时间
+    let timeToNextEvent: number | undefined;
+    if (nextEntryTime && currentStatus === 'sunlight') {
+      timeToNextEvent = Math.round((nextEntryTime.getTime() - now.getTime()) / 60000);
+    } else if (nextExitTime && currentStatus === 'eclipse') {
+      timeToNextEvent = Math.round((nextExitTime.getTime() - now.getTime()) / 60000);
+    }
+
+    return {
+      noradId: sat.noradId,
+      name: sat.name,
+      analysisStartTime: startTime.toISOString(),
+      analysisEndTime: new Date(startTime.getTime() + durationMinutes * 60 * 1000).toISOString(),
+      orbitalPeriod,
+      sunlightRatio: Math.round(sunlightRatio * 1000) / 1000,
+      sunlightDuration,
+      eclipseDuration,
+      currentStatus,
+      nextEclipseEntry: nextEntryTime?.toISOString(),
+      nextEclipseExit: nextExitTime?.toISOString(),
+      timeToNextEvent,
+      orbitSegments,
+    };
+  }
+
+  /**
+   * 获取当前日照状态（实时）
+   * @param noradId 卫星 NORAD ID
+   */
+  getCurrentSunlightStatus(noradId: string): SunlightStatus | null {
+    const sat = this.satellites.get(noradId);
+    if (!sat) return null;
+
+    const now = new Date();
+    const sunPos = this.calculateSunPosition(now);
+    const eci = satellite.propagate(sat.satrec, now);
+
+    if (!eci?.position) return null;
+
+    const isIlluminated = this.isSatelliteIlluminated(eci.position, sunPos);
+
+    // 计算太阳方向向量（从卫星指向太阳，归一化）
+    const satToSun = {
+      x: sunPos.x - eci.position.x,
+      y: sunPos.y - eci.position.y,
+      z: sunPos.z - eci.position.z,
+    };
+    const distToSun = Math.sqrt(satToSun.x ** 2 + satToSun.y ** 2 + satToSun.z ** 2);
+
+    return {
+      noradId: sat.noradId,
+      name: sat.name,
+      timestamp: now.toISOString(),
+      status: isIlluminated ? 'sunlight' : 'eclipse',
+      sunDirection: {
+        x: satToSun.x / distToSun,
+        y: satToSun.y / distToSun,
+        z: satToSun.z / distToSun,
+      },
+    };
   }
 }

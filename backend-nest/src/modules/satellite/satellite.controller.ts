@@ -454,6 +454,83 @@ export class SatelliteController {
   }
 
   /**
+   * 日照分析
+   * GET /api/satellites/:noradId/sunlight
+   * @param noradId 卫星 NORAD ID
+   * @param startTime 分析开始时间（ISO格式，默认当前）
+   * @param duration 分析时长（分钟，默认一个轨道周期，最大1440）
+   */
+  @Get(':noradId/sunlight')
+  analyzeSunlight(
+    @Param('noradId') noradId: string,
+    @Query('startTime') startTime?: string,
+    @Query('duration') duration?: string,
+  ) {
+    this.logger.log(`分析卫星 ${noradId} 的日照情况`);
+
+    const sat = this.orbitCalculator.getSatelliteInfo(noradId);
+    if (!sat) {
+      return {
+        code: -1,
+        data: null,
+        message: '卫星不存在',
+      };
+    }
+
+    const start = startTime ? new Date(startTime) : new Date();
+
+    // 验证时间
+    if (isNaN(start.getTime())) {
+      return {
+        code: -1,
+        data: null,
+        message: '无效的开始时间格式',
+      };
+    }
+
+    // 默认分析一个轨道周期（约90分钟），最多24小时
+    const defaultDuration = 90;
+    const durationMinutes = Math.min(
+      Math.max(parseInt(duration || String(defaultDuration)) || defaultDuration, 10),
+      1440,
+    );
+
+    const analysis = this.orbitCalculator.analyzeSunlight(noradId, start, durationMinutes);
+
+    return {
+      code: 0,
+      data: analysis,
+      message: 'success',
+    };
+  }
+
+  /**
+   * 实时日照状态
+   * GET /api/satellites/:noradId/sunlight/status
+   */
+  @Get(':noradId/sunlight/status')
+  getSunlightStatus(@Param('noradId') noradId: string) {
+    this.logger.log(`获取卫星 ${noradId} 的实时日照状态`);
+
+    const sat = this.orbitCalculator.getSatelliteInfo(noradId);
+    if (!sat) {
+      return {
+        code: -1,
+        data: null,
+        message: '卫星不存在',
+      };
+    }
+
+    const status = this.orbitCalculator.getCurrentSunlightStatus(noradId);
+
+    return {
+      code: 0,
+      data: status,
+      message: 'success',
+    };
+  }
+
+  /**
    * 预测卫星过境
    * GET /api/satellites/:noradId/passes
    * @param noradId 卫星 NORAD ID

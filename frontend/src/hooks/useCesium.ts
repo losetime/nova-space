@@ -1039,6 +1039,120 @@ export function useCesium() {
     passTrajectoryEntities.clear();
   };
 
+  // ==================== 日照分析可视化 ====================
+
+  // 日照轨道实体集合
+  const sunlightOrbitEntities: Map<string, boolean> = new Map();
+
+  // 日照轨道段接口
+  interface OrbitSegment {
+    startTime: string;
+    endTime: string;
+    status: 'sunlight' | 'eclipse';
+    points: Array<{ lat: number; lng: number; alt: number }>;
+  }
+
+  /**
+   * 显示日照分析轨道（按日照状态分段绘制）
+   */
+  const showSunlightOrbit = (noradId: string, segments: OrbitSegment[]) => {
+    if (!viewer.value || !segments.length) return;
+
+    // 清除该卫星之前的日照轨道
+    clearSunlightOrbit(noradId);
+
+    // 日照段颜色：金黄色
+    const sunlightColor = Cesium.Color.fromCssColorString('#fbbf24');
+    // 阴影段颜色：深蓝色
+    const eclipseColor = Cesium.Color.fromCssColorString('#3b82f6');
+
+    // 按段绘制轨道
+    segments.forEach((segment, index) => {
+      if (!segment.points || segment.points.length < 2) return;
+
+      const positions = segment.points.map((p) =>
+        Cesium.Cartesian3.fromDegrees(p.lng, p.lat, p.alt)
+      );
+
+      const color = segment.status === 'sunlight' ? sunlightColor : eclipseColor;
+
+      // 添加轨道线
+      const orbitId = `sunlight_orbit_${noradId}_${index}`;
+      viewer.value!.entities.add({
+        id: orbitId,
+        polyline: {
+          positions,
+          width: 3,
+          material: new Cesium.PolylineGlowMaterialProperty({
+            glowPower: 0.3,
+            color,
+          }),
+        },
+      });
+      sunlightOrbitEntities.set(orbitId, true);
+
+      // 添加段端点标记
+      const startPoint = segment.points[0];
+      if (startPoint) {
+        const startMarkerId = `sunlight_marker_${noradId}_${index}_start`;
+        viewer.value!.entities.add({
+          id: startMarkerId,
+          position: Cesium.Cartesian3.fromDegrees(startPoint.lng, startPoint.lat, startPoint.alt),
+          point: {
+            pixelSize: 6,
+            color,
+            outlineColor: Cesium.Color.WHITE,
+            outlineWidth: 1,
+          },
+        });
+        sunlightOrbitEntities.set(startMarkerId, true);
+      }
+    });
+
+    // 启用地球光照效果
+    viewer.value.scene.globe.enableLighting = true;
+  };
+
+  /**
+   * 清除日照分析轨道
+   */
+  const clearSunlightOrbit = (noradId: string) => {
+    if (!viewer.value) return;
+
+    sunlightOrbitEntities.forEach((_, key) => {
+      if (key.includes(noradId)) {
+        const entity = viewer.value!.entities.getById(key);
+        if (entity) {
+          viewer.value!.entities.remove(entity);
+        }
+      }
+    });
+
+    // 从 Map 中移除
+    const keysToRemove = Array.from(sunlightOrbitEntities.keys()).filter((k) =>
+      k.includes(noradId)
+    );
+    keysToRemove.forEach((k) => sunlightOrbitEntities.delete(k));
+  };
+
+  /**
+   * 清除所有日照轨道
+   */
+  const clearAllSunlightOrbits = () => {
+    if (!viewer.value) return;
+
+    sunlightOrbitEntities.forEach((_, key) => {
+      const entity = viewer.value!.entities.getById(key);
+      if (entity) {
+        viewer.value!.entities.remove(entity);
+      }
+    });
+    sunlightOrbitEntities.clear();
+
+    // 关闭地球光照效果
+    viewer.value.scene.globe.enableLighting = false;
+  };
+
   // ==================== 时间轴动画 ====================
 
   // 动画状态
@@ -1351,6 +1465,9 @@ export function useCesium() {
     clearAllPredictedOrbits,
     showPassTrajectory,
     clearPassTrajectory,
+    showSunlightOrbit,
+    clearSunlightOrbit,
+    clearAllSunlightOrbits,
     animationState,
     playPassAnimation,
     stopPassAnimation,

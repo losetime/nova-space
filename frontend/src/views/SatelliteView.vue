@@ -179,17 +179,18 @@
               <div class="filter-section-header" @click="toggleFilterSection('purpose')">
                 <span class="section-title">
                   用途分类
-                  <span v-if="selectedPurpose" class="selected-tag">{{ selectedPurpose }}</span>
+                  <span class="selected-tag">{{ getPurposeLabel(selectedPurpose) }}</span>
                 </span>
                 <DownOutlined :class="['expand-icon', { expanded: expandedSections.purpose }]" />
               </div>
               <transition name="collapse">
                 <div v-show="expandedSections.purpose" class="filter-options purpose-options">
                   <div class="filter-search">
-                    <a-input
-                      v-model:value="purposeSearch"
+                    <input
+                      v-model="purposeSearch"
+                      type="text"
                       placeholder="搜索用途..."
-                      allow-clear
+                      class="purpose-search-input"
                     />
                   </div>
                   <div
@@ -215,52 +216,6 @@
                   </div>
                   <div v-else-if="purposes.length === 0" class="no-result">
                     暂无用途数据
-                  </div>
-                </div>
-              </transition>
-            </div>
-
-            <!-- 运营商筛选 -->
-            <div class="filter-section">
-              <div class="filter-section-header" @click="toggleFilterSection('operator')">
-                <span class="section-title">
-                  运营商
-                  <span v-if="selectedOperator" class="selected-tag">{{ selectedOperator }}</span>
-                </span>
-                <DownOutlined :class="['expand-icon', { expanded: expandedSections.operator }]" />
-              </div>
-              <transition name="collapse">
-                <div v-show="expandedSections.operator" class="filter-options operator-options">
-                  <div class="filter-search">
-                    <a-input
-                      v-model:value="operatorSearch"
-                      placeholder="搜索运营商..."
-                      allow-clear
-                    />
-                  </div>
-                  <div
-                    class="filter-option"
-                    :class="{ active: !selectedOperator }"
-                    @click="selectedOperator = ''"
-                  >
-                    <GlobalOutlined class="option-icon" />
-                    <span>全部</span>
-                  </div>
-                  <div
-                    v-for="operator in filteredOperators"
-                    :key="operator.name"
-                    class="filter-option"
-                    :class="{ active: selectedOperator === operator.name }"
-                    @click="selectedOperator = operator.name"
-                  >
-                    <span class="option-name">{{ operator.name }}</span>
-                    <span class="option-count">{{ operator.count }}</span>
-                  </div>
-                  <div v-if="filteredOperators.length === 0 && operatorSearch" class="no-result">
-                    未找到匹配的运营商
-                  </div>
-                  <div v-else-if="operators.length === 0" class="no-result">
-                    暂无运营商数据
                   </div>
                 </div>
               </transition>
@@ -371,14 +326,17 @@
               <EyeOutlined class="tool-icon" />
               <span class="tool-text">过境预测</span>
             </div>
+            <div
+              class="tool-btn"
+              :class="{ active: activeRightPanel === 'sunlight' }"
+              @click="toggleRightPanel('sunlight')"
+            >
+              <BulbOutlined class="tool-icon" />
+              <span class="tool-text">日照分析</span>
+            </div>
             <div class="tool-divider"></div>
-            <a-tooltip title="刷新数据">
-              <div class="tool-btn icon-only" @click="handleRefresh">
-                <ReloadOutlined class="tool-icon" />
-              </div>
-            </a-tooltip>
             <a-tooltip title="全屏模式">
-              <div class="tool-btn icon-only">
+              <div class="tool-btn icon-only" @click="toggleFullscreen">
                 <FullscreenOutlined class="tool-icon" />
               </div>
             </a-tooltip>
@@ -427,6 +385,16 @@
               @play-animation="handlePlayPassAnimation"
             />
           </div>
+
+          <!-- 日照分析 -->
+          <div v-else-if="activeRightPanel === 'sunlight'" class="panel-content">
+            <SunlightAnalysis
+              ref="sunlightAnalysisRef"
+              :satellite="selectedSatellite"
+              @show-sunlight-orbit="handleShowSunlightOrbit"
+              @clear-sunlight-orbit="handleClearSunlightOrbit"
+            />
+          </div>
         </aside>
       </transition>
     </div>
@@ -440,7 +408,6 @@ import {
   ThunderboltOutlined,
   ClockCircleOutlined,
   CloseOutlined,
-  ReloadOutlined,
   FullscreenOutlined,
   UnorderedListOutlined,
   RocketOutlined,
@@ -450,11 +417,13 @@ import {
   DownOutlined,
   StarFilled,
   StarOutlined,
+  BulbOutlined,
 } from '@ant-design/icons-vue'
 import SatelliteList from '@/components/SatelliteList.vue'
 import SatelliteDetail from '@/components/SatelliteDetail.vue'
 import OrbitPrediction from '@/components/OrbitPrediction.vue'
 import PassPrediction from '@/components/PassPrediction.vue'
+import SunlightAnalysis from '@/components/SunlightAnalysis.vue'
 import FlagIcon from '@/components/FlagIcon.vue'
 import { useCesium, type ColorSchemeType } from '@/hooks/useCesium'
 import { useWebSocket } from '@/hooks/useWebSocket'
@@ -467,7 +436,6 @@ import { getFlagClass } from '@/utils/countryFlags'
 const filterType = ref('all')
 const selectedCountry = ref('')
 const selectedPurpose = ref('')
-const selectedOperator = ref('')
 const favoriteFilter = ref<'all' | 'favorited' | 'unfavorited'>('all')
 const loading = ref(true)
 const userStore = useUserStore()
@@ -483,7 +451,6 @@ const expandedSections = ref({
   country: false,
   orbit: false,
   purpose: false,
-  operator: false,
   favorite: false,
   color: false
 })
@@ -495,10 +462,6 @@ const countrySearch = ref('')
 // 用途列表
 const purposes = ref<{ name: string; count: number }[]>([])
 const purposeSearch = ref('')
-
-// 运营商列表
-const operators = ref<{ name: string; count: number }[]>([])
-const operatorSearch = ref('')
 
 // 过滤后的国家列表
 const filteredCountries = computed(() => {
@@ -516,13 +479,6 @@ const filteredPurposes = computed(() => {
   if (!purposeSearch.value) return purposes.value
   const search = purposeSearch.value.toLowerCase()
   return purposes.value.filter(p => p.name.toLowerCase().includes(search))
-})
-
-// 过滤后的运营商列表
-const filteredOperators = computed(() => {
-  if (!operatorSearch.value) return operators.value
-  const search = operatorSearch.value.toLowerCase()
-  return operators.value.filter(o => o.name.toLowerCase().includes(search))
 })
 
 // 国家代码到中文名称的映射 (CelesTrak 格式)
@@ -561,6 +517,147 @@ const COUNTRY_NAMES: Record<string, string> = {
   SES: 'SES公司', O3B: 'O3b网络', ORB: '轨道科学公司',
   GLOB: '全球星', STCT: '空间通信', RASC: '俄罗斯航天局',
   SEAL: '海射公司', TBD: '待定', ABS: 'ABS公司',
+}
+
+// 用途分类映射（与后端一致）
+const PURPOSE_CATEGORIES: Record<string, string> = {
+  // 通信类
+  'Civil Communications': '通信',
+  'Defense Communications': '通信',
+  'Commercial Communications': '通信',
+  'Communications': '通信',
+  'Telecommunications': '通信',
+  'Broadcasting': '通信',
+  'Mobile Communications': '通信',
+  'Fixed Satellite Services': '通信',
+
+  // 导航类
+  'Civil Navigation': '导航',
+  'Defense Navigation': '导航',
+  'Commercial Navigation': '导航',
+  'Navigation': '导航',
+  'Positioning': '导航',
+  'GNSS': '导航',
+  'GPS': '导航',
+  'GLONASS': '导航',
+  'Galileo': '导航',
+  'BeiDou': '导航',
+
+  // 遥感/对地观测类
+  'Civil Imaging': '遥感',
+  'Civil Earth Observation': '遥感',
+  'Civil Remote Sensing': '遥感',
+  'Defense Imaging': '遥感',
+  'Defense Earth Observation': '遥感',
+  'Defense Reconnaissance': '遥感',
+  'Commercial Imaging': '遥感',
+  'Commercial Remote Sensing': '遥感',
+  'Earth Observation': '遥感',
+  'Remote Sensing': '遥感',
+  'Imaging': '遥感',
+  'Reconnaissance': '遥感',
+  'Surveillance': '遥感',
+  'Mapping': '遥感',
+  'Cartography': '遥感',
+  'Terrain Mapping': '遥感',
+  'Oceanography': '遥感',
+  'Marine Observation': '遥感',
+  'Land Observation': '遥感',
+
+  // 气象类
+  'Civil Weather': '气象',
+  'Defense Weather': '气象',
+  'Commercial Weather': '气象',
+  'Weather': '气象',
+  'Meteorological': '气象',
+  'Meteorology': '气象',
+  'Climate': '气象',
+  'Climate Research': '气象',
+  'Environmental Monitoring': '气象',
+
+  // 科学研究类
+  'Civil Science': '科学',
+  'Civil Technology': '科学',
+  'Defense Science': '科学',
+  'Scientific Research': '科学',
+  'Space Science': '科学',
+  'Earth Science': '科学',
+  'Astronomy': '科学',
+  'Astrophysics': '科学',
+  'Geodetic': '科学',
+  'Geodesy': '科学',
+  'Geophysical': '科学',
+  'Geophysics': '科学',
+  'Biological': '科学',
+  'Biology': '科学',
+  'Materials': '科学',
+  'Materials Science': '科学',
+  'Physics': '科学',
+  'Solar Physics': '科学',
+  'Space Physics': '科学',
+  'Plasma Physics': '科学',
+  'Cosmic Ray': '科学',
+  'Particle Physics': '科学',
+
+  // 技术试验类
+  'Technology Demonstration': '技术试验',
+  'Civil Experimental': '技术试验',
+  'Defense Technology': '技术试验',
+  'Experimental': '技术试验',
+  'Test': '技术试验',
+  'Technology Development': '技术试验',
+  'Technology': '技术试验',
+  'Demonstration': '技术试验',
+  'Prototype': '技术试验',
+  'Engineering': '技术试验',
+
+  // 国防军事类
+  'Defense Sigint': '国防',
+  'Defense Early Warning': '国防',
+  'Defense': '国防',
+  'Military': '国防',
+  'Missile Warning': '国防',
+  'Nuclear Detection': '国防',
+  'Electronic Intelligence': '国防',
+  'Signals Intelligence': '国防',
+  'ELINT': '国防',
+  'SIGINT': '国防',
+
+  // 载人航天类
+  'Space Station': '载人航天',
+  'Manned': '载人航天',
+  'Crewed': '载人航天',
+  'Cargo': '载人航天',
+  'Supply': '载人航天',
+  'Human Spaceflight': '载人航天',
+  'Space Tourism': '载人航天',
+
+  // 数据中继类
+  'Data Relay': '数据中继',
+  'Tracking and Data Relay': '数据中继',
+  'TDRS': '数据中继',
+  'Satellite Inter-satellite Link': '数据中继',
+
+  // 其他
+  'Civil Education': '教育',
+  'Education': '教育',
+  'Academic': '教育',
+  'Amateur': '业余无线电',
+  'Amateur Radio': '业余无线电',
+  'Rescue': '搜救',
+  'Search and Rescue': '搜救',
+  'SAR': '搜救',
+  'Training': '训练',
+  ' Calibration': '校准',
+  'Tracking': '跟踪',
+  'Space Debris': '碎片',
+  'Debris': '碎片',
+}
+
+// 用途分类函数
+const categorizePurpose = (mission: string | undefined): string => {
+  if (!mission) return '其他'
+  return PURPOSE_CATEGORIES[mission] || '其他'
 }
 
 // 获取国家中文名称
@@ -608,14 +705,21 @@ const getCountryLabel = (code: string): string => {
   return `${getCountryName(code)}(${code}) ${count}`
 }
 
+// 获取用途选择标签文本
+const getPurposeLabel = (purpose: string): string => {
+  if (!purpose) return '全部'
+  const purposeItem = purposes.value.find(p => p.name === purpose)
+  const count = purposeItem ? purposeItem.count : 0
+  return `${purpose} ${count}`
+}
+
 // 切换筛选区域展开/折叠（同时关闭其他区域）
-const toggleFilterSection = (section: 'orbit' | 'country' | 'purpose' | 'operator' | 'favorite' | 'color') => {
+const toggleFilterSection = (section: 'orbit' | 'country' | 'purpose' | 'favorite' | 'color') => {
   // 如果当前区域是折叠状态，则展开它并关闭其他区域
   if (!expandedSections.value[section]) {
     expandedSections.value.orbit = section === 'orbit'
     expandedSections.value.country = section === 'country'
     expandedSections.value.purpose = section === 'purpose'
-    expandedSections.value.operator = section === 'operator'
     expandedSections.value.favorite = section === 'favorite'
     expandedSections.value.color = section === 'color'
   } else {
@@ -658,14 +762,9 @@ const filteredSatellites = computed(() => {
     result = result.filter(sat => sat.countryCode === selectedCountry.value)
   }
 
-  // 按用途筛选
+  // 按用途筛选（使用分类后的值进行比较）
   if (selectedPurpose.value) {
-    result = result.filter(sat => sat.mission === selectedPurpose.value)
-  }
-
-  // 按运营商筛选
-  if (selectedOperator.value) {
-    result = result.filter(sat => sat.operator === selectedOperator.value)
+    result = result.filter(sat => categorizePurpose(sat.mission) === selectedPurpose.value)
   }
 
   // 按收藏筛选
@@ -684,6 +783,7 @@ const { selectedSatellite, selectedMetadata, handleSelectSatellite: baseHandleSe
 // 子组件引用
 const orbitPredictionRef = ref<InstanceType<typeof OrbitPrediction> | null>(null)
 const passPredictionRef = ref<InstanceType<typeof PassPrediction> | null>(null)
+const sunlightAnalysisRef = ref<InstanceType<typeof SunlightAnalysis> | null>(null)
 
 // 获取右侧面板标题
 const getRightPanelTitle = () => {
@@ -694,6 +794,8 @@ const getRightPanelTitle = () => {
       return '轨道预测'
     case 'transit':
       return '过境预测'
+    case 'sunlight':
+      return '日照分析'
     default:
       return ''
   }
@@ -708,6 +810,8 @@ const getRightPanelIcon = () => {
       return RocketOutlined
     case 'transit':
       return EyeOutlined
+    case 'sunlight':
+      return BulbOutlined
     default:
       return InfoCircleOutlined
   }
@@ -720,10 +824,12 @@ const handleSelectSatellite = (satellite: typeof selectedSatellite.value) => {
     cesium.clearAllPredictedOrbits()
     cesium.clearPassTrajectory()
     cesium.stopPassAnimation()
+    cesium.clearAllSunlightOrbits()
   }
   // 重置预测组件状态
   orbitPredictionRef.value?.reset()
   passPredictionRef.value?.reset()
+  sunlightAnalysisRef.value?.reset()
 
   baseHandleSelectSatellite(satellite)
   showSatelliteDetail()
@@ -761,6 +867,29 @@ const handleFlyToPosition = (position: { lat: number; lng: number; alt: number }
 const handleClearOrbit = (noradId: string) => {
   if (cesium && noradId) {
     cesium.clearPredictedOrbit(noradId)
+  }
+}
+
+// 显示日照分析轨道
+const handleShowSunlightOrbit = (segments: Array<{
+  startTime: string
+  endTime: string
+  status: 'sunlight' | 'eclipse'
+  points: Array<{ lat: number; lng: number; alt: number }>
+}>) => {
+  if (!cesium || !selectedSatellite.value) return
+
+  // 清除之前的日照轨道
+  cesium.clearSunlightOrbit(selectedSatellite.value.noradId)
+
+  // 显示新的日照轨道
+  cesium.showSunlightOrbit(selectedSatellite.value.noradId, segments)
+}
+
+// 清除日照分析轨道
+const handleClearSunlightOrbit = (noradId: string) => {
+  if (cesium && noradId) {
+    cesium.clearSunlightOrbit(noradId)
   }
 }
 
@@ -936,24 +1065,16 @@ onMounted(async () => {
     console.error('加载用途列表失败:', err)
   }
 
-  // 加载运营商列表
-  try {
-    const operatorRes = await satelliteApi.getOperators()
-    if (operatorRes.data.code === 0) {
-      operators.value = operatorRes.data.data || []
-    }
-  } catch (err) {
-    console.error('加载运营商列表失败:', err)
-  }
-
-  
   // 加载收藏列表
   await fetchFavorites()
 })
 
-const handleRefresh = () => {
-  // 刷新数据
-  websocket.connect()
+const toggleFullscreen = () => {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen()
+  } else {
+    document.exitFullscreen()
+  }
 }
 </script>
 
@@ -1424,6 +1545,27 @@ const handleRefresh = () => {
     display: flex;
     flex-direction: column;
     gap: 6px;
+
+    .purpose-search-input {
+      width: 100%;
+      padding: 8px 12px;
+      background: rgba(0, 212, 255, 0.04);
+      border: 1px solid rgba(0, 212, 255, 0.1);
+      border-radius: 8px;
+      color: #fff;
+      font-size: 12px;
+      outline: none;
+      transition: all 0.2s;
+
+      &::placeholder {
+        color: rgba(255, 255, 255, 0.3);
+      }
+
+      &:focus {
+        border-color: rgba(0, 212, 255, 0.3);
+        background: rgba(0, 212, 255, 0.06);
+      }
+    }
   }
 
   .filter-option {

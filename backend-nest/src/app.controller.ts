@@ -18,4 +18,9 @@ export class AppController {
       version: '1.0.0',
     };
   }
+
+  @Get('stats')
+  getStats() {
+    return this.appService.getStats();
+  }
 }

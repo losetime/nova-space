@@ -103,6 +103,7 @@
 </template>
 
 <script setup lang="ts">
+import { ref, onMounted } from 'vue'
 import {
   RightOutlined,
   ArrowRightOutlined,
@@ -110,6 +111,7 @@ import {
   BookOutlined,
   FileTextOutlined
 } from '@ant-design/icons-vue'
+import { statsApi } from '@/api'
 
 const features = [
   {
@@ -132,12 +134,39 @@ const features = [
   }
 ]
 
-const stats = [
-  { number: '8,000+', label: '在轨卫星' },
-  { number: '100+', label: '国家/地区' },
-  { number: '50,000+', label: '知识条目' },
-  { number: '10,000+', label: '活跃用户' }
-]
+// 格式化数字显示
+const formatNumber = (num: number): string => {
+  return `${num.toLocaleString()}+`
+}
+
+const stats = ref([
+  { number: '-', label: '在轨卫星' },
+  { number: '-', label: '国家/地区' },
+  { number: '-', label: '知识条目' },
+  { number: '-', label: '活跃用户' }
+])
+
+// 加载统计数据
+const loadStats = async () => {
+  try {
+    const res = await statsApi.getHomeStats()
+    if (res.data.code === 0) {
+      const data = res.data.data
+      stats.value = [
+        { number: formatNumber(data.satellites), label: '在轨卫星' },
+        { number: `${data.countries}+`, label: '国家/地区' },
+        { number: formatNumber(data.articles), label: '知识条目' },
+        { number: formatNumber(data.users), label: '活跃用户' }
+      ]
+    }
+  } catch {
+    // 加载失败时使用默认显示
+  }
+}
+
+onMounted(() => {
+  loadStats()
+})
 
 const latestIntelligence = [
   {
