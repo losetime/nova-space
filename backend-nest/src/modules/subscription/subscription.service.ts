@@ -1,9 +1,17 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between } from 'typeorm';
 import { Subscription } from '../../common/entities/subscription.entity';
 import { User } from '../../common/entities/user.entity';
-import { SubscriptionStatus, SubscriptionPlan, UserLevel } from '../../common/enums/user.enum';
+import {
+  SubscriptionStatus,
+  SubscriptionPlan,
+  UserLevel,
+} from '../../common/enums/user.enum';
 import { CreateSubscriptionDto, UpdateSubscriptionDto } from './dto';
 
 @Injectable()
@@ -16,7 +24,10 @@ export class SubscriptionService {
   ) {}
 
   // 创建订阅
-  async create(userId: string, createDto: CreateSubscriptionDto): Promise<Subscription> {
+  async create(
+    userId: string,
+    createDto: CreateSubscriptionDto,
+  ): Promise<Subscription> {
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) {
       throw new NotFoundException('用户不存在');
@@ -66,12 +77,13 @@ export class SubscriptionService {
     page = 1,
     limit = 10,
   ): Promise<{ subscriptions: Subscription[]; total: number }> {
-    const [subscriptions, total] = await this.subscriptionRepository.findAndCount({
-      where: { userId },
-      skip: (page - 1) * limit,
-      take: limit,
-      order: { createdAt: 'DESC' },
-    });
+    const [subscriptions, total] =
+      await this.subscriptionRepository.findAndCount({
+        where: { userId },
+        skip: (page - 1) * limit,
+        take: limit,
+        order: { createdAt: 'DESC' },
+      });
 
     return { subscriptions, total };
   }
@@ -105,7 +117,9 @@ export class SubscriptionService {
       await this.subscriptionRepository.save(subscription);
 
       // 更新用户等级
-      const user = await this.userRepository.findOne({ where: { id: subscription.userId } });
+      const user = await this.userRepository.findOne({
+        where: { id: subscription.userId },
+      });
       if (user) {
         user.level = UserLevel.BASIC;
         await this.userRepository.save(user);
@@ -114,7 +128,10 @@ export class SubscriptionService {
   }
 
   // 续费
-  async renew(userId: string, createDto: CreateSubscriptionDto): Promise<Subscription> {
+  async renew(
+    userId: string,
+    createDto: CreateSubscriptionDto,
+  ): Promise<Subscription> {
     const currentSubscription = await this.getCurrentSubscription(userId);
 
     if (currentSubscription) {

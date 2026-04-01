@@ -116,7 +116,9 @@ export class EsaDiscosService {
    * 只从数据库读取，不触发外部 API 调用
    * 数据同步由管理端负责
    */
-  async enrichSatelliteMetadata(noradId: string): Promise<SatelliteMetadata | null> {
+  async enrichSatelliteMetadata(
+    noradId: string,
+  ): Promise<SatelliteMetadata | null> {
     const entity = await this.metadataRepository.findOne({
       where: { noradId },
     });
@@ -131,7 +133,9 @@ export class EsaDiscosService {
   /**
    * 从 ESA DISCOS API 获取卫星信息
    */
-  private async fetchFromApi(noradId: string): Promise<DiscosSatelliteInfo | null> {
+  private async fetchFromApi(
+    noradId: string,
+  ): Promise<DiscosSatelliteInfo | null> {
     if (!this.apiToken) {
       return null;
     }
@@ -236,7 +240,9 @@ export class EsaDiscosService {
         launchSiteName,
       };
     } catch (error) {
-      this.logger.error(`ESA DISCOS API 请求失败 (${noradId}): ${error.message}`);
+      this.logger.error(
+        `ESA DISCOS API 请求失败 (${noradId}): ${error.message}`,
+      );
       return null;
     }
   }

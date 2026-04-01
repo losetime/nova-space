@@ -24,7 +24,10 @@ export class NotificationController {
 
   // 获取通知列表
   @Get()
-  async findAll(@Request() req: RequestWithUser, @Query() query: NotificationQueryDto) {
+  async findAll(
+    @Request() req: RequestWithUser,
+    @Query() query: NotificationQueryDto,
+  ) {
     return this.notificationService.findByUser(req.user.id, query);
   }
 

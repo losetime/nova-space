@@ -1,10 +1,23 @@
-import { Controller, Get, Post, Delete, Param, Query, Logger, UseGuards, Req } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Delete,
+  Param,
+  Query,
+  Logger,
+  UseGuards,
+  Req,
+} from '@nestjs/common';
 import { OrbitCalculatorService } from './services/orbit-calculator.service';
 import { SatelliteDataService } from './services/satellite-data.service';
 import { SatelliteFavoriteService } from './services/satellite-favorite.service';
 import { EsaDiscosService } from './services/esa-discos.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import type { OrbitPoint, ObserverPosition } from './interfaces/satellite.interface';
+import type {
+  OrbitPoint,
+  ObserverPosition,
+} from './interfaces/satellite.interface';
 
 /**
  * 卫星控制器
@@ -50,15 +63,19 @@ export class SatelliteController {
     @Query('name') name?: string,
     @Query('limit') limit?: string,
   ) {
-    const searchLimit = Math.min(Math.max(parseInt(limit || '50') || 50, 1), 500);
+    const searchLimit = Math.min(
+      Math.max(parseInt(limit || '50') || 50, 1),
+      500,
+    );
     const allTLEs = this.satelliteDataService.getCachedTLEs();
 
     let results = allTLEs;
     if (name) {
       const searchName = name.toLowerCase();
-      results = allTLEs.filter(tle =>
-        tle.name.toLowerCase().includes(searchName) ||
-        tle.noradId.includes(searchName)
+      results = allTLEs.filter(
+        (tle) =>
+          tle.name.toLowerCase().includes(searchName) ||
+          tle.noradId.includes(searchName),
       );
     }
 
@@ -67,13 +84,15 @@ export class SatelliteController {
     // 批量获取元数据
     const satellites = await Promise.all(
       limitedResults.map(async (tle) => {
-        const metadata = await this.satelliteDataService.getSatelliteMetadata(tle.noradId);
+        const metadata = await this.satelliteDataService.getSatelliteMetadata(
+          tle.noradId,
+        );
         return {
           noradId: tle.noradId,
           name: tle.name,
           metadata,
         };
-      })
+      }),
     );
 
     return {
@@ -115,7 +134,7 @@ export class SatelliteController {
 
     // 获取 TLE 数据中的 NORAD ID 集合
     const tleData = this.satelliteDataService.getCachedTLEs();
-    const tleNoradIds = new Set(tleData.map(tle => tle.noradId));
+    const tleNoradIds = new Set(tleData.map((tle) => tle.noradId));
 
     const metadata = await this.satelliteDataService.getAllMetadata();
     const countryCount = new Map<string, number>();
@@ -146,7 +165,9 @@ export class SatelliteController {
       .map(([code, count]) => ({ code, count }))
       .sort((a, b) => b.count - a.count);
 
-    this.logger.log(`返回 ${countries.length} 个国家，共 ${tleData.length} 颗卫星`);
+    this.logger.log(
+      `返回 ${countries.length} 个国家，共 ${tleData.length} 颗卫星`,
+    );
     return {
       code: 0,
       data: countries,
@@ -155,16 +176,16 @@ export class SatelliteController {
   }
 
   /**
-   * 获取用途列表（含卫星数量）
-   * GET /api/satellites/purposes
+   * 获取任务分类列表（含卫星数量）
+   * GET /api/satellites/missions
    */
-  @Get('purposes')
-  async getPurposes() {
-    this.logger.log('获取用途列表');
-    const purposes = await this.satelliteDataService.getPurposeCounts();
+  @Get('missions')
+  async getMissions() {
+    this.logger.log('获取任务分类列表');
+    const missions = await this.satelliteDataService.getMissionCounts();
     return {
       code: 0,
-      data: purposes,
+      data: missions,
       message: 'success',
     };
   }
@@ -184,7 +205,7 @@ export class SatelliteController {
     };
   }
 
-/**
+  /**
    * 获取用户关注的卫星列表
    * GET /api/satellites/favorites
    */
@@ -197,14 +218,16 @@ export class SatelliteController {
     // 获取卫星元数据
     const result = await Promise.all(
       favorites.map(async (fav) => {
-        const metadata = await this.satelliteDataService.getSatelliteMetadata(fav.targetId);
+        const metadata = await this.satelliteDataService.getSatelliteMetadata(
+          fav.targetId,
+        );
         return {
           noradId: fav.targetId,
           name: metadata?.name || `卫星 ${fav.targetId}`,
           followedAt: fav.createdAt,
           metadata,
         };
-      })
+      }),
     );
 
     return {
@@ -240,14 +263,15 @@ export class SatelliteController {
     const position = positions.find((p) => p.noradId === noradId);
 
     // 3. 获取完整元数据（触发 ESA DISCOS 懒加载）
-    const metadata = await this.esaDiscosService.enrichSatelliteMetadata(noradId);
+    const metadata =
+      await this.esaDiscosService.enrichSatelliteMetadata(noradId);
 
     // 4. 计算轨道预测（默认一个轨道周期）
     const orbit = this.orbitCalculator.calculateSatelliteOrbit(
       noradId,
-      100,  // 轨道点数
+      100, // 轨道点数
       new Date(),
-      150,  // 约 2.5 小时
+      150, // 约 2.5 小时
     );
 
     return {
@@ -279,7 +303,8 @@ export class SatelliteController {
     this.logger.log(`获取卫星 ${noradId} 的元数据`);
 
     // 尝试从 ESA DISCOS 获取扩展信息
-    const enrichedMetadata = await this.esaDiscosService.enrichSatelliteMetadata(noradId);
+    const enrichedMetadata =
+      await this.esaDiscosService.enrichSatelliteMetadata(noradId);
 
     if (!enrichedMetadata) {
       return {
@@ -323,8 +348,14 @@ export class SatelliteController {
     }
 
     // 解析参数
-    const orbitSteps = Math.min(Math.max(parseInt(steps || '50') || 50, 10), 500);
-    const durationMinutes = Math.min(Math.max(parseInt(duration || '150') || 150, 10), 1440);
+    const orbitSteps = Math.min(
+      Math.max(parseInt(steps || '50') || 50, 10),
+      500,
+    );
+    const durationMinutes = Math.min(
+      Math.max(parseInt(duration || '150') || 150, 10),
+      1440,
+    );
     const start = startTime ? new Date(startTime) : new Date();
 
     // 验证时间
@@ -384,8 +415,14 @@ export class SatelliteController {
     }
 
     // 解析参数
-    const orbitSteps = Math.min(Math.max(parseInt(steps || '100') || 100, 10), 500);
-    const durationMinutes = Math.min(Math.max(parseInt(duration || '360') || 360, 10), 1440);
+    const orbitSteps = Math.min(
+      Math.max(parseInt(steps || '100') || 100, 10),
+      500,
+    );
+    const durationMinutes = Math.min(
+      Math.max(parseInt(duration || '360') || 360, 10),
+      1440,
+    );
     const start = startTime ? new Date(startTime) : new Date();
 
     // 验证时间
@@ -444,7 +481,10 @@ export class SatelliteController {
       };
     }
 
-    const prediction = this.orbitCalculator.predictPosition(noradId, targetTime);
+    const prediction = this.orbitCalculator.predictPosition(
+      noradId,
+      targetTime,
+    );
 
     return {
       code: 0,
@@ -491,11 +531,18 @@ export class SatelliteController {
     // 默认分析一个轨道周期（约90分钟），最多24小时
     const defaultDuration = 90;
     const durationMinutes = Math.min(
-      Math.max(parseInt(duration || String(defaultDuration)) || defaultDuration, 10),
+      Math.max(
+        parseInt(duration || String(defaultDuration)) || defaultDuration,
+        10,
+      ),
       1440,
     );
 
-    const analysis = this.orbitCalculator.analyzeSunlight(noradId, start, durationMinutes);
+    const analysis = this.orbitCalculator.analyzeSunlight(
+      noradId,
+      start,
+      durationMinutes,
+    );
 
     return {
       code: 0,
@@ -602,8 +649,14 @@ export class SatelliteController {
       alt: parseFloat(alt || '0') || 0,
     };
 
-    const predictionDays = Math.min(Math.max(parseInt(days || '7') || 7, 1), 30);
-    const minElev = Math.min(Math.max(parseFloat(minElevation || '10') || 10, 0), 90);
+    const predictionDays = Math.min(
+      Math.max(parseInt(days || '7') || 7, 1),
+      30,
+    );
+    const minElev = Math.min(
+      Math.max(parseFloat(minElevation || '10') || 10, 0),
+      90,
+    );
 
     const prediction = this.orbitCalculator.predictPasses(
       noradId,
@@ -654,10 +707,7 @@ export class SatelliteController {
    */
   @Post(':noradId/favorite')
   @UseGuards(JwtAuthGuard)
-  async toggleFavorite(
-    @Param('noradId') noradId: string,
-    @Req() req: any,
-  ) {
+  async toggleFavorite(@Param('noradId') noradId: string, @Req() req: any) {
     const userId = req.user.id;
     const result = await this.favoriteService.toggleFavorite(userId, noradId);
 
@@ -674,10 +724,7 @@ export class SatelliteController {
    */
   @Get(':noradId/favorite')
   @UseGuards(JwtAuthGuard)
-  async checkFavorite(
-    @Param('noradId') noradId: string,
-    @Req() req: any,
-  ) {
+  async checkFavorite(@Param('noradId') noradId: string, @Req() req: any) {
     const userId = req.user.id;
     const favorited = await this.favoriteService.isFavorited(userId, noradId);
 

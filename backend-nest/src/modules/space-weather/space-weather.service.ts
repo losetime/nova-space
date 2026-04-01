@@ -83,11 +83,11 @@ export class SpaceWeatherService {
    */
   private parseAlert(alert: any) {
     const message = alert.message || '';
-    
+
     // 提取预警类型
     let type = 'unknown';
     let level = 0;
-    
+
     if (message.includes('Geomagnetic Storm')) {
       type = 'geomagnetic';
       const gMatch = message.match(/Category G(\d)/);
@@ -123,7 +123,9 @@ export class SpaceWeatherService {
    */
   async getXrayFlux(hours: number = 6) {
     try {
-      const response = await axios.get(`${NOAA_BASE_URL}/json/goes/primary/xrays-6-hour.json`);
+      const response = await axios.get(
+        `${NOAA_BASE_URL}/json/goes/primary/xrays-6-hour.json`,
+      );
       const data = response.data;
 
       // 过滤最近指定小时的数据

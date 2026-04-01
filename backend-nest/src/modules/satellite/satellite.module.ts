@@ -10,7 +10,13 @@ import { UserFavorite } from '../../common/entities/user-favorite.entity';
 import { SatelliteTle, SatelliteMetadataEntity } from './entities';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([UserFavorite, SatelliteTle, SatelliteMetadataEntity])],
+  imports: [
+    TypeOrmModule.forFeature([
+      UserFavorite,
+      SatelliteTle,
+      SatelliteMetadataEntity,
+    ]),
+  ],
   controllers: [SatelliteController],
   providers: [
     SatelliteDataService,
@@ -19,6 +25,11 @@ import { SatelliteTle, SatelliteMetadataEntity } from './entities';
     EsaDiscosService,
     SatelliteGateway,
   ],
-  exports: [OrbitCalculatorService, SatelliteDataService, SatelliteFavoriteService, EsaDiscosService],
+  exports: [
+    OrbitCalculatorService,
+    SatelliteDataService,
+    SatelliteFavoriteService,
+    EsaDiscosService,
+  ],
 })
 export class SatelliteModule {}

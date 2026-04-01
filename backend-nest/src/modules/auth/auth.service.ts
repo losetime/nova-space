@@ -11,7 +11,9 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async register(registerDto: RegisterDto): Promise<{ user: User; token: string }> {
+  async register(
+    registerDto: RegisterDto,
+  ): Promise<{ user: User; token: string }> {
     const user = await this.userService.create(registerDto);
     const token = this.generateToken(user);
     return { user, token };

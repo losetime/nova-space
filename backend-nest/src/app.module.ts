@@ -47,7 +47,12 @@ import appConfig from './config/app.config';
       }),
       inject: [ConfigService],
     }),
-    TypeOrmModule.forFeature([SatelliteTle, SatelliteMetadataEntity, User, Article]),
+    TypeOrmModule.forFeature([
+      SatelliteTle,
+      SatelliteMetadataEntity,
+      User,
+      Article,
+    ]),
     UserModule,
     AuthModule,
     SubscriptionModule,

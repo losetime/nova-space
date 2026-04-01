@@ -164,7 +164,10 @@ export class EducationService {
   }
 
   // 收藏/取消收藏文章
-  async toggleCollect(userId: string, articleId: number): Promise<{ isCollected: boolean }> {
+  async toggleCollect(
+    userId: string,
+    articleId: number,
+  ): Promise<{ isCollected: boolean }> {
     const existing = await this.articleCollectRepository.findOne({
       where: { userId, articleId },
     });
@@ -173,7 +176,10 @@ export class EducationService {
       await this.articleCollectRepository.remove(existing);
       return { isCollected: false };
     } else {
-      const collect = this.articleCollectRepository.create({ userId, articleId });
+      const collect = this.articleCollectRepository.create({
+        userId,
+        articleId,
+      });
       await this.articleCollectRepository.save(collect);
       return { isCollected: true };
     }
@@ -188,7 +194,11 @@ export class EducationService {
   }
 
   // 获取用户收藏的文章列表
-  async getUserCollects(userId: string, page = 1, limit = 10): Promise<{ data: any[]; total: number }> {
+  async getUserCollects(
+    userId: string,
+    page = 1,
+    limit = 10,
+  ): Promise<{ data: any[]; total: number }> {
     const [collects, total] = await this.articleCollectRepository.findAndCount({
       where: { userId },
       order: { createdAt: 'DESC' },

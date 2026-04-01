@@ -16,7 +16,9 @@ import { UserModule } from '../user/user.module';
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
-        secret: configService.get<string>('app.jwtSecret') || 'nova-space-secret-key-2024',
+        secret:
+          configService.get<string>('app.jwtSecret') ||
+          'nova-space-secret-key-2024',
         signOptions: {
           expiresIn: '7d',
         },

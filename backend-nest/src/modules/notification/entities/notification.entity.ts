@@ -11,8 +11,8 @@ import { User } from '../../../common/entities/user.entity';
 
 export enum NotificationType {
   INTELLIGENCE = 'intelligence', // 情报通知
-  SYSTEM = 'system',             // 系统通知
-  ACHIEVEMENT = 'achievement',   // 成就通知
+  SYSTEM = 'system', // 系统通知
+  ACHIEVEMENT = 'achievement', // 成就通知
 }
 
 @Entity('notifications')

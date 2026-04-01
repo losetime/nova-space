@@ -37,7 +37,10 @@ export class UserController {
   // 更新当前用户信息
   @Put('me')
   @UseGuards(JwtAuthGuard)
-  async updateCurrentUser(@Request() req: RequestWithUser, @Body() updateUserDto: UpdateUserDto) {
+  async updateCurrentUser(
+    @Request() req: RequestWithUser,
+    @Body() updateUserDto: UpdateUserDto,
+  ) {
     const user = await this.userService.update(req.user.id, updateUserDto);
     const { password, ...result } = user as any;
     return { code: 0, data: result, message: '更新成功' };
@@ -46,7 +49,10 @@ export class UserController {
   // 修改密码
   @Put('me/password')
   @UseGuards(JwtAuthGuard)
-  async changePassword(@Request() req: RequestWithUser, @Body() changePasswordDto: ChangePasswordDto) {
+  async changePassword(
+    @Request() req: RequestWithUser,
+    @Body() changePasswordDto: ChangePasswordDto,
+  ) {
     await this.userService.changePassword(req.user.id, changePasswordDto);
     return { code: 0, message: '密码修改成功' };
   }
@@ -64,7 +70,10 @@ export class UserController {
   @Put(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
-  async adminUpdate(@Param('id') id: string, @Body() adminUpdateDto: AdminUpdateUserDto) {
+  async adminUpdate(
+    @Param('id') id: string,
+    @Body() adminUpdateDto: AdminUpdateUserDto,
+  ) {
     const user = await this.userService.adminUpdate(id, adminUpdateDto);
     const { password, ...result } = user as any;
     return { code: 0, data: result, message: '更新成功' };

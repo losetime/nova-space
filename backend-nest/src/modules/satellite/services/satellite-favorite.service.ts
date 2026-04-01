@@ -11,7 +11,10 @@ export class SatelliteFavoriteService {
     private favoriteRepository: Repository<UserFavorite>,
   ) {}
 
-  async toggleFavorite(userId: string, noradId: string): Promise<{ favorited: boolean }> {
+  async toggleFavorite(
+    userId: string,
+    noradId: string,
+  ): Promise<{ favorited: boolean }> {
     const existing = await this.favoriteRepository.findOne({
       where: {
         userId,

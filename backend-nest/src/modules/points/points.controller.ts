@@ -29,8 +29,16 @@ export class PointsController {
 
   // 获取积分记录
   @Get('history')
-  async getHistory(@Request() req: RequestWithUser, @Query('page') page = 1, @Query('limit') limit = 20) {
-    const result = await this.pointsService.getPointsHistory(req.user.id, +page, +limit);
+  async getHistory(
+    @Request() req: RequestWithUser,
+    @Query('page') page = 1,
+    @Query('limit') limit = 20,
+  ) {
+    const result = await this.pointsService.getPointsHistory(
+      req.user.id,
+      +page,
+      +limit,
+    );
     return { code: 0, data: result };
   }
 
@@ -50,7 +58,10 @@ export class PointsController {
 
   // 消费积分
   @Post('consume')
-  async consume(@Request() req: RequestWithUser, @Body() dto: ConsumePointsDto) {
+  async consume(
+    @Request() req: RequestWithUser,
+    @Body() dto: ConsumePointsDto,
+  ) {
     const record = await this.pointsService.consumePoints(req.user.id, dto);
     return {
       code: 0,

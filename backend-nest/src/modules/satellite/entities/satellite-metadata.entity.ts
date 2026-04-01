@@ -142,6 +142,92 @@ export class SatelliteMetadataEntity {
   @Column({ type: 'boolean', default: false })
   hasDiscosData: boolean; // 是否已获取 ESA DISCOS 数据
 
+  @Column({ type: 'boolean', default: false })
+  hasKeepTrackData: boolean; // 是否已获取 KeepTrack 数据
+
+  @Column({ type: 'boolean', default: false })
+  hasSpaceTrackData: boolean; // 是否已获取 Space-Track 数据
+
+  // ========== Space-Track 扩展字段（保留但暂不使用） ==========
+  @Column({ type: 'text', nullable: true })
+  purpose: string; // 用途（暂不使用，统一使用 mission）
+
+  // ========== KeepTrack 扩展字段 ==========
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  bus: string; // 卫星总线
+
+  @Column({ type: 'float', nullable: true })
+  length: number; // 长度 (米)
+
+  @Column({ type: 'float', nullable: true })
+  diameter: number; // 直径 (米)
+
+  @Column({ type: 'float', nullable: true })
+  dryMass: number; // 干质量 (kg)
+
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  constellationName: string; // 星座名称
+
+  @Column({ type: 'text', nullable: true })
+  equipment: string; // 设备信息
+
+  @Column({ type: 'text', nullable: true })
+  adcs: string; // 姿态控制系统
+
+  @Column({ type: 'text', nullable: true })
+  payload: string; // 有效载荷
+
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  alt_name: string; // 别名
+
+  @Column({ type: 'date', nullable: true })
+  stable_date: string; // 稳定日期
+
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  launch_pad: string; // 发射工位
+
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  manufacturer: string; // 制造商
+
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  configuration: string; // 配置
+
+  @Column({ type: 'text', nullable: true })
+  power: string; // 电源系统
+
+  @Column({ type: 'text', nullable: true })
+  motor: string; // 推进系统
+
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  color: string; // 颜色
+
+  @Column({ type: 'text', nullable: true })
+  material_composition: string; // 材料组成
+
+  @Column({ type: 'text', nullable: true })
+  major_events: string; // 主要事件
+
+  @Column({ type: 'text', nullable: true })
+  related_satellites: string; // 相关卫星
+
+  @Column({ type: 'text', nullable: true })
+  transmitter_frequencies: string; // 发射频率
+
+  @Column({ type: 'text', nullable: true })
+  sources: string; // 数据来源
+
+  @Column({ type: 'text', nullable: true })
+  reference_urls: string; // 参考链接
+
+  @Column({ type: 'text', nullable: true })
+  summary: string; // 摘要
+
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  anomaly_flags: string; // 异常标记
+
+  @Column({ type: 'timestamp', nullable: true })
+  last_reviewed: Date; // 最后审核时间
+
   @CreateDateColumn()
   createdAt: Date;
 

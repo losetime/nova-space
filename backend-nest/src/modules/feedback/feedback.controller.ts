@@ -18,7 +18,10 @@ export class FeedbackController {
   constructor(private readonly feedbackService: FeedbackService) {}
 
   @Post()
-  async create(@Body() createFeedbackDto: CreateFeedbackDto, @Request() req: any) {
+  async create(
+    @Body() createFeedbackDto: CreateFeedbackDto,
+    @Request() req: any,
+  ) {
     // 如果用户已登录，自动关联用户ID
     if (req.user?.id) {
       createFeedbackDto.userId = req.user.id;

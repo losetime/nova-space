@@ -1,7 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
-import { Intelligence, IntelligenceCategory, IntelligenceLevel } from './entities/intelligence.entity';
+import {
+  Intelligence,
+  IntelligenceCategory,
+  IntelligenceLevel,
+} from './entities/intelligence.entity';
 import { IntelligenceCollect } from './entities/intelligence-collect.entity';
 import { CreateIntelligenceDto } from './dto/create-intelligence.dto';
 import { QueryIntelligenceDto } from './dto/query-intelligence.dto';
@@ -18,9 +22,9 @@ export class IntelligenceService {
   // 获取情报列表
   async findAll(query: QueryIntelligenceDto, userLevel?: string) {
     const { category, page = 1, pageSize = 12 } = query;
-    
+
     const qb = this.intelligenceRepository.createQueryBuilder('intel');
-    
+
     if (category) {
       qb.andWhere('intel.category = :category', { category });
     }
@@ -29,8 +33,8 @@ export class IntelligenceService {
     if (userLevel === 'professional') {
       // 专业会员可见所有
     } else if (userLevel === 'advanced') {
-      qb.andWhere('intel.level IN (:...levels)', { 
-        levels: [IntelligenceLevel.FREE, IntelligenceLevel.ADVANCED] 
+      qb.andWhere('intel.level IN (:...levels)', {
+        levels: [IntelligenceLevel.FREE, IntelligenceLevel.ADVANCED],
       });
     } else {
       qb.andWhere('intel.level = :level', { level: IntelligenceLevel.FREE });
@@ -43,10 +47,11 @@ export class IntelligenceService {
     const [list, total] = await qb.getManyAndCount();
 
     return {
-      list: list.map(item => ({
+      list: list.map((item) => ({
         ...item,
         tags: item.tags ? JSON.parse(item.tags) : [],
-        isLocked: userLevel === 'basic' && item.level !== IntelligenceLevel.FREE,
+        isLocked:
+          userLevel === 'basic' && item.level !== IntelligenceLevel.FREE,
       })),
       total,
       page,
@@ -90,7 +95,7 @@ export class IntelligenceService {
       take: limit,
     });
 
-    return list.map(item => ({
+    return list.map((item) => ({
       id: item.id,
       title: item.title,
       views: item.views,
@@ -136,7 +141,7 @@ export class IntelligenceService {
       order: { createdAt: 'DESC' },
     });
 
-    return collects.map(c => ({
+    return collects.map((c) => ({
       ...c.intelligence,
       tags: c.intelligence.tags ? JSON.parse(c.intelligence.tags) : [],
       collectedAt: c.createdAt,

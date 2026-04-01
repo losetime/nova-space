@@ -1,4 +1,8 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PointsRecord } from '../../common/entities/points-record.entity';
@@ -49,7 +53,10 @@ export class PointsService {
   }
 
   // 消费积分
-  async consumePoints(userId: string, dto: ConsumePointsDto): Promise<PointsRecord> {
+  async consumePoints(
+    userId: string,
+    dto: ConsumePointsDto,
+  ): Promise<PointsRecord> {
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) {
       throw new NotFoundException('用户不存在');

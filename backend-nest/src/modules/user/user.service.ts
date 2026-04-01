@@ -1,10 +1,20 @@
-import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { User } from '../../common/entities/user.entity';
 import { UserRole, UserLevel } from '../../common/enums/user.enum';
-import { RegisterDto, UpdateUserDto, ChangePasswordDto, AdminUpdateUserDto } from './dto';
+import {
+  RegisterDto,
+  UpdateUserDto,
+  ChangePasswordDto,
+  AdminUpdateUserDto,
+} from './dto';
 
 @Injectable()
 export class UserService {
@@ -18,7 +28,11 @@ export class UserService {
 
     // 检查用户名是否已存在
     const existingUser = await this.userRepository.findOne({
-      where: [{ username }, ...(email ? [{ email }] : []), ...(phone ? [{ phone }] : [])],
+      where: [
+        { username },
+        ...(email ? [{ email }] : []),
+        ...(phone ? [{ phone }] : []),
+      ],
     });
 
     if (existingUser) {
@@ -119,7 +133,10 @@ export class UserService {
     return this.userRepository.save(user);
   }
 
-  async changePassword(id: string, changePasswordDto: ChangePasswordDto): Promise<void> {
+  async changePassword(
+    id: string,
+    changePasswordDto: ChangePasswordDto,
+  ): Promise<void> {
     const user = await this.userRepository
       .createQueryBuilder('user')
       .where('user.id = :id', { id })
@@ -142,18 +159,36 @@ export class UserService {
     await this.userRepository.update(id, { password: hashedPassword });
   }
 
-  async findAll(page = 1, limit = 10): Promise<{ users: User[]; total: number }> {
+  async findAll(
+    page = 1,
+    limit = 10,
+  ): Promise<{ users: User[]; total: number }> {
     const [users, total] = await this.userRepository.findAndCount({
       skip: (page - 1) * limit,
       take: limit,
       order: { createdAt: 'DESC' },
-      select: ['id', 'username', 'email', 'phone', 'nickname', 'avatar', 'role', 'level', 'points', 'isActive', 'createdAt'],
+      select: [
+        'id',
+        'username',
+        'email',
+        'phone',
+        'nickname',
+        'avatar',
+        'role',
+        'level',
+        'points',
+        'isActive',
+        'createdAt',
+      ],
     });
 
     return { users, total };
   }
 
-  async adminUpdate(id: string, adminUpdateDto: AdminUpdateUserDto): Promise<User> {
+  async adminUpdate(
+    id: string,
+    adminUpdateDto: AdminUpdateUserDto,
+  ): Promise<User> {
     const user = await this.findById(id);
     if (!user) {
       throw new NotFoundException('用户不存在');

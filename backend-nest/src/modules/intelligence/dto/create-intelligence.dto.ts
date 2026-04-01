@@ -1,5 +1,8 @@
 import { IsString, IsOptional, IsEnum, IsUrl } from 'class-validator';
-import { IntelligenceCategory, IntelligenceLevel } from '../entities/intelligence.entity';
+import {
+  IntelligenceCategory,
+  IntelligenceLevel,
+} from '../entities/intelligence.entity';
 
 export class CreateIntelligenceDto {
   @IsString()

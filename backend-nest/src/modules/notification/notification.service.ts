@@ -2,7 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { Notification, NotificationType } from './entities/notification.entity';
-import { CreateNotificationDto, NotificationQueryDto } from './dto/notification.dto';
+import {
+  CreateNotificationDto,
+  NotificationQueryDto,
+} from './dto/notification.dto';
 
 @Injectable()
 export class NotificationService {
@@ -18,7 +21,10 @@ export class NotificationService {
   }
 
   // 批量创建通知（给多个用户推送）
-  async createBatch(userIds: string[], dto: Omit<CreateNotificationDto, 'userId'>): Promise<void> {
+  async createBatch(
+    userIds: string[],
+    dto: Omit<CreateNotificationDto, 'userId'>,
+  ): Promise<void> {
     const notifications = userIds.map((userId) =>
       this.notificationRepository.create({
         ...dto,

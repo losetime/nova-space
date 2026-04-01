@@ -16,7 +16,10 @@ export class FeedbackService {
     return this.feedbackRepository.save(feedback);
   }
 
-  async findAll(page: number = 1, limit: number = 10): Promise<{ data: Feedback[]; total: number }> {
+  async findAll(
+    page: number = 1,
+    limit: number = 10,
+  ): Promise<{ data: Feedback[]; total: number }> {
     const [data, total] = await this.feedbackRepository.findAndCount({
       order: { createdAt: 'DESC' },
       skip: (page - 1) * limit,

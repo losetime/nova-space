@@ -128,10 +128,6 @@
               <span class="info-value">{{ metadata.operator || "--" }}</span>
             </div>
             <div class="info-item">
-              <span class="info-label">用途</span>
-              <span class="info-value">{{ metadata.purpose || "--" }}</span>
-            </div>
-            <div class="info-item">
               <span class="info-label">发射质量</span>
               <span class="info-value"
                 >{{ metadata.launchMass ? metadata.launchMass.toLocaleString() : "--" }} kg</span
@@ -420,7 +416,6 @@ interface SatelliteMetadata {
   objectClass?: string; // ESA 对象分类
   mission?: string; // 任务描述
   operator?: string; // 运营商
-  purpose?: string; // 用途
   contractor?: string; // 制造商
   launchMass?: number; // 发射质量 (kg)
   shape?: string; // 形状

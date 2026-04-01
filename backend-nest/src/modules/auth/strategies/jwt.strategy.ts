@@ -10,7 +10,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     private authService: AuthService,
     configService: ConfigService,
   ) {
-    const secret = configService.get<string>('app.jwtSecret') || 'nova-space-secret-key-2024';
+    const secret =
+      configService.get<string>('app.jwtSecret') ||
+      'nova-space-secret-key-2024';
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
@@ -20,6 +22,13 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
   async validate(payload: any) {
     const user = await this.authService.validateUserById(payload.sub);
-    return user ? { id: payload.sub, username: payload.username, role: payload.role, level: payload.level } : null;
+    return user
+      ? {
+          id: payload.sub,
+          username: payload.username,
+          role: payload.role,
+          level: payload.level,
+        }
+      : null;
   }
 }

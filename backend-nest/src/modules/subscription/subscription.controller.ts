@@ -21,7 +21,9 @@ export class SubscriptionController {
   // 获取当前订阅
   @Get('current')
   async getCurrentSubscription(@Request() req: RequestWithUser) {
-    const subscription = await this.subscriptionService.getCurrentSubscription(req.user.id);
+    const subscription = await this.subscriptionService.getCurrentSubscription(
+      req.user.id,
+    );
     return {
       code: 0,
       data: subscription,
@@ -30,7 +32,11 @@ export class SubscriptionController {
 
   // 获取订阅历史
   @Get('history')
-  async getHistory(@Request() req: RequestWithUser, @Query('page') page = 1, @Query('limit') limit = 10) {
+  async getHistory(
+    @Request() req: RequestWithUser,
+    @Query('page') page = 1,
+    @Query('limit') limit = 10,
+  ) {
     const result = await this.subscriptionService.getSubscriptionHistory(
       req.user.id,
       +page,
@@ -41,8 +47,14 @@ export class SubscriptionController {
 
   // 创建订阅（购买会员）
   @Post()
-  async create(@Request() req: RequestWithUser, @Body() createDto: CreateSubscriptionDto) {
-    const subscription = await this.subscriptionService.create(req.user.id, createDto);
+  async create(
+    @Request() req: RequestWithUser,
+    @Body() createDto: CreateSubscriptionDto,
+  ) {
+    const subscription = await this.subscriptionService.create(
+      req.user.id,
+      createDto,
+    );
     return {
       code: 0,
       data: subscription,
@@ -52,8 +64,14 @@ export class SubscriptionController {
 
   // 续费
   @Post('renew')
-  async renew(@Request() req: RequestWithUser, @Body() createDto: CreateSubscriptionDto) {
-    const subscription = await this.subscriptionService.renew(req.user.id, createDto);
+  async renew(
+    @Request() req: RequestWithUser,
+    @Body() createDto: CreateSubscriptionDto,
+  ) {
+    const subscription = await this.subscriptionService.renew(
+      req.user.id,
+      createDto,
+    );
     return {
       code: 0,
       data: subscription,
@@ -63,7 +81,10 @@ export class SubscriptionController {
 
   // 取消订阅
   @Put('cancel')
-  async cancel(@Request() req: RequestWithUser, @Body() updateDto: UpdateSubscriptionDto) {
+  async cancel(
+    @Request() req: RequestWithUser,
+    @Body() updateDto: UpdateSubscriptionDto,
+  ) {
     const subscription = await this.subscriptionService.cancel(
       req.user.id,
       updateDto.cancelReason,

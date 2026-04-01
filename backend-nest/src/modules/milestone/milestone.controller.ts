@@ -1,7 +1,22 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query, ParseIntPipe, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  Query,
+  ParseIntPipe,
+  UseGuards,
+} from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { MilestoneService } from './milestone.service';
-import { CreateMilestoneDto, UpdateMilestoneDto, QueryMilestoneDto } from './dto/milestone.dto';
+import {
+  CreateMilestoneDto,
+  UpdateMilestoneDto,
+  QueryMilestoneDto,
+} from './dto/milestone.dto';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../../common/enums/user.enum';
 
@@ -23,7 +38,9 @@ export class MilestoneController {
 
   // 公开接口 - 获取重要里程碑
   @Get('featured')
-  async getFeatured(@Query('limit', new ParseIntPipe({ optional: true })) limit?: number) {
+  async getFeatured(
+    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+  ) {
     return this.milestoneService.getFeatured(limit);
   }
 
@@ -51,7 +68,10 @@ export class MilestoneController {
   @Put(':id')
   @UseGuards(JwtAuthGuard)
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
-  async update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateMilestoneDto) {
+  async update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateMilestoneDto,
+  ) {
     return this.milestoneService.update(id, dto);
   }
 

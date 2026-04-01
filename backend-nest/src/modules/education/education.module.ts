@@ -8,7 +8,9 @@ import { QuizAnswer } from './entities/quiz-answer.entity';
 import { ArticleCollect } from './entities/article-collect.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Article, Quiz, QuizAnswer, ArticleCollect])],
+  imports: [
+    TypeOrmModule.forFeature([Article, Quiz, QuizAnswer, ArticleCollect]),
+  ],
   controllers: [EducationController],
   providers: [EducationService],
 })

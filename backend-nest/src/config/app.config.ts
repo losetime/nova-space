@@ -24,7 +24,8 @@ export default registerAs('app', () => ({
     from: process.env.SMTP_FROM || 'noreply@nova-space.com',
   },
   satellite: {
-    broadcastInterval: parseInt(process.env.SATELLITE_BROADCAST_INTERVAL || '5000', 10) || 5000,
+    broadcastInterval:
+      parseInt(process.env.SATELLITE_BROADCAST_INTERVAL || '5000', 10) || 5000,
   },
   esaDiscos: {
     apiToken: process.env.ESA_DISCOS_API_TOKEN || '',

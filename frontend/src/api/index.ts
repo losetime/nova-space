@@ -487,9 +487,9 @@ export const satelliteApi = {
   getCountries: () =>
     api.get<ApiResponse<{ code: string; count: number }[]>>('/satellites/countries'),
 
-  // 获取用途列表
-  getPurposes: () =>
-    api.get<ApiResponse<{ name: string; count: number }[]>>('/satellites/purposes'),
+  // 获取任务列表
+  getMissions: () =>
+    api.get<ApiResponse<{ name: string; count: number }[]>>('/satellites/missions'),
 
   // 获取运营商列表
   getOperators: () =>

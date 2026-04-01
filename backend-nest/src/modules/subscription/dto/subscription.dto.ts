@@ -1,4 +1,11 @@
-import { IsEnum, IsNumber, IsBoolean, IsOptional, IsString, IsDateString } from 'class-validator';
+import {
+  IsEnum,
+  IsNumber,
+  IsBoolean,
+  IsOptional,
+  IsString,
+  IsDateString,
+} from 'class-validator';
 import { SubscriptionPlan } from '../../../common/enums/user.enum';
 
 export class CreateSubscriptionDto {

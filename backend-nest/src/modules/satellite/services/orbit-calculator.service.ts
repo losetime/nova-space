@@ -1,7 +1,20 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import * as satellite from 'satellite.js';
-import type { TLEData, SatellitePosition, OrbitPoint, SatelliteData, OrbitPrediction, PositionPrediction, ObserverPosition, PassEvent, PassPrediction, SunlightAnalysis, SunlightStatus, OrbitSegment } from '../interfaces/satellite.interface';
+import type {
+  TLEData,
+  SatellitePosition,
+  OrbitPoint,
+  SatelliteData,
+  OrbitPrediction,
+  PositionPrediction,
+  ObserverPosition,
+  PassEvent,
+  PassPrediction,
+  SunlightAnalysis,
+  SunlightStatus,
+  OrbitSegment,
+} from '../interfaces/satellite.interface';
 import { SatelliteDataService } from './satellite-data.service';
 
 // 常量定义
@@ -31,10 +44,12 @@ export class OrbitCalculatorService implements OnModuleInit {
         this.loadSatellites();
         return;
       }
-      await new Promise(resolve => setTimeout(resolve, checkIntervalMs));
+      await new Promise((resolve) => setTimeout(resolve, checkIntervalMs));
       waited += checkIntervalMs;
       if (waited % 5000 === 0) {
-        this.logger.log(`等待 SatelliteDataService 数据加载... (${waited / 1000}s)`);
+        this.logger.log(
+          `等待 SatelliteDataService 数据加载... (${waited / 1000}s)`,
+        );
       }
     }
 
@@ -113,7 +128,10 @@ export class OrbitCalculatorService implements OnModuleInit {
   /**
    * 计算单个卫星的当前位置
    */
-  private calculateSatellitePosition(sat: SatelliteData, time: Date): SatellitePosition | null {
+  private calculateSatellitePosition(
+    sat: SatelliteData,
+    time: Date,
+  ): SatellitePosition | null {
     try {
       const gmst = satellite.gstime(time);
       const eci = satellite.propagate(sat.satrec, time);
@@ -178,7 +196,10 @@ export class OrbitCalculatorService implements OnModuleInit {
   /**
    * 计算轨道点
    */
-  private calculateOrbitPoint(sat: SatelliteData, time: Date): OrbitPoint | null {
+  private calculateOrbitPoint(
+    sat: SatelliteData,
+    time: Date,
+  ): OrbitPoint | null {
     try {
       const gmst = satellite.gstime(time);
       const eci = satellite.propagate(sat.satrec, time);
@@ -250,7 +271,9 @@ export class OrbitCalculatorService implements OnModuleInit {
       noradId: sat.noradId,
       name: sat.name,
       startTime: startTime.toISOString(),
-      endTime: new Date(startTime.getTime() + durationMinutes * 60 * 1000).toISOString(),
+      endTime: new Date(
+        startTime.getTime() + durationMinutes * 60 * 1000,
+      ).toISOString(),
       duration: durationMinutes,
       steps: orbit.length,
       orbit,
@@ -321,22 +344,22 @@ export class OrbitCalculatorService implements OnModuleInit {
       // 使用 satellite.js 获取轨道参数
       const now = new Date();
       const positionAndVelocity = satellite.propagate(sat.satrec, now);
-      
+
       if (positionAndVelocity && positionAndVelocity.position) {
         const positionEci = positionAndVelocity.position;
         const velocityEci = positionAndVelocity.velocity;
-        
+
         // 计算轨道半径（km）
         const r = Math.sqrt(
           positionEci.x ** 2 + positionEci.y ** 2 + positionEci.z ** 2,
         );
-        
+
         // 地球标准引力参数 (km³/s²)
         const mu = 398600.4418;
-        
+
         // 轨道周期 T = 2π * sqrt(r³/μ) 秒
         const periodSeconds = 2 * Math.PI * Math.sqrt(r ** 3 / mu);
-        
+
         // 转换为分钟
         return Math.round(periodSeconds / 60);
       }
@@ -344,28 +367,30 @@ export class OrbitCalculatorService implements OnModuleInit {
       // 默认返回约 90 分钟（LEO 卫星典型值）
       return 90;
     }
-    
+
     return 90;
   }
 
   /**
    * 获取轨道信息
    */
-  private getOrbitalInfo(sat: SatelliteData): { period: number; inclination: number; eccentricity: number } | undefined {
+  private getOrbitalInfo(
+    sat: SatelliteData,
+  ): { period: number; inclination: number; eccentricity: number } | undefined {
     try {
       // 从 TLE 数据中提取轨道参数
       // satellite.js 的 satrec 对象包含这些信息
       const satrec = sat.satrec;
-      
+
       // 轨道倾角（弧度转角度）
       const inclination = satellite.radiansToDegrees(satrec.inclo || 0);
-      
+
       // 离心率
       const eccentricity = satrec.ecco || 0;
-      
+
       // 轨道周期
       const period = this.calculateOrbitalPeriod(sat);
-      
+
       return {
         period,
         inclination: Math.round(inclination * 100) / 100,
@@ -457,12 +482,17 @@ export class OrbitCalculatorService implements OnModuleInit {
           // 只记录持续超过1分钟的过境
           if (duration >= 60) {
             // 检查是否肉眼可见（太阳在地平线下，卫星被照亮）
-            const visible = this.isVisuallyVisible(sat, observer, maxElevTime || time);
+            const visible = this.isVisuallyVisible(
+              sat,
+              observer,
+              maxElevTime || time,
+            );
 
             passes.push({
               startTime: currentPass.startTime,
               endTime: time.toISOString(),
-              maxElevationTime: maxElevTime?.toISOString() || time.toISOString(),
+              maxElevationTime:
+                maxElevTime?.toISOString() || time.toISOString(),
               maxElevation: Math.round(maxElevInPass * 10) / 10,
               startAzimuth: Math.round(currentPass.startAzimuth || 0),
               endAzimuth: Math.round(azimuth),
@@ -631,7 +661,8 @@ export class OrbitCalculatorService implements OnModuleInit {
 
     // 点积：判断卫星在地球的向阳面还是背阳面
     // 正值表示卫星在向阳面，负值表示在背阳面（可能在阴影中）
-    const dotProduct = satDir.x * sunDir.x + satDir.y * sunDir.y + satDir.z * sunDir.z;
+    const dotProduct =
+      satDir.x * sunDir.x + satDir.y * sunDir.y + satDir.z * sunDir.z;
 
     // 如果点积为正，卫星在向阳面，肯定被照亮
     if (dotProduct >= 0) {
@@ -651,7 +682,11 @@ export class OrbitCalculatorService implements OnModuleInit {
   /**
    * 计算太阳位置（ECI坐标系，单位km）
    */
-  private calculateSunPosition(time: Date): { x: number; y: number; z: number } {
+  private calculateSunPosition(time: Date): {
+    x: number;
+    y: number;
+    z: number;
+  } {
     const jday = satellite.jday(time);
     const sunPosAU = satellite.sunPos(jday);
     return {
@@ -716,7 +751,11 @@ export class OrbitCalculatorService implements OnModuleInit {
 
       // 预测下次阴影事件（从当前时间开始找第一个状态变化）
       if (time >= now) {
-        if (status === 'eclipse' && !nextEntryTime && currentStatus === 'sunlight') {
+        if (
+          status === 'eclipse' &&
+          !nextEntryTime &&
+          currentStatus === 'sunlight'
+        ) {
           nextEntryTime = time;
         }
         if (status === 'sunlight' && nextEntryTime && !nextExitTime) {
@@ -760,16 +799,22 @@ export class OrbitCalculatorService implements OnModuleInit {
     // 计算到下次事件的时间
     let timeToNextEvent: number | undefined;
     if (nextEntryTime && currentStatus === 'sunlight') {
-      timeToNextEvent = Math.round((nextEntryTime.getTime() - now.getTime()) / 60000);
+      timeToNextEvent = Math.round(
+        (nextEntryTime.getTime() - now.getTime()) / 60000,
+      );
     } else if (nextExitTime && currentStatus === 'eclipse') {
-      timeToNextEvent = Math.round((nextExitTime.getTime() - now.getTime()) / 60000);
+      timeToNextEvent = Math.round(
+        (nextExitTime.getTime() - now.getTime()) / 60000,
+      );
     }
 
     return {
       noradId: sat.noradId,
       name: sat.name,
       analysisStartTime: startTime.toISOString(),
-      analysisEndTime: new Date(startTime.getTime() + durationMinutes * 60 * 1000).toISOString(),
+      analysisEndTime: new Date(
+        startTime.getTime() + durationMinutes * 60 * 1000,
+      ).toISOString(),
       orbitalPeriod,
       sunlightRatio: Math.round(sunlightRatio * 1000) / 1000,
       sunlightDuration,
@@ -804,7 +849,9 @@ export class OrbitCalculatorService implements OnModuleInit {
       y: sunPos.y - eci.position.y,
       z: sunPos.z - eci.position.z,
     };
-    const distToSun = Math.sqrt(satToSun.x ** 2 + satToSun.y ** 2 + satToSun.z ** 2);
+    const distToSun = Math.sqrt(
+      satToSun.x ** 2 + satToSun.y ** 2 + satToSun.z ** 2,
+    );
 
     return {
       noradId: sat.noradId,

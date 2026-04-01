@@ -13,7 +13,7 @@ interface Satellite {
 }
 
 // 颜色分类类型
-export type ColorSchemeType = 'orbit' | 'purpose' | 'country' | 'objectType';
+export type ColorSchemeType = 'orbit' | 'mission' | 'country' | 'objectType';
 
 // 图例项
 export interface LegendItem {

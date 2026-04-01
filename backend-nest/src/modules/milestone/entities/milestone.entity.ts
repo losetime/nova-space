@@ -1,4 +1,10 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
 export enum MilestoneCategory {
   LAUNCH = 'launch', // 发射任务
@@ -31,7 +37,11 @@ export class Milestone {
   @Column()
   eventDate: Date; // 历史事件发生日期
 
-  @Column({ type: 'enum', enum: MilestoneCategory, default: MilestoneCategory.OTHER })
+  @Column({
+    type: 'enum',
+    enum: MilestoneCategory,
+    default: MilestoneCategory.OTHER,
+  })
   category: MilestoneCategory; // 分类
 
   @Column({ nullable: true })

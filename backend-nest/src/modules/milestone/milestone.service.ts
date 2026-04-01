@@ -2,7 +2,11 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Milestone, MilestoneCategory } from './entities/milestone.entity';
-import { CreateMilestoneDto, UpdateMilestoneDto, QueryMilestoneDto } from './dto/milestone.dto';
+import {
+  CreateMilestoneDto,
+  UpdateMilestoneDto,
+  QueryMilestoneDto,
+} from './dto/milestone.dto';
 
 @Injectable()
 export class MilestoneService {
@@ -13,7 +17,13 @@ export class MilestoneService {
 
   // 获取里程碑列表（时间线）
   async findAll(query: QueryMilestoneDto) {
-    const { category, page = 1, pageSize = 12, sortBy = 'eventDate', sortOrder = 'DESC' } = query;
+    const {
+      category,
+      page = 1,
+      pageSize = 12,
+      sortBy = 'eventDate',
+      sortOrder = 'DESC',
+    } = query;
 
     const qb = this.milestoneRepository.createQueryBuilder('milestone');
     qb.where('milestone.isPublished = :isPublished', { isPublished: true });

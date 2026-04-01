@@ -174,48 +174,48 @@
               </transition>
             </div>
 
-            <!-- 用途筛选 -->
+            <!-- 任务筛选 -->
             <div class="filter-section">
-              <div class="filter-section-header" @click="toggleFilterSection('purpose')">
+              <div class="filter-section-header" @click="toggleFilterSection('mission')">
                 <span class="section-title">
-                  用途分类
-                  <span class="selected-tag">{{ getPurposeLabel(selectedPurpose) }}</span>
+                  任务分类
+                  <span class="selected-tag">{{ getMissionLabel(selectedMission) }}</span>
                 </span>
-                <DownOutlined :class="['expand-icon', { expanded: expandedSections.purpose }]" />
+                <DownOutlined :class="['expand-icon', { expanded: expandedSections.mission }]" />
               </div>
               <transition name="collapse">
-                <div v-show="expandedSections.purpose" class="filter-options purpose-options">
+                <div v-show="expandedSections.mission" class="filter-options mission-options">
                   <div class="filter-search">
                     <input
-                      v-model="purposeSearch"
+                      v-model="missionSearch"
                       type="text"
-                      placeholder="搜索用途..."
-                      class="purpose-search-input"
+                      placeholder="搜索任务..."
+                      class="mission-search-input"
                     />
                   </div>
                   <div
                     class="filter-option"
-                    :class="{ active: !selectedPurpose }"
-                    @click="selectedPurpose = ''"
+                    :class="{ active: !selectedMission }"
+                    @click="selectedMission = ''"
                   >
                     <GlobalOutlined class="option-icon" />
                     <span>全部</span>
                   </div>
                   <div
-                    v-for="purpose in filteredPurposes"
-                    :key="purpose.name"
+                    v-for="mission in filteredMissions"
+                    :key="mission.name"
                     class="filter-option"
-                    :class="{ active: selectedPurpose === purpose.name }"
-                    @click="selectedPurpose = purpose.name"
+                    :class="{ active: selectedMission === mission.name }"
+                    @click="selectedMission = mission.name"
                   >
-                    <span class="option-name">{{ purpose.name }}</span>
-                    <span class="option-count">{{ purpose.count }}</span>
+                    <span class="option-name">{{ mission.name }}</span>
+                    <span class="option-count">{{ mission.count }}</span>
                   </div>
-                  <div v-if="filteredPurposes.length === 0 && purposeSearch" class="no-result">
-                    未找到匹配的用途
+                  <div v-if="filteredMissions.length === 0 && missionSearch" class="no-result">
+                    未找到匹配的任务
                   </div>
-                  <div v-else-if="purposes.length === 0" class="no-result">
-                    暂无用途数据
+                  <div v-else-if="missions.length === 0" class="no-result">
+                    暂无任务数据
                   </div>
                 </div>
               </transition>
@@ -435,7 +435,7 @@ import { getFlagClass } from '@/utils/countryFlags'
 
 const filterType = ref('all')
 const selectedCountry = ref('')
-const selectedPurpose = ref('')
+const selectedMission = ref('')
 const favoriteFilter = ref<'all' | 'favorited' | 'unfavorited'>('all')
 const loading = ref(true)
 const userStore = useUserStore()
@@ -450,7 +450,7 @@ const favoritedIds = ref<Set<string>>(new Set())
 const expandedSections = ref({
   country: false,
   orbit: false,
-  purpose: false,
+  mission: false,
   favorite: false,
   color: false
 })
@@ -459,9 +459,9 @@ const expandedSections = ref({
 const countries = ref<{ code: string; count: number }[]>([])
 const countrySearch = ref('')
 
-// 用途列表
-const purposes = ref<{ name: string; count: number }[]>([])
-const purposeSearch = ref('')
+// 任务列表
+const missions = ref<{ name: string; count: number }[]>([])
+const missionSearch = ref('')
 
 // 过滤后的国家列表
 const filteredCountries = computed(() => {
@@ -474,11 +474,11 @@ const filteredCountries = computed(() => {
   })
 })
 
-// 过滤后的用途列表
-const filteredPurposes = computed(() => {
-  if (!purposeSearch.value) return purposes.value
-  const search = purposeSearch.value.toLowerCase()
-  return purposes.value.filter(p => p.name.toLowerCase().includes(search))
+// 过滤后的任务列表
+const filteredMissions = computed(() => {
+  if (!missionSearch.value) return missions.value
+  const search = missionSearch.value.toLowerCase()
+  return missions.value.filter(m => m.name.toLowerCase().includes(search))
 })
 
 // 国家代码到中文名称的映射 (CelesTrak 格式)
@@ -519,8 +519,8 @@ const COUNTRY_NAMES: Record<string, string> = {
   SEAL: '海射公司', TBD: '待定', ABS: 'ABS公司',
 }
 
-// 用途分类映射（与后端一致）
-const PURPOSE_CATEGORIES: Record<string, string> = {
+// 任务分类映射（与后端一致）
+const MISSION_CATEGORIES: Record<string, string> = {
   // 通信类
   'Civil Communications': '通信',
   'Defense Communications': '通信',
@@ -654,10 +654,10 @@ const PURPOSE_CATEGORIES: Record<string, string> = {
   'Debris': '碎片',
 }
 
-// 用途分类函数
-const categorizePurpose = (mission: string | undefined): string => {
+// 任务分类函数
+const categorizeMission = (mission: string | undefined): string => {
   if (!mission) return '其他'
-  return PURPOSE_CATEGORIES[mission] || '其他'
+  return MISSION_CATEGORIES[mission] || '其他'
 }
 
 // 获取国家中文名称
@@ -690,7 +690,7 @@ const getFavoriteLabel = (type: string): string => {
 const getColorSchemeLabel = (scheme: ColorSchemeType): string => {
   const labels: Record<ColorSchemeType, string> = {
     orbit: '轨道分类',
-    purpose: '用途分类',
+    mission: '任务分类',
     country: '国家分类',
     objectType: '类型分类'
   }
@@ -705,21 +705,21 @@ const getCountryLabel = (code: string): string => {
   return `${getCountryName(code)}(${code}) ${count}`
 }
 
-// 获取用途选择标签文本
-const getPurposeLabel = (purpose: string): string => {
-  if (!purpose) return '全部'
-  const purposeItem = purposes.value.find(p => p.name === purpose)
-  const count = purposeItem ? purposeItem.count : 0
-  return `${purpose} ${count}`
+// 获取任务选择标签文本
+const getMissionLabel = (mission: string): string => {
+  if (!mission) return '全部'
+  const missionItem = missions.value.find(m => m.name === mission)
+  const count = missionItem ? missionItem.count : 0
+  return `${mission} ${count}`
 }
 
 // 切换筛选区域展开/折叠（同时关闭其他区域）
-const toggleFilterSection = (section: 'orbit' | 'country' | 'purpose' | 'favorite' | 'color') => {
+const toggleFilterSection = (section: 'orbit' | 'country' | 'mission' | 'favorite' | 'color') => {
   // 如果当前区域是折叠状态，则展开它并关闭其他区域
   if (!expandedSections.value[section]) {
     expandedSections.value.orbit = section === 'orbit'
     expandedSections.value.country = section === 'country'
-    expandedSections.value.purpose = section === 'purpose'
+    expandedSections.value.mission = section === 'mission'
     expandedSections.value.favorite = section === 'favorite'
     expandedSections.value.color = section === 'color'
   } else {
@@ -762,9 +762,9 @@ const filteredSatellites = computed(() => {
     result = result.filter(sat => sat.countryCode === selectedCountry.value)
   }
 
-  // 按用途筛选（使用分类后的值进行比较）
-  if (selectedPurpose.value) {
-    result = result.filter(sat => categorizePurpose(sat.mission) === selectedPurpose.value)
+  // 按任务筛选（使用分类后的值进行比较）
+  if (selectedMission.value) {
+    result = result.filter(sat => categorizeMission(sat.mission) === selectedMission.value)
   }
 
   // 按收藏筛选
@@ -1055,14 +1055,14 @@ onMounted(async () => {
     console.error('加载国家列表失败:', err)
   }
 
-  // 加载用途列表
+  // 加载任务列表
   try {
-    const purposeRes = await satelliteApi.getPurposes()
-    if (purposeRes.data.code === 0) {
-      purposes.value = purposeRes.data.data || []
+    const missionRes = await satelliteApi.getMissions()
+    if (missionRes.data.code === 0) {
+      missions.value = missionRes.data.data || []
     }
   } catch (err) {
-    console.error('加载用途列表失败:', err)
+    console.error('加载任务列表失败:', err)
   }
 
   // 加载收藏列表
@@ -1546,7 +1546,7 @@ const toggleFullscreen = () => {
     flex-direction: column;
     gap: 6px;
 
-    .purpose-search-input {
+    .mission-search-input {
       width: 100%;
       padding: 8px 12px;
       background: rgba(0, 212, 255, 0.04);

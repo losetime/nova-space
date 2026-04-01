@@ -19,7 +19,9 @@ export class DigestService {
     private intelligenceService: IntelligenceService,
   ) {}
 
-  async generateDigestContent(subscription: PushSubscription): Promise<DigestContent> {
+  async generateDigestContent(
+    subscription: PushSubscription,
+  ): Promise<DigestContent> {
     const date = new Date().toLocaleDateString('zh-CN', {
       year: 'numeric',
       month: 'long',
@@ -33,7 +35,9 @@ export class DigestService {
     };
 
     // 获取空间天气预警
-    if (subscription.subscriptionTypes.includes(SubscriptionType.SPACE_WEATHER)) {
+    if (
+      subscription.subscriptionTypes.includes(SubscriptionType.SPACE_WEATHER)
+    ) {
       try {
         const alerts = await this.spaceWeatherService.getAlerts(5);
         // 只保留高等级预警
@@ -44,9 +48,14 @@ export class DigestService {
     }
 
     // 获取航天情报
-    if (subscription.subscriptionTypes.includes(SubscriptionType.INTELLIGENCE)) {
+    if (
+      subscription.subscriptionTypes.includes(SubscriptionType.INTELLIGENCE)
+    ) {
       try {
-        const result = await this.intelligenceService.findAll({ page: 1, pageSize: 5 }, 'basic');
+        const result = await this.intelligenceService.findAll(
+          { page: 1, pageSize: 5 },
+          'basic',
+        );
         content.intelligence = result.list.map((item: any) => ({
           id: item.id,
           title: item.title,

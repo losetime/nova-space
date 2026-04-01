@@ -1,4 +1,10 @@
-import { IsNumber, IsString, IsEnum, IsOptional, IsUUID } from 'class-validator';
+import {
+  IsNumber,
+  IsString,
+  IsEnum,
+  IsOptional,
+  IsUUID,
+} from 'class-validator';
 import { PointsAction } from '../../../common/enums/user.enum';
 
 export class AddPointsDto {
