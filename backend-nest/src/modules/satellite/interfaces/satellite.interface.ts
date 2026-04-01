@@ -82,6 +82,12 @@ export interface SatelliteMetadata {
   power?: string; // 电源系统
   motor?: string; // 推进系统
   summary?: string; // 摘要
+  stable_date?: string; // 稳定日期
+  launch_pad?: string; // 发射工位
+  material_composition?: string; // 材料组成
+  major_events?: string; // 主要事件
+  related_satellites?: string; // 相关卫星
+  transmitter_frequencies?: string; // 发射频率
 }
 
 /**

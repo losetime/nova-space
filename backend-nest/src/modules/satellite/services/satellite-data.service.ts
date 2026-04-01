@@ -204,6 +204,12 @@ export class SatelliteDataService implements OnModuleInit {
       power: entity.power,
       motor: entity.motor,
       summary: entity.summary,
+      stable_date: entity.stable_date,
+      launch_pad: entity.launch_pad,
+      material_composition: entity.material_composition,
+      major_events: entity.major_events,
+      related_satellites: entity.related_satellites,
+      transmitter_frequencies: entity.transmitter_frequencies,
     };
   }
 
