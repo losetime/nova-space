@@ -53,3 +53,6 @@ cache/
 
 nova-frontend.tar
 nova-images.tar
+
+# Scripts folder
+scripts/

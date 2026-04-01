@@ -64,12 +64,11 @@ class SatelliteRenderer {
   private hoverHandler: Cesium.ScreenSpaceEventHandler | null = null;
   private hoveredNoradId: string | null = null;
   private hoverLabel: Cesium.Label | null = null;
-  private hoverDebounceTimer: number | null = null; // 防抖定时器
-  private readonly HOVER_DEBOUNCE_MS = 100; // 防抖间隔（毫秒）
 
-  // 空间网格索引（用于悬停检测优化）
-  private spatialGrid: Map<string, Set<string>> = new Map();
-  private readonly GRID_SIZE = 100; // 网格大小（像素）
+  // 经纬度网格索引（用于悬停检测优化）
+  private latLngGrid: Map<string, Set<string>> = new Map();
+  private readonly GRID_LAT_SIZE = 1;  // 1度纬度网格
+  private readonly GRID_LNG_SIZE = 1;  // 1度经度网格
 
   // 默认卫星样式
   private readonly DEFAULT_PIXEL_SIZE = 3;
@@ -158,8 +157,76 @@ class SatelliteRenderer {
     let closestNoradId: string | null = null;
     let closestDistance = maxDistance;
 
-    for (const [noradId, satInfo] of this.satellitePositions.entries()) {
-      // 将卫星世界坐标转换为屏幕坐标
+    // 1. 从屏幕位置获取相机射线
+    const ray = this.viewer.camera.getPickRay(screenPosition);
+    if (!ray) {
+      // 没有射线，遍历所有卫星
+      for (const [noradId, satInfo] of this.satellitePositions.entries()) {
+        const screenPos = Cesium.SceneTransforms.worldToWindowCoordinates(
+          this.viewer.scene,
+          satInfo.position
+        );
+        if (screenPos) {
+          const distance = Math.sqrt(
+            Math.pow(screenPos.x - screenPosition.x, 2) +
+            Math.pow(screenPos.y - screenPosition.y, 2)
+          );
+          if (distance < closestDistance) {
+            closestDistance = distance;
+            closestNoradId = noradId;
+          }
+        }
+      }
+      return closestNoradId;
+    }
+
+    // 2. 射线与地球交点 → 经纬度
+    const intersection = this.viewer.scene.globe.pick(ray, this.viewer.scene);
+    if (!intersection) {
+      // 没有击中地球，遍历所有卫星
+      for (const [noradId, satInfo] of this.satellitePositions.entries()) {
+        const screenPos = Cesium.SceneTransforms.worldToWindowCoordinates(
+          this.viewer.scene,
+          satInfo.position
+        );
+        if (screenPos) {
+          const distance = Math.sqrt(
+            Math.pow(screenPos.x - screenPosition.x, 2) +
+            Math.pow(screenPos.y - screenPosition.y, 2)
+          );
+          if (distance < closestDistance) {
+            closestDistance = distance;
+            closestNoradId = noradId;
+          }
+        }
+      }
+      return closestNoradId;
+    }
+
+    const cartographic = Cesium.Cartographic.fromCartesian(intersection);
+    const lat = Cesium.Math.toDegrees(cartographic.latitude);
+    const lng = Cesium.Math.toDegrees(cartographic.longitude);
+
+    // 3. 查询附近9个网格
+    const candidates: string[] = [];
+    const gridLat = Math.floor(lat);
+    const gridLng = Math.floor(lng);
+
+    for (let dLat = -1; dLat <= 1; dLat++) {
+      for (let dLng = -1; dLng <= 1; dLng++) {
+        const key = `${gridLat + dLat},${gridLng + dLng}`;
+        const gridSatellites = this.latLngGrid.get(key);
+        if (gridSatellites) {
+          candidates.push(...gridSatellites);
+        }
+      }
+    }
+
+    // 4. 只计算候选卫星的屏幕坐标
+    for (const noradId of candidates) {
+      const satInfo = this.satellitePositions.get(noradId);
+      if (!satInfo) continue;
+
       const screenPos = Cesium.SceneTransforms.worldToWindowCoordinates(
         this.viewer.scene,
         satInfo.position
@@ -194,35 +261,25 @@ class SatelliteRenderer {
 
     this.hoverHandler = new Cesium.ScreenSpaceEventHandler(this.viewer.scene.canvas);
 
-    // 处理鼠标移动事件（带防抖）
+    // 处理鼠标移动事件
     this.hoverHandler.setInputAction((movement: Cesium.ScreenSpaceEventHandler.MotionEvent) => {
-      // 清除之前的定时器
-      if (this.hoverDebounceTimer !== null) {
-        clearTimeout(this.hoverDebounceTimer);
-      }
+      const mousePosition = movement.endPosition;
+      const nearbySatellite = this.findNearbySatelliteForHover(mousePosition);
 
-      // 设置新的防抖定时器
-      this.hoverDebounceTimer = window.setTimeout(() => {
-        this.hoverDebounceTimer = null;
-
-        const mousePosition = movement.endPosition;
-        const nearbySatellite = this.findNearbySatelliteForHover(mousePosition);
-
-        if (nearbySatellite !== this.hoveredNoradId) {
-          // 取消之前的高亮
-          if (this.hoveredNoradId) {
-            this.unhighlightSatellite(this.hoveredNoradId);
-          }
-
-          // 高亮新的卫星
-          if (nearbySatellite) {
-            this.highlightSatellite(nearbySatellite);
-            this.hoveredNoradId = nearbySatellite;
-          } else {
-            this.hoveredNoradId = null;
-          }
+      if (nearbySatellite !== this.hoveredNoradId) {
+        // 取消之前的高亮
+        if (this.hoveredNoradId) {
+          this.unhighlightSatellite(this.hoveredNoradId);
         }
-      }, this.HOVER_DEBOUNCE_MS);
+
+        // 高亮新的卫星
+        if (nearbySatellite) {
+          this.highlightSatellite(nearbySatellite);
+          this.hoveredNoradId = nearbySatellite;
+        } else {
+          this.hoveredNoradId = null;
+        }
+      }
     }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
   }
 
@@ -274,36 +331,63 @@ class SatelliteRenderer {
     }
   }
 
-  // 查找鼠标附近的卫星（用于悬停检测，使用空间网格优化）
+  // 查找鼠标附近的卫星（用于悬停检测，使用经纬度网格优化）
   private findNearbySatelliteForHover(screenPosition: Cesium.Cartesian2): string | null {
     const maxDistance = 20; // 悬停检测范围（像素）
     let closestNoradId: string | null = null;
     let closestDistance = maxDistance;
 
-    // 使用空间网格优化：只检测当前网格及相邻网格中的卫星
-    const gridX = Math.floor(screenPosition.x / this.GRID_SIZE);
-    const gridY = Math.floor(screenPosition.y / this.GRID_SIZE);
+    // 1. 从屏幕位置获取相机射线
+    const ray = this.viewer.camera.getPickRay(screenPosition);
+    if (!ray) return null;
 
-    // 检查当前网格及相邻 8 个网格
-    const candidates: Set<string> = new Set();
-    for (let dx = -1; dx <= 1; dx++) {
-      for (let dy = -1; dy <= 1; dy++) {
-        const key = `${gridX + dx},${gridY + dy}`;
-        const cell = this.spatialGrid.get(key);
-        if (cell) {
-          cell.forEach(id => candidates.add(id));
+    // 2. 射线与地球交点 → 经纬度
+    const intersection = this.viewer.scene.globe.pick(ray, this.viewer.scene);
+    if (!intersection) {
+      // 如果射线没有击中地球，退回到遍历所有卫星
+      for (const [noradId, satInfo] of this.satellitePositions.entries()) {
+        if (noradId === this.selectedNoradId) continue;
+        
+        const screenPos = Cesium.SceneTransforms.worldToWindowCoordinates(
+          this.viewer.scene,
+          satInfo.position
+        );
+        
+        if (screenPos) {
+          const distance = Math.sqrt(
+            Math.pow(screenPos.x - screenPosition.x, 2) +
+            Math.pow(screenPos.y - screenPosition.y, 2)
+          );
+          if (distance < closestDistance) {
+            closestDistance = distance;
+            closestNoradId = noradId;
+          }
+        }
+      }
+      return closestNoradId;
+    }
+
+    const cartographic = Cesium.Cartographic.fromCartesian(intersection);
+    const lat = Cesium.Math.toDegrees(cartographic.latitude);
+    const lng = Cesium.Math.toDegrees(cartographic.longitude);
+
+    // 3. 查询附近9个网格（中心+周围8个）
+    const candidates: string[] = [];
+    const gridLat = Math.floor(lat);
+    const gridLng = Math.floor(lng);
+
+    for (let dLat = -1; dLat <= 1; dLat++) {
+      for (let dLng = -1; dLng <= 1; dLng++) {
+        const key = `${gridLat + dLat},${gridLng + dLng}`;
+        const gridSatellites = this.latLngGrid.get(key);
+        if (gridSatellites) {
+          candidates.push(...gridSatellites);
         }
       }
     }
 
-    // 如果网格中没有候选卫星，返回 null
-    if (candidates.size === 0) {
-      return null;
-    }
-
-    // 只检测候选卫星
+    // 4. 只计算候选卫星的屏幕坐标
     for (const noradId of candidates) {
-      // 跳过已选中的卫星
       if (noradId === this.selectedNoradId) continue;
 
       const satInfo = this.satellitePositions.get(noradId);
@@ -330,109 +414,98 @@ class SatelliteRenderer {
     return closestNoradId;
   }
 
-  // 更新空间网格索引
-  private updateSpatialGrid() {
-    this.spatialGrid.clear();
+  // 更新经纬度网格索引
+  private updateLatLngGrid() {
+    this.latLngGrid.clear();
 
     for (const [noradId, satInfo] of this.satellitePositions.entries()) {
-      const screenPos = Cesium.SceneTransforms.worldToWindowCoordinates(
-        this.viewer.scene,
-        satInfo.position
-      );
+      const cartographic = Cesium.Cartographic.fromCartesian(satInfo.position);
+      const lat = Cesium.Math.toDegrees(cartographic.latitude);
+      const lng = Cesium.Math.toDegrees(cartographic.longitude);
 
-      if (screenPos) {
-        const gridX = Math.floor(screenPos.x / this.GRID_SIZE);
-        const gridY = Math.floor(screenPos.y / this.GRID_SIZE);
-        const key = `${gridX},${gridY}`;
+      const gridLat = Math.floor(lat);
+      const gridLng = Math.floor(lng);
+      const key = `${gridLat},${gridLng}`;
 
-        if (!this.spatialGrid.has(key)) {
-          this.spatialGrid.set(key, new Set());
-        }
-        this.spatialGrid.get(key)!.add(noradId);
+      if (!this.latLngGrid.has(key)) {
+        this.latLngGrid.set(key, new Set());
       }
+      this.latLngGrid.get(key)!.add(noradId);
     }
   }
 
-  // 批量更新卫星位置（增量更新优化）
-  updateSatellites(satellites: Satellite[], batchSize: number = 1000) {
+  // 批量更新卫星位置（分批异步更新优化）
+  updateSatellites(satellites: Satellite[], batchSize: number = 500) {
     const currentIds = new Set(satellites.map((s) => s.noradId));
 
-    // 增量更新：只处理新增和删除的卫星
-    const idsToRemove: string[] = [];
-    const idsToAdd: Satellite[] = [];
-
-    // 找出需要删除的卫星
+    // 1. 同步删除不在新列表中的卫星（数量通常很少）
     this.lastSatelliteIds.forEach(id => {
       if (!currentIds.has(id)) {
-        idsToRemove.push(id);
+        const point = this.pointMap.get(id);
+        if (point && this.pointCollection) {
+          this.pointCollection.remove(point);
+        }
+        this.pointMap.delete(id);
+        this.satellitePositions.delete(id);
       }
     });
 
-    // 找出需要新增的卫星
-    satellites.forEach(sat => {
-      if (!this.lastSatelliteIds.has(sat.noradId)) {
-        idsToAdd.push(sat);
-      }
-    });
+    // 2. 分批异步更新卫星位置
+    let currentIndex = 0;
+    const total = satellites.length;
 
-    // 删除不在新列表中的卫星
-    idsToRemove.forEach((id) => {
-      const point = this.pointMap.get(id);
-      if (point && this.pointCollection) {
-        this.pointCollection.remove(point);
-      }
-      this.pointMap.delete(id);
-      this.satellitePositions.delete(id);
-    });
+    const processBatch = () => {
+      const endIndex = Math.min(currentIndex + batchSize, total);
 
-    // 更新所有现有卫星的位置（必须更新，因为卫星在运动）
-    satellites.forEach(sat => {
-      const position = Cesium.Cartesian3.fromDegrees(
-        sat.position.lng,
-        sat.position.lat,
-        sat.position.alt,
-      );
+      for (let i = currentIndex; i < endIndex; i++) {
+        const sat = satellites[i]!;
+        const position = Cesium.Cartesian3.fromDegrees(
+          sat.position.lng,
+          sat.position.lat,
+          sat.position.alt,
+        );
 
-      // 获取颜色（基于分类方式）
-      const color = this.getSatelliteColor(sat);
+        const color = this.getSatelliteColor(sat);
 
-      if (this.pointMap.has(sat.noradId)) {
-        // 更新现有点的位置
-        const point = this.pointMap.get(sat.noradId)!;
-        point.position = position;
-        // 更新颜色
-        if (sat.noradId !== this.selectedNoradId && sat.noradId !== this.hoveredNoradId) {
-          point.color = color;
+        if (this.pointMap.has(sat.noradId)) {
+          const point = this.pointMap.get(sat.noradId)!;
+          point.position = position;
+          if (sat.noradId !== this.selectedNoradId && sat.noradId !== this.hoveredNoradId) {
+            point.color = color;
+          }
+
+          if (sat.noradId === this.selectedNoradId) {
+            if (this.selectedModel) {
+              this.selectedModel.position = new Cesium.ConstantPositionProperty(position);
+            }
+            if (this.selectedLabel) {
+              this.selectedLabel.position = position;
+            }
+          }
+        } else {
+          const point = this.pointCollection!.add({
+            position,
+            pixelSize: this.DEFAULT_PIXEL_SIZE,
+            color,
+          });
+          this.pointMap.set(sat.noradId, point);
         }
 
-        // 如果是选中的卫星，同步更新 Model 和 Label 位置
-        if (sat.noradId === this.selectedNoradId) {
-          if (this.selectedModel) {
-            this.selectedModel.position = new Cesium.ConstantPositionProperty(position);
-          }
-          if (this.selectedLabel) {
-            this.selectedLabel.position = position;
-          }
-        }
+        this.satellitePositions.set(sat.noradId, { name: sat.name, position, alt: sat.position.alt });
+      }
+
+      currentIndex = endIndex;
+
+      if (currentIndex < total) {
+        requestAnimationFrame(processBatch);
       } else {
-        // 创建新点
-        const point = this.pointCollection!.add({
-          position,
-          pixelSize: this.DEFAULT_PIXEL_SIZE,
-          color,
-        });
-        this.pointMap.set(sat.noradId, point);
+        // 所有批次完成，更新缓存和网格索引
+        this.lastSatelliteIds = currentIds;
+        this.updateLatLngGrid();
       }
+    };
 
-      // 存储卫星位置和名称（用于选中逻辑）
-      this.satellitePositions.set(sat.noradId, { name: sat.name, position, alt: sat.position.alt });
-    });
-
-    // 更新缓存
-    this.lastSatelliteIds = currentIds;
-
-    // 更新空间网格索引（用于悬停检测优化）
-    this.updateSpatialGrid();
+    processBatch();
   }
 
   // 获取卫星颜色（基于分类方式）
@@ -575,7 +648,7 @@ class SatelliteRenderer {
     this.pointCollection?.removeAll();
     this.pointMap.clear();
     this.satellitePositions.clear();
-    this.spatialGrid.clear();
+    this.latLngGrid.clear();
     this.lastSatelliteIds.clear();
     this.deselectSatellite();
   }
@@ -593,11 +666,6 @@ class SatelliteRenderer {
 
   // 销毁
   destroy() {
-    // 清除防抖定时器
-    if (this.hoverDebounceTimer !== null) {
-      clearTimeout(this.hoverDebounceTimer);
-      this.hoverDebounceTimer = null;
-    }
     if (this.clickHandler) {
       this.clickHandler.destroy();
       this.clickHandler = null;
@@ -614,7 +682,7 @@ class SatelliteRenderer {
     }
     this.pointMap.clear();
     this.satellitePositions.clear();
-    this.spatialGrid.clear();
+    this.latLngGrid.clear();
     this.lastSatelliteIds.clear();
   }
 }

@@ -32,14 +32,14 @@ export function useWebSocket() {
   // 内部数据缓冲（节流用）
   let pendingData: Satellite[] = []
 
-  // 节流更新函数 - 最多每 10 秒更新一次 UI
+  // 节流更新函数 - 最多每 5 秒更新一次 UI（与后端推送同步）
   const throttledUpdate = useThrottleFn(() => {
     if (pendingData.length > 0) {
       satellites.value = pendingData
       satelliteCount.value = pendingData.length
       pendingData = []
     }
-  }, 10000)
+  }, 5000)
 
   const initWebSocket = () => {
     if (isInitialized.value) return

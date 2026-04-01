@@ -84,18 +84,7 @@
           </a-spin>
         </div>
 
-        <!-- 订阅入口 -->
-        <div class="sidebar-section subscribe-section">
-          <h3><BellOutlined /> 订阅推送</h3>
-          <p>每日精选情报直达邮箱</p>
-          <a-input-search
-            v-model:value="subscribeEmail"
-            placeholder="输入邮箱地址"
-            enter-button="订阅"
-            size="large"
-            @search="handleSubscribe"
-          />
-        </div>
+        
       </aside>
     </div>
   </div>
@@ -110,7 +99,6 @@ import {
   UserOutlined,
   EyeOutlined,
   FireOutlined,
-  BellOutlined,
 } from '@ant-design/icons-vue'
 import { intelligenceApi, type Intelligence } from '@/api'
 
@@ -121,7 +109,6 @@ const pageSize = ref(12)
 const total = ref(0)
 const loading = ref(false)
 const hotLoading = ref(false)
-const subscribeEmail = ref('')
 
 const intelligenceList = ref<Intelligence[]>([])
 const hotList = ref<{ id: number; title: string; views: number }[]>([])
@@ -217,14 +204,7 @@ const handleHotClick = (id: number) => {
   router.push(`/intelligence/${id}`)
 }
 
-const handleSubscribe = () => {
-  if (!subscribeEmail.value) {
-    message.warning('请输入邮箱地址')
-    return
-  }
-  message.success('订阅成功！')
-  subscribeEmail.value = ''
-}
+
 
 onMounted(() => {
   fetchIntelligenceList()
@@ -514,24 +494,7 @@ onMounted(() => {
   }
 }
 
-.subscribe-section {
-  :deep(.ant-input-search) {
-    .ant-input {
-      background: rgba(255, 255, 255, 0.05);
-      border-color: rgba(0, 212, 255, 0.2);
-      color: #fff;
 
-      &::placeholder {
-        color: rgba(255, 255, 255, 0.4);
-      }
-    }
-
-    .ant-input-search-button {
-      background: linear-gradient(135deg, #00d4ff 0%, #7b2cbf 100%);
-      border: none;
-    }
-  }
-}
 
 @media (max-width: 1024px) {
   .intel-content {
