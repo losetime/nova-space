@@ -111,22 +111,6 @@ export class PushSubscriptionService {
     await this.subscriptionRepository.save(subscription);
   }
 
-  async updateLastPushAt(userId: string): Promise<void> {
-    await this.subscriptionRepository.update(
-      { userId },
-      { lastPushAt: new Date() },
-    );
-  }
-
-  async getActiveSubscriptions(): Promise<PushSubscription[]> {
-    return this.subscriptionRepository.find({
-      where: {
-        status: PushSubscriptionStatus.ACTIVE,
-        enabled: true,
-      },
-    });
-  }
-
   // 检查是否订阅了指定类型
   hasSubscriptionType(
     subscription: PushSubscription,

@@ -19,6 +19,7 @@ import { FeedbackModule } from './modules/feedback/feedback.module';
 import { SpaceWeatherModule } from './modules/space-weather/space-weather.module';
 import { PushModule } from './modules/push/push.module';
 import { MilestoneModule } from './modules/milestone/milestone.module';
+import { CompanyModule } from './modules/company/company.module';
 import { SatelliteTle } from './modules/satellite/entities/satellite-tle.entity';
 import { SatelliteMetadataEntity } from './modules/satellite/entities/satellite-metadata.entity';
 import { User } from './common/entities/user.entity';
@@ -65,6 +66,7 @@ import appConfig from './config/app.config';
     SpaceWeatherModule,
     PushModule,
     MilestoneModule,
+    CompanyModule,
   ],
   controllers: [AppController],
   providers: [

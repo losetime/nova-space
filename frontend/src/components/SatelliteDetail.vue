@@ -49,16 +49,14 @@
           <div class="info-grid">
             <div class="info-item">
               <span class="info-label">对象类型</span>
-              <span
-                :class="['info-value', 'type-badge', getObjectTypeClass(metadata.objectType)]"
-              >
+              <span :class="['info-value', 'type-badge', getObjectTypeClass(metadata.objectType)]">
                 {{ getObjectTypeLabel(metadata.objectType) }}
               </span>
             </div>
-            <div class="info-item">
+            <!-- <div class="info-item">
               <span class="info-label">ESA分类</span>
               <span class="info-value">{{ metadata.objectClass || "--" }}</span>
-            </div>
+            </div> -->
             <div class="info-item">
               <span class="info-label">所属国家/组织</span>
               <span class="info-value">
@@ -85,7 +83,9 @@
             </div>
             <div class="info-item">
               <span class="info-label">标准星等</span>
-              <span class="info-value">{{ metadata.stdMag != null ? metadata.stdMag.toFixed(2) : "--" }}</span>
+              <span class="info-value">{{
+                metadata.stdMag != null ? metadata.stdMag.toFixed(2) : "--"
+              }}</span>
             </div>
             <div class="info-item">
               <span class="info-label">COSPAR编号</span>
@@ -93,7 +93,9 @@
             </div>
             <div class="info-item">
               <span class="info-label">预测衰减日期</span>
-              <span class="info-value">{{ metadata.predDecayDate ? formatDate(metadata.predDecayDate) : "--" }}</span>
+              <span class="info-value">{{
+                metadata.predDecayDate ? formatDate(metadata.predDecayDate) : "--"
+              }}</span>
             </div>
           </div>
         </div>
@@ -114,15 +116,21 @@
           <div class="info-grid">
             <div class="info-item">
               <span class="info-label">发射日期</span>
-              <span class="info-value">{{ metadata.launchDate ? formatDate(metadata.launchDate) : "--" }}</span>
+              <span class="info-value">{{
+                metadata.launchDate ? formatDate(metadata.launchDate) : "--"
+              }}</span>
             </div>
             <div class="info-item">
               <span class="info-label">首次轨道历元</span>
-              <span class="info-value">{{ metadata.firstEpoch ? formatDate(metadata.firstEpoch) : "--" }}</span>
+              <span class="info-value">{{
+                metadata.firstEpoch ? formatDate(metadata.firstEpoch) : "--"
+              }}</span>
             </div>
             <div class="info-item">
               <span class="info-label">发射地点</span>
-              <span class="info-value">{{ metadata.launchSite ? getLaunchSiteName(metadata.launchSite) : "--" }}</span>
+              <span class="info-value">{{
+                metadata.launchSite ? getLaunchSiteName(metadata.launchSite) : "--"
+              }}</span>
             </div>
             <div class="info-item">
               <span class="info-label">发射场</span>
@@ -146,13 +154,21 @@
             </div>
             <div class="info-item">
               <span class="info-label">发射状态</span>
-              <span :class="['info-value', 'status-badge', metadata.launchFailure ? 'decayed' : 'active']">
+              <span
+                :class="[
+                  'info-value',
+                  'status-badge',
+                  metadata.launchFailure ? 'decayed' : 'active',
+                ]"
+              >
                 {{ metadata.launchFailure ? "发射失败" : "发射成功" }}
               </span>
             </div>
             <div class="info-item">
               <span class="info-label">衰减日期</span>
-              <span class="info-value">{{ metadata.decayDate ? formatDate(metadata.decayDate) : "--" }}</span>
+              <span class="info-value">{{
+                metadata.decayDate ? formatDate(metadata.decayDate) : "--"
+              }}</span>
             </div>
           </div>
         </div>
@@ -177,15 +193,36 @@
             </div>
             <div class="info-item">
               <span class="info-label">运营商</span>
-              <span class="info-value">{{ metadata.operator || "--" }}</span>
+              <span
+                v-if="metadata.operator"
+                class="info-value clickable-company"
+                @click="openCompanyDetail(metadata.operator)"
+              >
+                {{ metadata.operator }}
+              </span>
+              <span v-else class="info-value">--</span>
             </div>
             <div class="info-item">
               <span class="info-label">承包商</span>
-              <span class="info-value">{{ metadata.contractor || "--" }}</span>
+              <span
+                v-if="metadata.contractor"
+                class="info-value clickable-company"
+                @click="openCompanyDetail(metadata.contractor)"
+              >
+                {{ metadata.contractor }}
+              </span>
+              <span v-else class="info-value">--</span>
             </div>
             <div class="info-item">
               <span class="info-label">制造商</span>
-              <span class="info-value">{{ metadata.manufacturer || "--" }}</span>
+              <span
+                v-if="metadata.manufacturer"
+                class="info-value clickable-company"
+                @click="openCompanyDetail(metadata.manufacturer)"
+              >
+                {{ metadata.manufacturer }}
+              </span>
+              <span v-else class="info-value">--</span>
             </div>
             <div class="info-item">
               <span class="info-label">星座名称</span>
@@ -226,11 +263,15 @@
           <div class="info-grid">
             <div class="info-item">
               <span class="info-label">发射质量</span>
-              <span class="info-value">{{ metadata.launchMass ? `${metadata.launchMass.toLocaleString()} kg` : "--" }}</span>
+              <span class="info-value">{{
+                metadata.launchMass ? `${metadata.launchMass.toLocaleString()} kg` : "--"
+              }}</span>
             </div>
             <div class="info-item">
               <span class="info-label">干质量</span>
-              <span class="info-value">{{ metadata.dryMass ? `${metadata.dryMass.toLocaleString()} kg` : "--" }}</span>
+              <span class="info-value">{{
+                metadata.dryMass ? `${metadata.dryMass.toLocaleString()} kg` : "--"
+              }}</span>
             </div>
             <div class="info-item">
               <span class="info-label">形状</span>
@@ -250,7 +291,9 @@
             </div>
             <div class="info-item">
               <span class="info-label">直径</span>
-              <span class="info-value">{{ metadata.diameter ? `${metadata.diameter} m` : "--" }}</span>
+              <span class="info-value">{{
+                metadata.diameter ? `${metadata.diameter} m` : "--"
+              }}</span>
             </div>
             <div class="info-item">
               <span class="info-label">卫星总线</span>
@@ -282,7 +325,9 @@
             </div>
             <div class="info-item">
               <span class="info-label">雷达截面</span>
-              <span :class="['info-value', 'rcs-badge', getRcsClass(metadata.rcs)]">{{ metadata.rcs || "--" }}</span>
+              <span :class="['info-value', 'rcs-badge', getRcsClass(metadata.rcs)]">{{
+                metadata.rcs || "--"
+              }}</span>
             </div>
             <div class="info-item">
               <span class="info-label">配置</span>
@@ -294,7 +339,9 @@
             </div>
             <div class="info-item full-width">
               <span class="info-label">发射频率</span>
-              <span class="info-value text-left">{{ metadata.transmitter_frequencies || "--" }}</span>
+              <span class="info-value text-left">{{
+                metadata.transmitter_frequencies || "--"
+              }}</span>
             </div>
           </div>
         </div>
@@ -337,7 +384,9 @@
               </div>
               <div class="param-content">
                 <label>轨道高度</label>
-                <span class="param-value">{{ formatNumber(satellite.position.alt / 1000, 0) }} km</span>
+                <span class="param-value"
+                  >{{ formatNumber(satellite.position.alt / 1000, 0) }} km</span
+                >
               </div>
             </div>
             <div class="param-card">
@@ -362,8 +411,12 @@
                   <span>远地点</span>
                 </div>
                 <div class="feature-values">
-                  <span>{{ metadata.perigee ? `${metadata.perigee.toLocaleString()} km` : "--" }}</span>
-                  <span>{{ metadata.apogee ? `${metadata.apogee.toLocaleString()} km` : "--" }}</span>
+                  <span>{{
+                    metadata.perigee ? `${metadata.perigee.toLocaleString()} km` : "--"
+                  }}</span>
+                  <span>{{
+                    metadata.apogee ? `${metadata.apogee.toLocaleString()} km` : "--"
+                  }}</span>
                 </div>
               </div>
             </div>
@@ -372,7 +425,9 @@
               <div class="feature-content">
                 <div class="feature-row">
                   <span class="feature-label">轨道周期</span>
-                  <span class="feature-value">{{ metadata.period != null ? `${metadata.period.toFixed(1)} 分钟` : "--" }}</span>
+                  <span class="feature-value">{{
+                    metadata.period != null ? `${metadata.period.toFixed(1)} 分钟` : "--"
+                  }}</span>
                 </div>
               </div>
             </div>
@@ -381,7 +436,9 @@
               <div class="feature-content">
                 <div class="feature-row">
                   <span class="feature-label">轨道倾角</span>
-                  <span class="feature-value">{{ metadata.inclination != null ? `${metadata.inclination.toFixed(2)}°` : "--" }}</span>
+                  <span class="feature-value">{{
+                    metadata.inclination != null ? `${metadata.inclination.toFixed(2)}°` : "--"
+                  }}</span>
                 </div>
               </div>
             </div>
@@ -390,7 +447,9 @@
               <div class="feature-content">
                 <div class="feature-row">
                   <span class="feature-label">偏心率</span>
-                  <span class="feature-value">{{ metadata.eccentricity != null ? metadata.eccentricity.toFixed(6) : "--" }}</span>
+                  <span class="feature-value">{{
+                    metadata.eccentricity != null ? metadata.eccentricity.toFixed(6) : "--"
+                  }}</span>
                 </div>
               </div>
             </div>
@@ -399,7 +458,9 @@
               <div class="feature-content">
                 <div class="feature-row">
                   <span class="feature-label">升交点赤经</span>
-                  <span class="feature-value">{{ metadata.raan != null ? `${metadata.raan.toFixed(2)}°` : "--" }}</span>
+                  <span class="feature-value">{{
+                    metadata.raan != null ? `${metadata.raan.toFixed(2)}°` : "--"
+                  }}</span>
                 </div>
               </div>
             </div>
@@ -408,7 +469,9 @@
               <div class="feature-content">
                 <div class="feature-row">
                   <span class="feature-label">近地点幅角</span>
-                  <span class="feature-value">{{ metadata.argOfPerigee != null ? `${metadata.argOfPerigee.toFixed(2)}°` : "--" }}</span>
+                  <span class="feature-value">{{
+                    metadata.argOfPerigee != null ? `${metadata.argOfPerigee.toFixed(2)}°` : "--"
+                  }}</span>
                 </div>
               </div>
             </div>
@@ -417,7 +480,9 @@
               <div class="feature-content">
                 <div class="feature-row">
                   <span class="feature-label">TLE历元时间</span>
-                  <span class="feature-value">{{ metadata.tleEpoch ? formatDateTime(metadata.tleEpoch) : "--" }}</span>
+                  <span class="feature-value">{{
+                    metadata.tleEpoch ? formatDateTime(metadata.tleEpoch) : "--"
+                  }}</span>
                 </div>
               </div>
             </div>
@@ -470,7 +535,9 @@
             </div>
             <div class="status-time-row" v-if="metadata">
               <span class="status-label">稳定日期</span>
-              <span class="status-time">{{ metadata.stable_date ? formatDate(metadata.stable_date) : "--" }}</span>
+              <span class="status-time">{{
+                metadata.stable_date ? formatDate(metadata.stable_date) : "--"
+              }}</span>
             </div>
             <div class="decay-warning" v-if="metadata?.decayDate">
               <WarningOutlined />
@@ -493,11 +560,19 @@
     <p>请选择一颗卫星</p>
     <span>从左侧列表中选择卫星查看详细信息</span>
   </div>
+
+  <!-- 公司详情弹窗 -->
+  <CompanyDetailModal
+    :company-name="selectedCompanyName"
+    :open="companyDetailVisible"
+    @update:open="companyDetailVisible = $event"
+  />
 </template>
 
 <script setup lang="ts">
 import { ref, watch } from "vue";
 import { message } from "ant-design-vue";
+import CompanyDetailModal from "./CompanyDetailModal.vue";
 import {
   GlobalOutlined,
   CompassOutlined,
@@ -620,6 +695,16 @@ const userStore = useUserStore();
 const isFavorited = ref(false);
 const followLoading = ref(false);
 
+// 公司详情弹窗状态
+const companyDetailVisible = ref(false);
+const selectedCompanyName = ref("");
+
+// 打开公司详情弹窗
+function openCompanyDetail(companyName: string) {
+  selectedCompanyName.value = companyName;
+  companyDetailVisible.value = true;
+}
+
 // 检查是否已关注
 async function checkFavorite() {
   if (!props.satellite || !userStore.isLoggedIn) return;
@@ -664,37 +749,124 @@ watch(
 
 // 国家代码到中文名称的映射 (CelesTrak 格式)
 const COUNTRY_NAMES: Record<string, string> = {
-  US: "美国", UK: "英国", FR: "法国", CA: "加拿大", IT: "意大利",
-  NZ: "新西兰", MA: "摩洛哥", IM: "马恩岛", AC: "阿森松岛", AB: "安提瓜和巴布达",
-  CIS: "俄罗斯", PRC: "中国", CN: "中国", TWN: "中国台湾",
-  JPN: "日本", IND: "印度", BRAZ: "巴西", ARGN: "阿根廷",
-  MEX: "墨西哥", SAUD: "沙特阿拉伯", INDO: "印度尼西亚", TURK: "土耳其",
-  NETH: "荷兰", THAI: "泰国", SAFR: "南非", UKR: "乌克兰",
-  SING: "新加坡", POL: "波兰", SWED: "瑞典", NOR: "挪威",
-  BEL: "比利时", MALA: "马来西亚", PAKI: "巴基斯坦", RP: "菲律宾",
-  VENZ: "委内瑞拉", SWTZ: "瑞士", DEN: "丹麦", EGYP: "埃及",
-  FIN: "芬兰", GREC: "希腊", IRAN: "伊朗", IRAQ: "伊拉克",
-  KAZ: "哈萨克斯坦", KWT: "科威特", NIG: "尼日利亚",
-  POR: "葡萄牙", SKOR: "韩国", UAE: "阿联酋", ISRA: "以色列",
-  SPN: "西班牙", GER: "德国", CZE: "捷克", EST: "爱沙尼亚",
-  HUN: "匈牙利", LTU: "立陶宛", BGR: "保加利亚", ROM: "罗马尼亚",
-  SVN: "斯洛文尼亚", SVK: "斯洛伐克", HRV: "克罗地亚", AZER: "阿塞拜疆",
-  MDA: "摩尔多瓦", MNG: "蒙古", NKOR: "朝鲜", LAOS: "老挝",
-  BGD: "孟加拉国", LKA: "斯里兰卡", MMR: "缅甸", NPL: "尼泊尔",
-  PER: "秘鲁", COL: "哥伦比亚", CHLE: "智利", BOL: "玻利维亚",
-  PRY: "巴拉圭", URY: "乌拉圭", ECU: "厄瓜多尔", CRI: "哥斯达黎加",
-  DJI: "吉布提", RWA: "卢旺达", UGA: "乌干达", GHA: "加纳",
-  ZWE: "津巴布韦", BWA: "博茨瓦纳", MUS: "毛里求斯", AGO: "安哥拉",
-  SDN: "苏丹", TUN: "突尼斯", ALG: "阿尔及利亚", QAT: "卡塔尔",
-  BHR: "巴林", JOR: "约旦", PRI: "波多黎各", SLB: "所罗门群岛",
-  MCO: "摩纳哥", KEN: "肯尼亚", VTNM: "越南",
-  CHBZ: "瑞士", BELA: "白俄罗斯", ASRA: "奥地利", FGER: "法国/德国",
-  FRIT: "法国/意大利", CZCH: "捷克", USBZ: "美国/巴西",
-  ESA: "欧洲航天局", ESRO: "欧洲空间研究组织", EUTE: "欧洲通信卫星组织",
-  EUME: "欧洲气象卫星组织", NATO: "北约", ITSO: "国际通信卫星组织",
-  SES: "SES公司", O3B: "O3b网络", ORB: "轨道科学公司",
-  GLOB: "全球星", STCT: "空间通信", RASC: "俄罗斯航天局",
-  SEAL: "海射公司", TBD: "待定", ABS: "ABS公司",
+  US: "美国",
+  UK: "英国",
+  FR: "法国",
+  CA: "加拿大",
+  IT: "意大利",
+  NZ: "新西兰",
+  MA: "摩洛哥",
+  IM: "马恩岛",
+  AC: "阿森松岛",
+  AB: "安提瓜和巴布达",
+  CIS: "俄罗斯",
+  PRC: "中国",
+  CN: "中国",
+  TWN: "中国台湾",
+  JPN: "日本",
+  IND: "印度",
+  BRAZ: "巴西",
+  ARGN: "阿根廷",
+  MEX: "墨西哥",
+  SAUD: "沙特阿拉伯",
+  INDO: "印度尼西亚",
+  TURK: "土耳其",
+  NETH: "荷兰",
+  THAI: "泰国",
+  SAFR: "南非",
+  UKR: "乌克兰",
+  SING: "新加坡",
+  POL: "波兰",
+  SWED: "瑞典",
+  NOR: "挪威",
+  BEL: "比利时",
+  MALA: "马来西亚",
+  PAKI: "巴基斯坦",
+  RP: "菲律宾",
+  VENZ: "委内瑞拉",
+  SWTZ: "瑞士",
+  DEN: "丹麦",
+  EGYP: "埃及",
+  FIN: "芬兰",
+  GREC: "希腊",
+  IRAN: "伊朗",
+  IRAQ: "伊拉克",
+  KAZ: "哈萨克斯坦",
+  KWT: "科威特",
+  NIG: "尼日利亚",
+  POR: "葡萄牙",
+  SKOR: "韩国",
+  UAE: "阿联酋",
+  ISRA: "以色列",
+  SPN: "西班牙",
+  GER: "德国",
+  CZE: "捷克",
+  EST: "爱沙尼亚",
+  HUN: "匈牙利",
+  LTU: "立陶宛",
+  BGR: "保加利亚",
+  ROM: "罗马尼亚",
+  SVN: "斯洛文尼亚",
+  SVK: "斯洛伐克",
+  HRV: "克罗地亚",
+  AZER: "阿塞拜疆",
+  MDA: "摩尔多瓦",
+  MNG: "蒙古",
+  NKOR: "朝鲜",
+  LAOS: "老挝",
+  BGD: "孟加拉国",
+  LKA: "斯里兰卡",
+  MMR: "缅甸",
+  NPL: "尼泊尔",
+  PER: "秘鲁",
+  COL: "哥伦比亚",
+  CHLE: "智利",
+  BOL: "玻利维亚",
+  PRY: "巴拉圭",
+  URY: "乌拉圭",
+  ECU: "厄瓜多尔",
+  CRI: "哥斯达黎加",
+  DJI: "吉布提",
+  RWA: "卢旺达",
+  UGA: "乌干达",
+  GHA: "加纳",
+  ZWE: "津巴布韦",
+  BWA: "博茨瓦纳",
+  MUS: "毛里求斯",
+  AGO: "安哥拉",
+  SDN: "苏丹",
+  TUN: "突尼斯",
+  ALG: "阿尔及利亚",
+  QAT: "卡塔尔",
+  BHR: "巴林",
+  JOR: "约旦",
+  PRI: "波多黎各",
+  SLB: "所罗门群岛",
+  MCO: "摩纳哥",
+  KEN: "肯尼亚",
+  VTNM: "越南",
+  CHBZ: "瑞士",
+  BELA: "白俄罗斯",
+  ASRA: "奥地利",
+  FGER: "法国/德国",
+  FRIT: "法国/意大利",
+  CZCH: "捷克",
+  USBZ: "美国/巴西",
+  ESA: "欧洲航天局",
+  ESRO: "欧洲空间研究组织",
+  EUTE: "欧洲通信卫星组织",
+  EUME: "欧洲气象卫星组织",
+  NATO: "北约",
+  ITSO: "国际通信卫星组织",
+  SES: "SES公司",
+  O3B: "O3b网络",
+  ORB: "轨道科学公司",
+  GLOB: "全球星",
+  STCT: "空间通信",
+  RASC: "俄罗斯航天局",
+  SEAL: "海射公司",
+  TBD: "待定",
+  ABS: "ABS公司",
 };
 
 // 发射场映射
@@ -904,16 +1076,30 @@ const getRcsClass = (rcs: string | undefined): string => {
 }
 
 @keyframes orbit-spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes orbit-motion {
-  0% { transform: translate(calc(-50% + 25px), -50%); }
-  25% { transform: translate(-50%, calc(-50% + 25px)); }
-  50% { transform: translate(calc(-50% - 25px), -50%); }
-  75% { transform: translate(-50%, calc(-50% - 25px)); }
-  100% { transform: translate(calc(-50% + 25px), -50%); }
+  0% {
+    transform: translate(calc(-50% + 25px), -50%);
+  }
+  25% {
+    transform: translate(-50%, calc(-50% + 25px));
+  }
+  50% {
+    transform: translate(calc(-50% - 25px), -50%);
+  }
+  75% {
+    transform: translate(-50%, calc(-50% - 25px));
+  }
+  100% {
+    transform: translate(calc(-50% + 25px), -50%);
+  }
 }
 
 .sat-title {
@@ -1058,6 +1244,22 @@ const getRcsClass = (rcs: string | undefined): string => {
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+    }
+
+    &.clickable-company {
+      cursor: pointer;
+      color: #a855f7;
+      transition: all 0.2s ease;
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: rgba(168, 85, 247, 0.1);
+      border: 1px solid rgba(168, 85, 247, 0.2);
+
+      &:hover {
+        color: #c084fc;
+        background: rgba(168, 85, 247, 0.2);
+        border-color: #a855f7;
+      }
     }
   }
 
@@ -1222,9 +1424,15 @@ const getRcsClass = (rcs: string | undefined): string => {
       color: #fff;
 
       &.orbit-type {
-        &.leo { color: #00ff88; }
-        &.meo { color: #00d4ff; }
-        &.geo { color: #b366e8; }
+        &.leo {
+          color: #00ff88;
+        }
+        &.meo {
+          color: #00d4ff;
+        }
+        &.geo {
+          color: #b366e8;
+        }
       }
     }
   }
@@ -1296,8 +1504,12 @@ const getRcsClass = (rcs: string | undefined): string => {
     font-weight: 500;
     color: #fff;
 
-    &.warning { color: #ffc107; }
-    &.old { color: #ff6b6b; }
+    &.warning {
+      color: #ffc107;
+    }
+    &.old {
+      color: #ff6b6b;
+    }
   }
 }
 
@@ -1361,8 +1573,15 @@ const getRcsClass = (rcs: string | undefined): string => {
 }
 
 @keyframes pulse-dot {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.3); opacity: 0.7; }
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.3);
+    opacity: 0.7;
+  }
 }
 
 .decay-warning {
@@ -1423,8 +1642,12 @@ const getRcsClass = (rcs: string | undefined): string => {
 }
 
 @keyframes slow-spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .empty-state p {
@@ -1478,8 +1701,12 @@ const getRcsClass = (rcs: string | undefined): string => {
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 // 折叠动画

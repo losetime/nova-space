@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   # 后端服务 - 连接共享数据库
   backend:
@@ -19,8 +17,6 @@ services:
       - JWT_EXPIRES_IN=7d
       - PORT=3001
       - FRONTEND_URL=http://47.236.101.87
-      - SPACE_TRACK_USERNAME=${SPACE_TRACK_USERNAME}
-      - SPACE_TRACK_PASSWORD=${SPACE_TRACK_PASSWORD}
     volumes:
       - ./backend-nest/cache:/app/cache
       - ./backend-nest/data:/app/data

@@ -776,4 +776,37 @@ export const milestoneApi = {
   delete: (id: number) => api.delete<ApiResponse<{ success: boolean }>>(`/milestones/${id}`),
 }
 
+// 公司
+export interface CompanyStats {
+  operatorCount: number
+  contractorCount: number
+  manufacturerCount: number
+}
+
+export interface SatelliteBrief {
+  noradId: string
+  name: string
+}
+
+export interface CompanyDetail {
+  name: string
+  country: string | null
+  foundedYear: number | null
+  website: string | null
+  logoUrl: string | null
+  description: string | null
+  stats: CompanyStats
+  satellites: {
+    asOperator: SatelliteBrief[]
+    asContractor: SatelliteBrief[]
+    asManufacturer: SatelliteBrief[]
+  }
+}
+
+// 公司 API
+export const companyApi = {
+  // 获取公司详情
+  getDetail: (name: string) => api.get<ApiResponse<CompanyDetail>>(`/companies/${encodeURIComponent(name)}`),
+}
+
 export default api
