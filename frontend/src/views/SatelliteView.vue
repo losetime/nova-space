@@ -1029,6 +1029,16 @@ function handleFavoriteChange(noradId: string, favorited: boolean) {
   favoritedIds.value = new Set(favoritedIds.value)
 }
 
+// 监听卫星数据加载状态，当就绪时关闭 loading
+watch(
+  () => localSatellites.state.value.status,
+  (status) => {
+    if (status === 'ready' || status === 'error') {
+      loading.value = false
+    }
+  }
+)
+
 // 延迟初始化 - 先渲染页面，再加载数据
 onMounted(async () => {
   // 使用 requestAnimationFrame 确保 DOM 已渲染
@@ -1041,12 +1051,6 @@ onMounted(async () => {
 
     // 加载 TLE 数据并初始化本地计算
     localSatellites.loadTLEData()
-
-    
-    // 延迟隐藏 loading，确保 Cesium 渲染完成
-    setTimeout(() => {
-      loading.value = false
-    }, 300)
   })
 
   // 加载国家列表
