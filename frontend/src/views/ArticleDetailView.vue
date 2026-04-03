@@ -165,6 +165,16 @@ const loadArticle = async () => {
   try {
     const res = await educationApi.getArticle(id)
     article.value = res.data.data
+
+    // 检查收藏状态（需要登录）
+    if (userStore.isLoggedIn && article.value) {
+      try {
+        const collectRes = await educationApi.isCollected(article.value.id)
+        isCollected.value = collectRes.data.data.isCollected
+      } catch {
+        // 静默失败，不影响文章加载
+      }
+    }
   } catch (error) {
     console.error('加载文章失败:', error)
     article.value = null

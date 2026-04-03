@@ -225,7 +225,11 @@ export const educationApi = {
 
   // 收藏/取消收藏文章
   toggleCollect: (id: string | number) =>
-    api.post<ApiResponse<{ collected: boolean }>>(`/education/articles/${id}/collect`),
+    api.post<ApiResponse<{ isCollected: boolean }>>(`/education/articles/${id}/collect`),
+
+  // 检查文章是否已收藏
+  isCollected: (id: string | number) =>
+    api.get<ApiResponse<{ isCollected: boolean }>>(`/education/articles/${id}/collected`),
 
   // 获取每日问答
   getDailyQuiz: () => api.get<ApiResponse<Quiz>>('/education/quiz/daily'),
