@@ -346,10 +346,8 @@ async function handleRegister() {
         background: rgba(255, 255, 255, 0.08) !important;
       }
 
-      // 修复浏览器自动填充背景色
       &:-webkit-autofill {
-        -webkit-box-shadow: 0 0 0px 1000px rgba(255, 255, 255, 0.05) inset;
-        -webkit-text-fill-color: #fff;
+        -webkit-box-shadow: 0 0 0 1000px #1a1a2e inset;
       }
     }
 
@@ -368,10 +366,8 @@ async function handleRegister() {
       .ant-input {
         background: transparent !important;
 
-        // 修复浏览器自动填充背景色
         &:-webkit-autofill {
-          -webkit-box-shadow: 0 0 0px 1000px rgba(255, 255, 255, 0.05) inset;
-          -webkit-text-fill-color: #fff;
+          -webkit-box-shadow: 0 0 0 1000px #1a1a2e inset;
         }
       }
     }
