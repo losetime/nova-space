@@ -16,6 +16,9 @@ export default defineConfig({
     },
   },
   assetsInclude: ['**/*.glb'],
+  worker: {
+    format: 'es'
+  },
   server: {
     port: 5174,
     open: true,
