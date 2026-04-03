@@ -478,8 +478,9 @@ export interface TLEResponse {
 // 卫星 API
 export const satelliteApi = {
   // 获取全量 TLE 数据（用于前端本地计算）
+  // 注意：TLE 数据量较大（约 4.5MB），需要更长的超时时间
   getTLEs: () =>
-    api.get<ApiResponse<TLEResponse>>('/satellites/tle'),
+    api.get<ApiResponse<TLEResponse>>('/satellites/tle', { timeout: 60000 }),
 
   // 获取卫星详细信息（推荐）
   getDetail: (noradId: string | number) =>
