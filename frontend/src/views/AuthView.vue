@@ -345,6 +345,12 @@ async function handleRegister() {
         box-shadow: 0 0 0 2px rgba(0, 212, 255, 0.1);
         background: rgba(255, 255, 255, 0.08) !important;
       }
+
+      // 修复浏览器自动填充背景色
+      &:-webkit-autofill {
+        -webkit-box-shadow: 0 0 0px 1000px rgba(255, 255, 255, 0.05) inset;
+        -webkit-text-fill-color: #fff;
+      }
     }
 
     .ant-input-affix-wrapper {
@@ -361,6 +367,12 @@ async function handleRegister() {
 
       .ant-input {
         background: transparent !important;
+
+        // 修复浏览器自动填充背景色
+        &:-webkit-autofill {
+          -webkit-box-shadow: 0 0 0px 1000px rgba(255, 255, 255, 0.05) inset;
+          -webkit-text-fill-color: #fff;
+        }
       }
     }
 
