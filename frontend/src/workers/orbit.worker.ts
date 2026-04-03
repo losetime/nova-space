@@ -133,4 +133,3 @@ function computePositions(timestamp: number) {
   })
 }
 
-export {}
