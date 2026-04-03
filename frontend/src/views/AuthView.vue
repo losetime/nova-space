@@ -331,7 +331,7 @@ async function handleRegister() {
 
     .ant-input,
     .ant-input-password {
-      background: rgba(255, 255, 255, 0.05);
+      background: rgba(255, 255, 255, 0.05) !important;
       border-color: rgba(255, 255, 255, 0.1);
       color: #fff;
 
@@ -343,11 +343,12 @@ async function handleRegister() {
       &:focus {
         border-color: #00d4ff;
         box-shadow: 0 0 0 2px rgba(0, 212, 255, 0.1);
+        background: rgba(255, 255, 255, 0.08) !important;
       }
     }
 
     .ant-input-affix-wrapper {
-      background: rgba(255, 255, 255, 0.05);
+      background: rgba(255, 255, 255, 0.05) !important;
       border-color: rgba(255, 255, 255, 0.1);
 
       &:hover,
@@ -355,10 +356,11 @@ async function handleRegister() {
       &.ant-input-affix-wrapper-focused {
         border-color: #00d4ff;
         box-shadow: 0 0 0 2px rgba(0, 212, 255, 0.1);
+        background: rgba(255, 255, 255, 0.08) !important;
       }
 
       .ant-input {
-        background: transparent;
+        background: transparent !important;
       }
     }
 
