@@ -345,10 +345,6 @@ async function handleRegister() {
         box-shadow: 0 0 0 2px rgba(0, 212, 255, 0.1);
         background: rgba(255, 255, 255, 0.08) !important;
       }
-
-      &:-webkit-autofill {
-        -webkit-box-shadow: 0 0 0 1000px #1a1a2e inset;
-      }
     }
 
     .ant-input-affix-wrapper {
@@ -365,10 +361,6 @@ async function handleRegister() {
 
       .ant-input {
         background: transparent !important;
-
-        &:-webkit-autofill {
-          -webkit-box-shadow: 0 0 0 1000px #1a1a2e inset;
-        }
       }
     }
 
