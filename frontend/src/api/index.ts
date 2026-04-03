@@ -231,6 +231,14 @@ export const educationApi = {
   isCollected: (id: string | number) =>
     api.get<ApiResponse<{ isCollected: boolean }>>(`/education/articles/${id}/collected`),
 
+  // 点赞/取消点赞文章
+  toggleLike: (id: string | number) =>
+    api.post<ApiResponse<{ isLiked: boolean; likes: number }>>(`/education/articles/${id}/like`),
+
+  // 检查文章是否已点赞
+  isLiked: (id: string | number) =>
+    api.get<ApiResponse<{ isLiked: boolean }>>(`/education/articles/${id}/liked`),
+
   // 获取每日问答
   getDailyQuiz: () => api.get<ApiResponse<Quiz>>('/education/quiz/daily'),
 

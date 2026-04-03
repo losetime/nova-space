@@ -5,6 +5,7 @@ import { Article } from './entities/article.entity';
 import { Quiz } from './entities/quiz.entity';
 import { QuizAnswer } from './entities/quiz-answer.entity';
 import { ArticleCollect } from './entities/article-collect.entity';
+import { ArticleLike } from './entities/article-like.entity';
 import { CreateArticleDto } from './dto/create-article.dto';
 import { SubmitAnswerDto } from './dto/submit-answer.dto';
 
@@ -19,6 +20,8 @@ export class EducationService {
     private quizAnswerRepository: Repository<QuizAnswer>,
     @InjectRepository(ArticleCollect)
     private articleCollectRepository: Repository<ArticleCollect>,
+    @InjectRepository(ArticleLike)
+    private articleLikeRepository: Repository<ArticleLike>,
   ) {}
 
   // 获取文章列表
@@ -218,5 +221,41 @@ export class EducationService {
     }));
 
     return { data, total };
+  }
+
+  async toggleLike(
+    userId: string,
+    articleId: number,
+  ): Promise<{ isLiked: boolean; likes: number }> {
+    const existing = await this.articleLikeRepository.findOne({
+      where: { userId, articleId },
+    });
+
+    if (existing) {
+      await this.articleLikeRepository.remove(existing);
+      await this.articleRepository.decrement({ id: articleId }, 'likes', 1);
+      const article = await this.articleRepository.findOne({
+        where: { id: articleId },
+      });
+      return { isLiked: false, likes: article?.likes || 0 };
+    } else {
+      const like = this.articleLikeRepository.create({
+        userId,
+        articleId,
+      });
+      await this.articleLikeRepository.save(like);
+      await this.articleRepository.increment({ id: articleId }, 'likes', 1);
+      const article = await this.articleRepository.findOne({
+        where: { id: articleId },
+      });
+      return { isLiked: true, likes: article?.likes || 1 };
+    }
+  }
+
+  async isLiked(userId: string, articleId: number): Promise<boolean> {
+    const count = await this.articleLikeRepository.count({
+      where: { userId, articleId },
+    });
+    return count > 0;
   }
 }

@@ -49,7 +49,12 @@
       <!-- 底部操作 -->
       <footer class="article-footer">
         <div class="actions">
-          <a-button type="text" :class="{ liked: isLiked }" @click="toggleLike">
+          <a-button 
+            type="text" 
+            :class="{ liked: isLiked }" 
+            :loading="likeLoading"
+            @click="toggleLike"
+          >
             <template #icon><LikeOutlined /></template>
             {{ article.likes || 0 }}
           </a-button>
@@ -129,6 +134,7 @@ const loading = ref(true)
 const isLiked = ref(false)
 const isCollected = ref(false)
 const collectLoading = ref(false)
+const likeLoading = ref(false)
 
 // 分类映射
 const categoryMap: Record<string, { label: string; color: string }> = {
@@ -174,6 +180,13 @@ const loadArticle = async () => {
       } catch {
         // 静默失败，不影响文章加载
       }
+
+      try {
+        const likeRes = await educationApi.isLiked(article.value.id)
+        isLiked.value = likeRes.data.data.isLiked
+      } catch {
+        // 静默失败，不影响文章加载
+      }
     }
   } catch (error) {
     console.error('加载文章失败:', error)
@@ -189,12 +202,29 @@ const goBack = () => {
 }
 
 // 点赞
-const toggleLike = () => {
-  isLiked.value = !isLiked.value
-  if (article.value) {
-    article.value.likes = (article.value.likes || 0) + (isLiked.value ? 1 : -1)
+const toggleLike = async () => {
+  if (!userStore.isLoggedIn) {
+    message.warning('请先登录')
+    router.push('/login')
+    return
   }
-  message.success(isLiked.value ? '已点赞' : '已取消点赞')
+
+  if (!article.value || likeLoading.value) return
+
+  likeLoading.value = true
+  try {
+    const res = await educationApi.toggleLike(article.value.id)
+    isLiked.value = res.data.data.isLiked
+    if (article.value) {
+      article.value.likes = res.data.data.likes
+    }
+    message.success(isLiked.value ? '已点赞' : '已取消点赞')
+  } catch (error: any) {
+    console.error('点赞失败:', error)
+    message.error(error.response?.data?.message || '操作失败')
+  } finally {
+    likeLoading.value = false
+  }
 }
 
 // 分享

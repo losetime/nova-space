@@ -103,4 +103,26 @@ export class EducationController {
       parseInt(limit || '10', 10),
     );
   }
+
+  @Post('articles/:id/like')
+  @UseGuards(JwtAuthGuard)
+  async toggleLike(
+    @Request() req: { user: { id: string } },
+    @Param('id') id: string,
+  ) {
+    return this.educationService.toggleLike(req.user.id, parseInt(id, 10));
+  }
+
+  @Get('articles/:id/liked')
+  @UseGuards(JwtAuthGuard)
+  async isLiked(
+    @Request() req: { user: { id: string } },
+    @Param('id') id: string,
+  ) {
+    const isLiked = await this.educationService.isLiked(
+      req.user.id,
+      parseInt(id, 10),
+    );
+    return { isLiked };
+  }
 }
