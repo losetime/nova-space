@@ -144,7 +144,7 @@ import {
 } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import { satelliteApi, type SunlightAnalysis, type SunlightStatus, type OrbitSegment } from '@/api'
-import type { Satellite } from '@/hooks/useWebSocket'
+import type { Satellite } from '@/hooks/useLocalSatellites'
 
 const props = defineProps<{
   satellite: Satellite | null

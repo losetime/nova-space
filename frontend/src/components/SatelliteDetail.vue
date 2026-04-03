@@ -592,7 +592,7 @@ import {
   TeamOutlined,
   ToolOutlined,
 } from "@ant-design/icons-vue";
-import type { Satellite } from "@/hooks/useWebSocket";
+import type { Satellite } from "@/hooks/useLocalSatellites";
 import FlagIcon from "@/components/FlagIcon.vue";
 import { satelliteApi } from "@/api";
 import { useUserStore } from "@/stores/user";

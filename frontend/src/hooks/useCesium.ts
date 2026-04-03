@@ -435,7 +435,7 @@ class SatelliteRenderer {
   }
 
   // 批量更新卫星位置（分批异步更新优化）
-  updateSatellites(satellites: Satellite[], batchSize: number = 500) {
+  updateSatellites(satellites: Satellite[], batchSize: number = 2000) {
     const currentIds = new Set(satellites.map((s) => s.noradId));
 
     // 1. 同步删除不在新列表中的卫星（数量通常很少）

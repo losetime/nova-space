@@ -9,7 +9,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # 安装依赖（包括 devDependencies 用于构建）
-RUN npm ci
+RUN npm install
 
 # 复制源代码
 COPY . .
@@ -29,13 +29,10 @@ ENV NODE_ENV=production
 COPY package*.json ./
 
 # 只安装生产依赖
-RUN npm ci --only=production
+RUN npm install --omit=dev
 
 # 从构建阶段复制编译后的文件
 COPY --from=builder /app/dist ./dist
-
-# 创建数据目录
-RUN mkdir -p /app/cache /app/data
 
 # 暴露端口
 EXPOSE 3001

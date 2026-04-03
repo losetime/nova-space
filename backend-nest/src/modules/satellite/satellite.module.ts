@@ -5,7 +5,6 @@ import { SatelliteDataService } from './services/satellite-data.service';
 import { OrbitCalculatorService } from './services/orbit-calculator.service';
 import { SatelliteFavoriteService } from './services/satellite-favorite.service';
 import { EsaDiscosService } from './services/esa-discos.service';
-import { SatelliteGateway } from './gateways/satellite.gateway';
 import { UserFavorite } from '../../common/entities/user-favorite.entity';
 import { SatelliteTle, SatelliteMetadataEntity } from './entities';
 
@@ -23,7 +22,6 @@ import { SatelliteTle, SatelliteMetadataEntity } from './entities';
     OrbitCalculatorService,
     SatelliteFavoriteService,
     EsaDiscosService,
-    SatelliteGateway,
   ],
   exports: [
     OrbitCalculatorService,

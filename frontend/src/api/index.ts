@@ -445,8 +445,30 @@ export interface SatelliteDetail {
   orbit: SatelliteOrbit
 }
 
+// TLE 数据（用于前端本地计算）
+export interface TLEData {
+  noradId: string
+  name: string
+  line1: string
+  line2: string
+  countryCode?: string
+  mission?: string
+  operator?: string
+}
+
+// TLE 响应
+export interface TLEResponse {
+  tles: TLEData[]
+  count: number
+  updatedAt: string
+}
+
 // 卫星 API
 export const satelliteApi = {
+  // 获取全量 TLE 数据（用于前端本地计算）
+  getTLEs: () =>
+    api.get<ApiResponse<TLEResponse>>('/satellites/tle'),
+
   // 获取卫星详细信息（推荐）
   getDetail: (noradId: string | number) =>
     api.get<ApiResponse<SatelliteDetail>>(`/satellites/${noradId}/detail`),

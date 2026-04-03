@@ -1,8 +1,8 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { WsAdapter } from '@nestjs/platform-ws';
 import { AppModule } from './app.module';
+import compression from 'compression';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
@@ -13,8 +13,8 @@ async function bootstrap() {
   const port = configService.get<number>('app.port') || 3001;
   const frontendUrl = configService.get<string>('app.frontend.url');
 
-  // 启用 WebSocket 适配器
-  app.useWebSocketAdapter(new WsAdapter(app));
+  // 启用 gzip 压缩
+  app.use(compression());
 
   // 全局验证管道
   app.useGlobalPipes(
@@ -38,7 +38,6 @@ async function bootstrap() {
 
   await app.listen(port);
   logger.log(`🚀 Nova Space Backend running on: http://localhost:${port}/api`);
-  logger.log(`📡 WebSocket available at: ws://localhost:${port}/ws/satellites`);
 }
 
 void bootstrap();

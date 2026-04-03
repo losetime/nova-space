@@ -107,6 +107,33 @@ export class SatelliteDataService implements OnModuleInit {
   }
 
   /**
+   * 获取全量TLE数据（用于前端本地计算）
+   * 包含筛选字段
+   */
+  getAllTLEsForClient(): {
+    noradId: string;
+    name: string;
+    line1: string;
+    line2: string;
+    countryCode?: string;
+    mission?: string;
+    operator?: string;
+  }[] {
+    return this.cachedTLEs.map((tle) => {
+      const meta = this.cachedMetadata.get(tle.noradId);
+      return {
+        noradId: tle.noradId,
+        name: tle.name,
+        line1: tle.line1,
+        line2: tle.line2,
+        countryCode: meta?.countryCode,
+        mission: meta?.mission,
+        operator: meta?.operator,
+      };
+    });
+  }
+
+  /**
    * 获取卫星元数据（从数据库）
    */
   async getSatelliteMetadata(

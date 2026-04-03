@@ -125,6 +125,25 @@ export class SatelliteController {
   }
 
   /**
+   * 获取全量TLE数据（用于前端本地计算）
+   * GET /api/satellites/tle
+   */
+  @Get('tle')
+  getAllTLEs() {
+    this.logger.log('获取全量TLE数据');
+    const tles = this.satelliteDataService.getAllTLEsForClient();
+    return {
+      code: 0,
+      data: {
+        tles,
+        count: tles.length,
+        updatedAt: new Date().toISOString(),
+      },
+      message: 'success',
+    };
+  }
+
+  /**
    * 获取国家列表（含卫星数量）
    * GET /api/satellites/countries
    */

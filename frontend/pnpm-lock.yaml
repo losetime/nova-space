@@ -26,9 +26,15 @@ importers:
       cesium:
         specifier: ^1.139.0
         version: 1.139.1
+      dayjs:
+        specifier: ^1.11.13
+        version: 1.11.20
       dompurify:
         specifier: ^3.3.3
         version: 3.3.3
+      echarts:
+        specifier: ^6.0.0
+        version: 6.0.0
       flag-icons:
         specifier: ^7.5.0
         version: 7.5.0
@@ -38,6 +44,9 @@ importers:
       pinia:
         specifier: ^3.0.4
         version: 3.0.4(typescript@5.9.3)(vue@3.5.31(typescript@5.9.3))
+      satellite.js:
+        specifier: ^7.0.0
+        version: 7.0.0
       vite-plugin-cesium:
         specifier: ^1.2.23
         version: 1.2.23(cesium@1.139.1)(rollup@4.60.0)(vite@7.3.1(@types/node@24.12.0)(jiti@2.6.1)(sass-embedded@1.98.0)(sass@1.98.0)(yaml@2.8.3))
@@ -2217,6 +2226,9 @@ packages:
     resolution: {integrity: sha512-+4N/u9dZ4PrgzGgPlKnaaRQx64RO0JBKs9sDhQ2pLgN6JQZ25uPQZKQYaBJU48Kd5BxgXoJ4e09Dq7nMcOUW3A==}
     engines: {node: '>=14.0.0'}
     hasBin: true
+
+  satellite.js@7.0.0:
+    resolution: {integrity: sha512-jrWZBytZgpzcfWpny6jsV7/StWKmie6JlDNpQ53RjbIXVDJPleQw8y+Cs/ZXaPIs720NFgQQLyvqYTbpsBTXKg==}
 
   scroll-into-view-if-needed@2.2.31:
     resolution: {integrity: sha512-dGCXy99wZQivjmjIqihaBQNjryrz5rueJY7eHfTdyWEiR4ttYpsajb14rn9s5d4DY4EcY6+4+U/maARBXJedkA==}
@@ -4540,6 +4552,8 @@ snapshots:
     optionalDependencies:
       '@parcel/watcher': 2.5.6
     optional: true
+
+  satellite.js@7.0.0: {}
 
   scroll-into-view-if-needed@2.2.31:
     dependencies:

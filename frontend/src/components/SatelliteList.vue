@@ -84,7 +84,7 @@
 import { computed, ref, watch } from 'vue'
 import { useVirtualList } from '@vueuse/core'
 import { SearchOutlined, CloseCircleOutlined, GlobalOutlined, ArrowUpOutlined } from '@ant-design/icons-vue'
-import type { Satellite } from '@/hooks/useWebSocket'
+import type { Satellite } from '@/hooks/useLocalSatellites'
 
 interface Props {
   satellites: Satellite[]

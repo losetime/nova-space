@@ -20,20 +20,11 @@
         </div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon connection" :class="{ connected: status === '已连接' }">
-          <ThunderboltOutlined />
-        </div>
-        <div class="stat-info">
-          <span class="stat-value">{{ status }}</span>
-          <span class="stat-label">数据链路</span>
-        </div>
-      </div>
-      <div class="stat-card">
         <div class="stat-icon time">
           <ClockCircleOutlined />
         </div>
         <div class="stat-info">
-          <span class="stat-value">{{ lastUpdate }}</span>
+          <span class="stat-value">{{ formattedLastUpdate }}</span>
           <span class="stat-label">最后更新</span>
         </div>
       </div>
@@ -426,7 +417,7 @@ import PassPrediction from '@/components/PassPrediction.vue'
 import SunlightAnalysis from '@/components/SunlightAnalysis.vue'
 import FlagIcon from '@/components/FlagIcon.vue'
 import { useCesium, type ColorSchemeType } from '@/hooks/useCesium'
-import { useWebSocket } from '@/hooks/useWebSocket'
+import { useLocalSatellites } from '@/hooks/useLocalSatellites'
 import { usePanel } from '@/hooks/usePanel'
 import { useSatellite } from '@/hooks/useSatellite'
 import { satelliteApi } from '@/api'
@@ -730,7 +721,7 @@ const toggleFilterSection = (section: 'orbit' | 'country' | 'mission' | 'favorit
 
 // 初始化 hooks
 const cesium = useCesium()
-const websocket = useWebSocket()
+const localSatellites = useLocalSatellites()
 const {
   activeLeftPanel,
   activeRightPanel,
@@ -739,8 +730,19 @@ const {
   showSatelliteDetail
 } = usePanel()
 
-// 解构 websocket 数据
-const { status, satellites, satelliteCount, lastUpdate } = websocket
+// 解构本地卫星数据
+const { status, satellites, satelliteCount, lastUpdate } = localSatellites
+
+// 格式化最后更新时间
+const formattedLastUpdate = computed(() => {
+  if (!lastUpdate.value) return '--'
+  
+  const updateTime = new Date(lastUpdate.value)
+  const hours = updateTime.getHours().toString().padStart(2, '0')
+  const minutes = updateTime.getMinutes().toString().padStart(2, '0')
+  const seconds = updateTime.getSeconds().toString().padStart(2, '0')
+  return `${hours}:${minutes}:${seconds}`
+})
 
 // 筛选后的卫星列表
 const filteredSatellites = computed(() => {
@@ -778,7 +780,7 @@ const filteredSatellites = computed(() => {
 })
 
 // 卫星选择逻辑
-const { selectedSatellite, selectedMetadata, handleSelectSatellite: baseHandleSelectSatellite } = useSatellite(cesium, websocket)
+const { selectedSatellite, selectedMetadata, handleSelectSatellite: baseHandleSelectSatellite } = useSatellite(cesium, localSatellites)
 
 // 子组件引用
 const orbitPredictionRef = ref<InstanceType<typeof OrbitPrediction> | null>(null)
@@ -819,6 +821,8 @@ const getRightPanelIcon = () => {
 
 // 选择卫星后显示详情
 const handleSelectSatellite = (satellite: typeof selectedSatellite.value) => {
+  if (!satellite) return
+
   // 清除之前预测的轨道和过境轨迹
   if (cesium) {
     cesium.clearAllPredictedOrbits()
@@ -1035,8 +1039,8 @@ onMounted(async () => {
     // 设置卫星点击回调
     cesium.setOnSatelliteClick(handleSatelliteClick)
 
-    // 初始化 WebSocket
-    websocket.connect()
+    // 加载 TLE 数据并初始化本地计算
+    localSatellites.loadTLEData()
 
     
     // 延迟隐藏 loading，确保 Cesium 渲染完成

@@ -1,10 +1,10 @@
 import { ref } from 'vue'
-import type { Satellite } from './useWebSocket'
+import type { Satellite } from './useLocalSatellites'
 import { satelliteApi, type SatelliteDetail } from '@/api'
 
 export function useSatellite(
   cesium: any,
-  websocket: any
+  localSatellites: any
 ) {
   const selectedSatellite = ref<Satellite | null>(null)
   const selectedMetadata = ref<SatelliteDetail['metadata']>(null)
@@ -40,11 +40,15 @@ export function useSatellite(
       selectedMetadata.value = metadata
 
       // 更新卫星位置（使用最新计算的位置）
-      // 后端返回的 position 结构: { noradId, name, position: { lat, lng, alt }, timestamp }
-      if (position?.position && selectedSatellite.value) {
+      // 后端返回的 position 结构: { noradId, name, lat, lng, alt, velocity? }
+      if (position && selectedSatellite.value) {
         selectedSatellite.value = {
           ...selectedSatellite.value,
-          position: position.position
+          position: {
+            lat: position.lat,
+            lng: position.lng,
+            alt: position.alt,
+          }
         }
       }
 
