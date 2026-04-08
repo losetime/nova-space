@@ -83,6 +83,12 @@ class SatelliteRenderer {
   // 轨道类型缓存（避免每次更新都重新计算）
   private orbitTypeCache: Map<string, string> = new Map();
 
+  // 屏幕位置缓存（用于悬停检测优化，lazy 计算）
+  private screenPositionCache: Map<string, { x: number; y: number }> = new Map();
+  private screenGridIndex: Map<string, Set<string>> = new Map();
+  private screenCacheDirty = true;
+  private readonly GRID_SIZE = 50;
+
   // 缓存上一次的卫星 ID 集合（用于增量更新）
   private lastSatelliteIds: Set<string> = new Set();
 
@@ -257,34 +263,33 @@ class SatelliteRenderer {
     this.onSatelliteClick = callback;
   }
 
-  // 设置悬停事件处理（暂时禁用）
+  // 设置悬停事件处理
   private setupHoverHandler() {
     if (this.hoverHandler) {
       this.hoverHandler.destroy();
     }
 
-    // 悬停功能暂时关闭
-    // this.hoverHandler = new Cesium.ScreenSpaceEventHandler(this.viewer.scene.canvas);
+    this.hoverHandler = new Cesium.ScreenSpaceEventHandler(this.viewer.scene.canvas);
 
-    // const debouncedHandler = debounce((movement: Cesium.ScreenSpaceEventHandler.MotionEvent) => {
-    //   const mousePosition = movement.endPosition;
-    //   const nearbySatellite = this.findNearbySatelliteForHover(mousePosition);
+    const debouncedHandler = debounce((movement: Cesium.ScreenSpaceEventHandler.MotionEvent) => {
+      const mousePosition = movement.endPosition;
+      const nearbySatellite = this.findNearbySatelliteForHover(mousePosition);
 
-    //   if (nearbySatellite !== this.hoveredNoradId) {
-    //     if (this.hoveredNoradId) {
-    //       this.unhighlightSatellite(this.hoveredNoradId);
-    //     }
+      if (nearbySatellite !== this.hoveredNoradId) {
+        if (this.hoveredNoradId) {
+          this.unhighlightSatellite(this.hoveredNoradId);
+        }
 
-    //     if (nearbySatellite) {
-    //       this.highlightSatellite(nearbySatellite);
-    //       this.hoveredNoradId = nearbySatellite;
-    //     } else {
-    //       this.hoveredNoradId = null;
-    //     }
-    //   }
-    // }, 50);
+        if (nearbySatellite) {
+          this.highlightSatellite(nearbySatellite);
+          this.hoveredNoradId = nearbySatellite;
+        } else {
+          this.hoveredNoradId = null;
+        }
+      }
+    }, 50);
 
-    // this.hoverHandler.setInputAction(debouncedHandler, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+    this.hoverHandler.setInputAction(debouncedHandler, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
   }
 
   // 高亮卫星（变大、改变颜色、发光效果）
@@ -335,34 +340,83 @@ class SatelliteRenderer {
     }
   }
 
-  // 查找鼠标附近的卫星（直接遍历，用卫星实际位置计算屏幕坐标）
+  // 查找鼠标附近的卫星（使用屏幕网格索引优化，lazy 计算）
   private findNearbySatelliteForHover(screenPosition: Cesium.Cartesian2): string | null {
     const maxDistance = 20;
     let closestNoradId: string | null = null;
     let closestDistance = maxDistance;
 
-    for (const [noradId, satInfo] of this.satellitePositions.entries()) {
+    // 如果缓存过期，重新计算（lazy 计算）
+    if (this.screenCacheDirty) {
+      this.updateScreenGridIndex();
+      this.screenCacheDirty = false;
+    }
+
+    // 计算鼠标所在的网格
+    const gridX = Math.floor(screenPosition.x / this.GRID_SIZE);
+    const gridY = Math.floor(screenPosition.y / this.GRID_SIZE);
+
+    // 只查询周围 9 个网格（中心 + 8 个邻居）
+    const candidates: string[] = [];
+    for (let dx = -1; dx <= 1; dx++) {
+      for (let dy = -1; dy <= 1; dy++) {
+        const key = `${gridX + dx},${gridY + dy}`;
+        const gridSatellites = this.screenGridIndex.get(key);
+        if (gridSatellites) {
+          candidates.push(...gridSatellites);
+        }
+      }
+    }
+
+    // 只计算候选卫星的距离
+    for (const noradId of candidates) {
       if (noradId === this.selectedNoradId) continue;
 
+      const cachedPos = this.screenPositionCache.get(noradId);
+      if (!cachedPos) continue;
+
+      const distance = Math.sqrt(
+        Math.pow(cachedPos.x - screenPosition.x, 2) +
+        Math.pow(cachedPos.y - screenPosition.y, 2)
+      );
+
+      if (distance < closestDistance) {
+        closestDistance = distance;
+        closestNoradId = noradId;
+      }
+    }
+
+    return closestNoradId;
+  }
+
+  // 更新屏幕网格索引（用于悬停检测优化）
+  private updateScreenGridIndex() {
+    this.screenPositionCache.clear();
+    this.screenGridIndex.clear();
+
+    const canvas = this.viewer.scene.canvas;
+    const width = canvas.clientWidth;
+    const height = canvas.clientHeight;
+
+    for (const [noradId, satInfo] of this.satellitePositions.entries()) {
       const screenPos = Cesium.SceneTransforms.worldToWindowCoordinates(
         this.viewer.scene,
         satInfo.position
       );
 
-      if (screenPos) {
-        const distance = Math.sqrt(
-          Math.pow(screenPos.x - screenPosition.x, 2) +
-          Math.pow(screenPos.y - screenPosition.y, 2)
-        );
+      if (screenPos && screenPos.x >= 0 && screenPos.x <= width && screenPos.y >= 0 && screenPos.y <= height) {
+        this.screenPositionCache.set(noradId, { x: screenPos.x, y: screenPos.y });
 
-        if (distance < closestDistance) {
-          closestDistance = distance;
-          closestNoradId = noradId;
+        const gridX = Math.floor(screenPos.x / this.GRID_SIZE);
+        const gridY = Math.floor(screenPos.y / this.GRID_SIZE);
+        const key = `${gridX},${gridY}`;
+
+        if (!this.screenGridIndex.has(key)) {
+          this.screenGridIndex.set(key, new Set());
         }
+        this.screenGridIndex.get(key)!.add(noradId);
       }
     }
-
-    return closestNoradId;
   }
 
   // 更新经纬度网格索引
@@ -455,6 +509,7 @@ class SatelliteRenderer {
         // 所有批次完成，更新缓存和网格索引
         this.lastSatelliteIds = currentIds;
         this.updateLatLngGrid();
+        this.screenCacheDirty = true;  // 标记缓存过期，lazy 更新
       }
     };
 
@@ -606,6 +661,8 @@ class SatelliteRenderer {
     this.latLngGrid.clear();
     this.lastSatelliteIds.clear();
     this.orbitTypeCache.clear();
+    this.screenPositionCache.clear();
+    this.screenGridIndex.clear();
     this.deselectSatellite();
   }
 
@@ -641,6 +698,8 @@ class SatelliteRenderer {
     this.latLngGrid.clear();
     this.lastSatelliteIds.clear();
     this.orbitTypeCache.clear();
+    this.screenPositionCache.clear();
+    this.screenGridIndex.clear();
   }
 }
 
@@ -690,6 +749,9 @@ export function useCesium() {
         roll: 0,
       },
     });
+
+    // 启用 FPS 显示
+    viewer.value.scene.debugShowFramesPerSecond = true;
 
     // 初始化轨道线集合
     orbitCollection = new Cesium.PolylineCollection();
