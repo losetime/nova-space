@@ -167,8 +167,16 @@ Cesium 的 `scene.pick()` 实现：
 |------|------|
 | **悬停时 FPS** | ✅ 从 49 提升到 56 (+14.3%) |
 | **最低 FPS** | ✅ 从 19 提升到 56 (+195%) |
-| **内存占用** | ✅ 减少 ~450 KB |
-| **代码量** | ✅ 减少约 33 行 |
+| **内存占用** | ✅ 删除 latLngGrid，减少内存 |
+| **代码量** | ✅ 减少约 140 行 |
+
+### 后续优化
+
+已删除点击 fallback 和 latLngGrid，代码更简洁：
+- 删除 `findNearbySatellite` 方法（~96 行）
+- 删除 `findClickedSatellite` 方法（~9 行）
+- 删除 `updateLatLngGrid` 方法（~19 行）
+- 删除 `latLngGrid` 属性（~4 行）
 
 ### 注意事项
 
