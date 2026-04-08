@@ -80,6 +80,9 @@ class SatelliteRenderer {
   // 颜色分类
   private colorScheme: ColorSchemeType = 'orbit';
 
+  // 轨道类型缓存（避免每次更新都重新计算）
+  private orbitTypeCache: Map<string, string> = new Map();
+
   // 缓存上一次的卫星 ID 集合（用于增量更新）
   private lastSatelliteIds: Set<string> = new Set();
 
@@ -395,6 +398,7 @@ class SatelliteRenderer {
         }
         this.pointMap.delete(id);
         this.satellitePositions.delete(id);
+        this.orbitTypeCache.delete(id);
       }
     });
 
@@ -413,14 +417,10 @@ class SatelliteRenderer {
           sat.position.alt,
         );
 
-        const color = this.getSatelliteColor(sat);
-
         if (this.pointMap.has(sat.noradId)) {
+          // 已存在的卫星：只更新位置，不重新计算颜色
           const point = this.pointMap.get(sat.noradId)!;
           point.position = position;
-          if (sat.noradId !== this.selectedNoradId && sat.noradId !== this.hoveredNoradId) {
-            point.color = color;
-          }
 
           if (sat.noradId === this.selectedNoradId) {
             if (this.selectedModel) {
@@ -431,6 +431,11 @@ class SatelliteRenderer {
             }
           }
         } else {
+          // 新卫星：计算并缓存颜色
+          const orbitType = getOrbitType(sat.position.alt);
+          this.orbitTypeCache.set(sat.noradId, orbitType);
+          const color = ORBIT_COLORS[orbitType]?.color || this.DEFAULT_COLOR;
+
           const point = this.pointCollection!.add({
             position,
             pixelSize: this.DEFAULT_PIXEL_SIZE,
@@ -473,12 +478,14 @@ class SatelliteRenderer {
     this.refreshAllColors();
   }
 
-  // 刷新所有卫星颜色
+  // 刷新所有卫星颜色（切换颜色方案时调用）
   private refreshAllColors() {
     this.satellitePositions.forEach((satInfo, noradId) => {
       const point = this.pointMap.get(noradId);
       if (point && noradId !== this.selectedNoradId && noradId !== this.hoveredNoradId) {
-        const color = this.getSatelliteColor({ noradId, name: satInfo.name, position: { lng: 0, lat: 0, alt: satInfo.alt } });
+        // 使用缓存的轨道类型
+        const orbitType = this.orbitTypeCache.get(noradId) || getOrbitType(satInfo.alt);
+        const color = ORBIT_COLORS[orbitType]?.color || this.DEFAULT_COLOR;
         point.color = color;
       }
     });
@@ -598,6 +605,7 @@ class SatelliteRenderer {
     this.satellitePositions.clear();
     this.latLngGrid.clear();
     this.lastSatelliteIds.clear();
+    this.orbitTypeCache.clear();
     this.deselectSatellite();
   }
 
@@ -632,6 +640,7 @@ class SatelliteRenderer {
     this.satellitePositions.clear();
     this.latLngGrid.clear();
     this.lastSatelliteIds.clear();
+    this.orbitTypeCache.clear();
   }
 }
 
