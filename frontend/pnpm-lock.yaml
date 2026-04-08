@@ -38,6 +38,9 @@ importers:
       flag-icons:
         specifier: ^7.5.0
         version: 7.5.0
+      lodash-es:
+        specifier: ^4.17.21
+        version: 4.17.23
       marked:
         specifier: ^17.0.5
         version: 17.0.5

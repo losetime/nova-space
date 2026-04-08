@@ -16,7 +16,7 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - JWT_EXPIRES_IN=7d
       - PORT=3001
-      - FRONTEND_URL=http://47.236.101.87
+      - FRONTEND_URL=https://space.nuoweibd.com
     networks:
       - nova-network
     extra_hosts:
@@ -32,7 +32,8 @@ services:
     depends_on:
       - backend
     ports:
-      - "80:80"
+      # 宿主机:容器内
+      - "8080:80"
     networks:
       - nova-network
 
