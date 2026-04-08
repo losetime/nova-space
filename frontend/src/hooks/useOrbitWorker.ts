@@ -1,5 +1,5 @@
 import { ref, onUnmounted, shallowRef } from 'vue'
-import type { SatellitePosition, TLEData } from '@/workers/orbit.worker'
+import type { PositionData, SatelliteMetadata, TLEData } from '@/workers/orbit.worker'
 
 export interface OrbitWorkerState {
   isReady: boolean
@@ -11,7 +11,8 @@ export interface OrbitWorkerState {
 
 export function useOrbitWorker() {
   const worker = shallowRef<Worker | null>(null)
-  const positions = shallowRef<SatellitePosition[]>([])
+  const metadata = shallowRef<Record<string, SatelliteMetadata>>({})
+  const positions = shallowRef<PositionData[]>([])
   const state = ref<OrbitWorkerState>({
     isReady: false,
     isLoading: false,
@@ -39,6 +40,9 @@ export function useOrbitWorker() {
         state.value.satelliteCount = data.total
         console.log(`[OrbitWorker] 初始化完成，加载 ${data.total} 颗卫星`)
         startComputeLoop()
+      } else if (type === 'metadata') {
+        metadata.value = data
+        console.log(`[OrbitWorker] 收到元数据，${Object.keys(data).length} 颗卫星`)
       } else if (type === 'positions') {
         positions.value = data
         state.value.lastUpdate = e.data.timestamp
@@ -67,10 +71,8 @@ export function useOrbitWorker() {
       clearInterval(computeInterval)
     }
 
-    // 立即计算一次
     computePositions()
 
-    // 定时计算
     computeInterval = setInterval(() => {
       computePositions()
     }, intervalMs)
@@ -98,6 +100,8 @@ export function useOrbitWorker() {
     worker.value = null
     state.value.isReady = false
     state.value.isLoading = false
+    metadata.value = {}
+    positions.value = []
   }
 
   onUnmounted(() => {
@@ -105,6 +109,7 @@ export function useOrbitWorker() {
   })
 
   return {
+    metadata,
     positions,
     state,
     initWorker,

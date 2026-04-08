@@ -10,6 +10,20 @@ export interface TLEData {
   operator?: string
 }
 
+export interface SatelliteMetadata {
+  name: string
+  countryCode?: string
+  mission?: string
+  operator?: string
+}
+
+export interface PositionData {
+  noradId: string
+  lat: number
+  lng: number
+  alt: number
+}
+
 export interface SatellitePosition {
   noradId: string
   name: string
@@ -51,6 +65,8 @@ function initSatellites(tles: TLEData[]) {
   let successCount = 0
   let errorCount = 0
 
+  const metadata: Record<string, SatelliteMetadata> = {}
+
   tles.forEach((tle) => {
     try {
       const satrec = satellite.twoline2satrec(tle.line1, tle.line2)
@@ -62,6 +78,14 @@ function initSatellites(tles: TLEData[]) {
         mission: tle.mission,
         operator: tle.operator,
       })
+
+      metadata[tle.noradId] = {
+        name: tle.name,
+        countryCode: tle.countryCode,
+        mission: tle.mission,
+        operator: tle.operator,
+      }
+
       successCount++
     } catch {
       errorCount++
@@ -69,6 +93,7 @@ function initSatellites(tles: TLEData[]) {
   })
 
   isInitialized = true
+
   self.postMessage({
     type: 'ready',
     data: {
@@ -76,6 +101,11 @@ function initSatellites(tles: TLEData[]) {
       successCount,
       errorCount,
     },
+  })
+
+  self.postMessage({
+    type: 'metadata',
+    data: metadata,
   })
 }
 
@@ -86,7 +116,7 @@ function computePositions(timestamp: number) {
   }
 
   const now = new Date(timestamp)
-  const positions: SatellitePosition[] = []
+  const positions: PositionData[] = []
 
   satellites.forEach((sat) => {
     try {
@@ -108,16 +138,9 @@ function computePositions(timestamp: number) {
         ) {
           positions.push({
             noradId: sat.noradId,
-            name: sat.name,
-            position: {
-              lat: latitude,
-              lng: longitude,
-              alt: altitude,
-            },
-            timestamp: now.toISOString(),
-            countryCode: sat.countryCode,
-            mission: sat.mission,
-            operator: sat.operator,
+            lat: latitude,
+            lng: longitude,
+            alt: altitude,
           })
         }
       }
@@ -132,4 +155,3 @@ function computePositions(timestamp: number) {
     timestamp: now.toISOString(),
   })
 }
-

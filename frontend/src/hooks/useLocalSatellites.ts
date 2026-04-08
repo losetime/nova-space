@@ -26,7 +26,7 @@ export interface LocalSatellitesState {
 }
 
 export function useLocalSatellites() {
-  const { positions, state: workerState, initSatellites, terminate } = useOrbitWorker()
+  const { metadata, positions, state: workerState, initSatellites, terminate } = useOrbitWorker()
 
   const state = ref<LocalSatellitesState>({
     status: 'idle',
@@ -37,7 +37,29 @@ export function useLocalSatellites() {
   })
 
   const satellites = computed<Satellite[]>(() => {
-    return positions.value
+    const meta = metadata.value
+    const pos = positions.value
+
+    if (Object.keys(meta).length === 0 || pos.length === 0) {
+      return []
+    }
+
+    return pos.map((p) => {
+      const m = meta[p.noradId]
+      return {
+        noradId: p.noradId,
+        name: m?.name || '',
+        position: {
+          lat: p.lat,
+          lng: p.lng,
+          alt: p.alt,
+        },
+        timestamp: workerState.value.lastUpdate || new Date().toISOString(),
+        countryCode: m?.countryCode,
+        mission: m?.mission,
+        operator: m?.operator,
+      }
+    })
   })
 
   const satelliteCount = computed(() => {
