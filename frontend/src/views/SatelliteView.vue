@@ -393,8 +393,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, computed, shallowRef } from 'vue'
-import { debounce } from 'lodash-es'
+import { ref, watch, onMounted, computed } from 'vue'
 import {
   GlobalOutlined,
   ThunderboltOutlined,
@@ -418,7 +417,7 @@ import PassPrediction from '@/components/PassPrediction.vue'
 import SunlightAnalysis from '@/components/SunlightAnalysis.vue'
 import FlagIcon from '@/components/FlagIcon.vue'
 import { useCesium, type ColorSchemeType } from '@/hooks/useCesium'
-import { useLocalSatellites, type Satellite } from '@/hooks/useLocalSatellites'
+import { useLocalSatellites } from '@/hooks/useLocalSatellites'
 import { usePanel } from '@/hooks/usePanel'
 import { useSatellite } from '@/hooks/useSatellite'
 import { satelliteApi } from '@/api'
@@ -745,30 +744,27 @@ const formattedLastUpdate = computed(() => {
   return `${hours}:${minutes}:${seconds}`
 })
 
-// 筛选后的卫星列表 - 使用 shallowRef 避免深层响应式
-const filteredSatellites = shallowRef<Satellite[]>([])
-
-// 筛选纯函数
-function applyFilters(sats: Satellite[]): Satellite[] {
-  let result = sats
+// 筛选后的卫星列表
+const filteredSatellites = computed(() => {
+  let result = satellites.value
 
   // 按轨道类型筛选（alt 单位是米）
   if (filterType.value !== 'all') {
     result = result.filter(sat => {
       const alt = sat.position.alt
-      if (filterType.value === 'leo') return alt < 2000000
-      if (filterType.value === 'meo') return alt >= 2000000 && alt < 35000000
-      if (filterType.value === 'geo') return alt >= 35000000
+      if (filterType.value === 'leo') return alt < 2000000      // < 2000 km
+      if (filterType.value === 'meo') return alt >= 2000000 && alt < 35000000  // 2000-35000 km
+      if (filterType.value === 'geo') return alt >= 35000000    // >= 35000 km
       return true
     })
   }
 
-  // 按国家筛选
+  // 按国家筛选（直接使用卫星数据中的字段）
   if (selectedCountry.value) {
     result = result.filter(sat => sat.countryCode === selectedCountry.value)
   }
 
-  // 按任务筛选
+  // 按任务筛选（使用分类后的值进行比较）
   if (selectedMission.value) {
     result = result.filter(sat => categorizeMission(sat.mission) === selectedMission.value)
   }
@@ -781,12 +777,7 @@ function applyFilters(sats: Satellite[]): Satellite[] {
   }
 
   return result
-}
-
-// debounce 包装的筛选更新函数
-const updateFilteredSatellites = debounce(() => {
-  filteredSatellites.value = applyFilters(satellites.value)
-}, 100)
+})
 
 // 卫星选择逻辑
 const { selectedSatellite, selectedMetadata, handleSelectSatellite: baseHandleSelectSatellite } = useSatellite(cesium, localSatellites)
@@ -998,32 +989,16 @@ const handlePlayPassAnimation = async (data: {
   }
 }
 
-// 监听筛选条件变化，触发重新筛选
-watch([filterType, selectedCountry, selectedMission, favoriteFilter, favoritedIds], () => {
-  updateFilteredSatellites()
-})
-
-// 监听筛选结果变化，更新 Cesium 显示
+// 监听筛选后的卫星数据变化，更新 Cesium（移除 deep watch，只监听数组引用变化）
 watch(filteredSatellites, (newSatellites) => {
   if (newSatellites && newSatellites.length > 0) {
-    cesium.updateSatellitesFilter(newSatellites)
+    // 使用批量更新替代逐个更新，大幅提升性能
+    cesium.updateSatellites(newSatellites)
   } else {
+    // 当筛选结果为空时，清除所有卫星
     cesium.clearAllSatellites?.()
   }
 })
-
-// 监听 satellites 位置更新
-watch(satellites, (newSatellites, oldSatellites) => {
-  if (newSatellites && newSatellites.length > 0) {
-    // 如果之前是空的（首次加载），需要触发筛选
-    if (!oldSatellites || oldSatellites.length === 0) {
-      updateFilteredSatellites()
-    } else {
-      // 后续更新只更新位置
-      cesium.updateSatellitePositions(newSatellites)
-    }
-  }
-}, { deep: false })
 
 // 监听颜色分类变化
 watch(colorScheme, (newScheme) => {
@@ -1100,9 +1075,6 @@ onMounted(async () => {
 
   // 加载收藏列表
   await fetchFavorites()
-
-  // 初始化筛选结果
-  updateFilteredSatellites()
 })
 
 const toggleFullscreen = () => {
