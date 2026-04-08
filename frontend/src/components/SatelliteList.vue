@@ -56,15 +56,6 @@
               </span>
             </div>
           </div>
-
-          <!-- 状态指示 -->
-          <div class="sat-indicator">
-            <div class="signal-wave">
-              <span></span>
-              <span></span>
-              <span></span>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -457,50 +448,6 @@ const formatAlt = (alt: number): string => {
       font-size: 10px;
       color: rgba(0, 212, 255, 0.6);
     }
-  }
-}
-
-// 信号指示器
-.sat-indicator {
-  flex-shrink: 0;
-
-  .signal-wave {
-    display: flex;
-    align-items: flex-end;
-    gap: 2px;
-    height: 16px;
-
-    span {
-      width: 3px;
-      background: rgba(0, 255, 136, 0.5);
-      border-radius: 2px;
-
-      &:nth-child(1) {
-        height: 6px;
-        animation: wave 1.2s ease-in-out infinite;
-      }
-
-      &:nth-child(2) {
-        height: 10px;
-        animation: wave 1.2s ease-in-out 0.2s infinite;
-      }
-
-      &:nth-child(3) {
-        height: 14px;
-        animation: wave 1.2s ease-in-out 0.4s infinite;
-      }
-    }
-  }
-}
-
-@keyframes wave {
-  0%, 100% {
-    transform: scaleY(1);
-    opacity: 0.5;
-  }
-  50% {
-    transform: scaleY(0.6);
-    opacity: 1;
   }
 }
 
