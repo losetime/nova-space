@@ -65,11 +65,6 @@ class SatelliteRenderer {
   private hoveredNoradId: string | null = null;
   private hoverLabel: Cesium.Label | null = null;
 
-  // 经纬度网格索引（用于悬停检测优化）
-  private latLngGrid: Map<string, Set<string>> = new Map();
-  private readonly GRID_LAT_SIZE = 1;  // 1度纬度网格
-  private readonly GRID_LNG_SIZE = 1;  // 1度经度网格
-
   // 默认卫星样式
   private readonly DEFAULT_PIXEL_SIZE = 3;
   private readonly HOVER_PIXEL_SIZE = 8;
@@ -123,138 +118,15 @@ class SatelliteRenderer {
 
     // 处理点击事件
     this.clickHandler.setInputAction((event: Cesium.ScreenSpaceEventHandler.PositionedEvent) => {
-      const clickedPosition = event.position;
-      const pickedObject = this.viewer.scene.pick(clickedPosition);
+      const pickedObject = this.viewer.scene.pick(event.position);
 
-      // 检查是否点击了卫星点
-      if (pickedObject && pickedObject.primitive) {
-        // 遍历查找匹配的卫星
-        const clickedNoradId = this.findClickedSatellite(pickedObject.primitive);
-        if (clickedNoradId) {
-          const satInfo = this.satellitePositions.get(clickedNoradId);
-          if (satInfo && this.onSatelliteClick) {
-            this.onSatelliteClick(clickedNoradId, satInfo.name);
-          }
-          return;
-        }
-      }
-
-      // 如果没有直接点击到卫星点，尝试通过距离检测
-      const nearbySatellite = this.findNearbySatellite(clickedPosition);
-      if (nearbySatellite) {
-        const satInfo = this.satellitePositions.get(nearbySatellite);
+      if (pickedObject?.id) {
+        const satInfo = this.satellitePositions.get(pickedObject.id);
         if (satInfo && this.onSatelliteClick) {
-          this.onSatelliteClick(nearbySatellite, satInfo.name);
+          this.onSatelliteClick(pickedObject.id, satInfo.name);
         }
       }
     }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
-  }
-
-  // 查找被点击的卫星
-  private findClickedSatellite(primitive: any): string | null {
-    for (const [noradId, point] of this.pointMap.entries()) {
-      if (point === primitive) {
-        return noradId;
-      }
-    }
-    return null;
-  }
-
-  // 通过屏幕坐标查找附近的卫星（像素距离检测）
-  private findNearbySatellite(screenPosition: Cesium.Cartesian2): string | null {
-    const maxDistance = 15; // 最大点击距离（像素）
-    let closestNoradId: string | null = null;
-    let closestDistance = maxDistance;
-
-    // 1. 从屏幕位置获取相机射线
-    const ray = this.viewer.camera.getPickRay(screenPosition);
-    if (!ray) {
-      // 没有射线，遍历所有卫星
-      for (const [noradId, satInfo] of this.satellitePositions.entries()) {
-        const screenPos = Cesium.SceneTransforms.worldToWindowCoordinates(
-          this.viewer.scene,
-          satInfo.position
-        );
-        if (screenPos) {
-          const distance = Math.sqrt(
-            Math.pow(screenPos.x - screenPosition.x, 2) +
-            Math.pow(screenPos.y - screenPosition.y, 2)
-          );
-          if (distance < closestDistance) {
-            closestDistance = distance;
-            closestNoradId = noradId;
-          }
-        }
-      }
-      return closestNoradId;
-    }
-
-    // 2. 射线与地球交点 → 经纬度
-    const intersection = this.viewer.scene.globe.pick(ray, this.viewer.scene);
-    if (!intersection) {
-      // 没有击中地球，遍历所有卫星
-      for (const [noradId, satInfo] of this.satellitePositions.entries()) {
-        const screenPos = Cesium.SceneTransforms.worldToWindowCoordinates(
-          this.viewer.scene,
-          satInfo.position
-        );
-        if (screenPos) {
-          const distance = Math.sqrt(
-            Math.pow(screenPos.x - screenPosition.x, 2) +
-            Math.pow(screenPos.y - screenPosition.y, 2)
-          );
-          if (distance < closestDistance) {
-            closestDistance = distance;
-            closestNoradId = noradId;
-          }
-        }
-      }
-      return closestNoradId;
-    }
-
-    const cartographic = Cesium.Cartographic.fromCartesian(intersection);
-    const lat = Cesium.Math.toDegrees(cartographic.latitude);
-    const lng = Cesium.Math.toDegrees(cartographic.longitude);
-
-    // 3. 查询附近9个网格
-    const candidates: string[] = [];
-    const gridLat = Math.floor(lat);
-    const gridLng = Math.floor(lng);
-
-    for (let dLat = -1; dLat <= 1; dLat++) {
-      for (let dLng = -1; dLng <= 1; dLng++) {
-        const key = `${gridLat + dLat},${gridLng + dLng}`;
-        const gridSatellites = this.latLngGrid.get(key);
-        if (gridSatellites) {
-          candidates.push(...gridSatellites);
-        }
-      }
-    }
-
-    // 4. 只计算候选卫星的屏幕坐标
-    for (const noradId of candidates) {
-      const satInfo = this.satellitePositions.get(noradId);
-      if (!satInfo) continue;
-
-      const screenPos = Cesium.SceneTransforms.worldToWindowCoordinates(
-        this.viewer.scene,
-        satInfo.position
-      );
-
-      if (screenPos) {
-        const distance = Math.sqrt(
-          Math.pow(screenPos.x - screenPosition.x, 2) +
-          Math.pow(screenPos.y - screenPosition.y, 2)
-        );
-
-        if (distance < closestDistance) {
-          closestDistance = distance;
-          closestNoradId = noradId;
-        }
-      }
-    }
-
-    return closestNoradId;
   }
 
   // 设置卫星点击回调
@@ -301,11 +173,7 @@ class SatelliteRenderer {
   // GPU Picking 执行
   private performHoverPick(screenPosition: Cesium.Cartesian2) {
     const pickedObject = this.viewer.scene.pick(screenPosition);
-    let nearbySatellite: string | null = null;
-
-    if (pickedObject?.primitive) {
-      nearbySatellite = this.findClickedSatellite(pickedObject.primitive);
-    }
+    const nearbySatellite: string | null = pickedObject?.id || null;
 
     if (nearbySatellite !== this.hoveredNoradId) {
       if (this.hoveredNoradId) {
@@ -368,26 +236,6 @@ class SatelliteRenderer {
     }
   }
 
-  // 更新经纬度网格索引
-  private updateLatLngGrid() {
-    this.latLngGrid.clear();
-
-    for (const [noradId, satInfo] of this.satellitePositions.entries()) {
-      const cartographic = Cesium.Cartographic.fromCartesian(satInfo.position);
-      const lat = Cesium.Math.toDegrees(cartographic.latitude);
-      const lng = Cesium.Math.toDegrees(cartographic.longitude);
-
-      const gridLat = Math.floor(lat);
-      const gridLng = Math.floor(lng);
-      const key = `${gridLat},${gridLng}`;
-
-      if (!this.latLngGrid.has(key)) {
-        this.latLngGrid.set(key, new Set());
-      }
-      this.latLngGrid.get(key)!.add(noradId);
-    }
-  }
-
   // 批量更新卫星位置（分批异步更新优化）
   updateSatellites(satellites: Satellite[], batchSize: number = 2000) {
     const currentIds = new Set(satellites.map((s) => s.noradId));
@@ -443,6 +291,7 @@ class SatelliteRenderer {
             position,
             pixelSize: this.DEFAULT_PIXEL_SIZE,
             color,
+            id: sat.noradId,
           });
           this.pointMap.set(sat.noradId, point);
         }
@@ -455,9 +304,8 @@ class SatelliteRenderer {
       if (currentIndex < total) {
         requestAnimationFrame(processBatch);
       } else {
-        // 所有批次完成，更新缓存和网格索引
+        // 所有批次完成，更新缓存
         this.lastSatelliteIds = currentIds;
-        this.updateLatLngGrid();
       }
     };
 
@@ -606,7 +454,6 @@ class SatelliteRenderer {
     this.pointCollection?.removeAll();
     this.pointMap.clear();
     this.satellitePositions.clear();
-    this.latLngGrid.clear();
     this.lastSatelliteIds.clear();
     this.orbitTypeCache.clear();
     this.deselectSatellite();
@@ -641,7 +488,6 @@ class SatelliteRenderer {
     }
     this.pointMap.clear();
     this.satellitePositions.clear();
-    this.latLngGrid.clear();
     this.lastSatelliteIds.clear();
     this.orbitTypeCache.clear();
   }
