@@ -102,153 +102,6 @@
       </transition>
     </div>
 
-    <!-- 发射信息 -->
-    <div class="section" v-if="metadata">
-      <div class="section-header" @click="expandedSections.launch = !expandedSections.launch">
-        <div class="header-left">
-          <RocketOutlined class="section-icon" />
-          <span>发射信息</span>
-        </div>
-        <DownOutlined :class="['expand-icon', { expanded: expandedSections.launch }]" />
-      </div>
-      <transition name="collapse">
-        <div v-show="expandedSections.launch" class="section-content">
-          <div class="info-grid">
-            <div class="info-item">
-              <span class="info-label">发射日期</span>
-              <span class="info-value">{{
-                metadata.launchDate ? formatDate(metadata.launchDate) : "--"
-              }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">首次轨道历元</span>
-              <span class="info-value">{{
-                metadata.firstEpoch ? formatDate(metadata.firstEpoch) : "--"
-              }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">发射地点</span>
-              <span class="info-value">{{
-                metadata.launchSite ? getLaunchSiteName(metadata.launchSite) : "--"
-              }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">发射场</span>
-              <span class="info-value">{{ metadata.launchSiteName || "--" }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">发射工位</span>
-              <span class="info-value">{{ metadata.launch_pad || "--" }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">运载工具</span>
-              <span class="info-value">{{ metadata.launchVehicle || "--" }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">发射序号</span>
-              <span class="info-value">{{ metadata.flightNo || "--" }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">COSPAR发射编号</span>
-              <span class="info-value">{{ metadata.cosparLaunchNo || "--" }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">发射状态</span>
-              <span
-                :class="[
-                  'info-value',
-                  'status-badge',
-                  metadata.launchFailure ? 'decayed' : 'active',
-                ]"
-              >
-                {{ metadata.launchFailure ? "发射失败" : "发射成功" }}
-              </span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">衰减日期</span>
-              <span class="info-value">{{
-                metadata.decayDate ? formatDate(metadata.decayDate) : "--"
-              }}</span>
-            </div>
-          </div>
-        </div>
-      </transition>
-    </div>
-
-    <!-- 任务与运营 -->
-    <div class="section" v-if="metadata">
-      <div class="section-header" @click="expandedSections.mission = !expandedSections.mission">
-        <div class="header-left">
-          <TeamOutlined class="section-icon" />
-          <span>任务与运营</span>
-        </div>
-        <DownOutlined :class="['expand-icon', { expanded: expandedSections.mission }]" />
-      </div>
-      <transition name="collapse">
-        <div v-show="expandedSections.mission" class="section-content">
-          <div class="info-grid">
-            <div class="info-item">
-              <span class="info-label">任务</span>
-              <span class="info-value mission">{{ metadata.mission || "--" }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">运营商</span>
-              <span
-                v-if="metadata.operator"
-                class="info-value clickable-company"
-                @click="openCompanyDetail(metadata.operator)"
-              >
-                {{ metadata.operator }}
-              </span>
-              <span v-else class="info-value">--</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">承包商</span>
-              <span
-                v-if="metadata.contractor"
-                class="info-value clickable-company"
-                @click="openCompanyDetail(metadata.contractor)"
-              >
-                {{ metadata.contractor }}
-              </span>
-              <span v-else class="info-value">--</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">制造商</span>
-              <span
-                v-if="metadata.manufacturer"
-                class="info-value clickable-company"
-                @click="openCompanyDetail(metadata.manufacturer)"
-              >
-                {{ metadata.manufacturer }}
-              </span>
-              <span v-else class="info-value">--</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">星座名称</span>
-              <span class="info-value">{{ metadata.constellationName || "--" }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">设计寿命</span>
-              <span class="info-value">{{ metadata.lifetime || "--" }}</span>
-            </div>
-            <div class="info-item full-width">
-              <span class="info-label">主要事件</span>
-              <span class="info-value text-left">{{ metadata.major_events || "--" }}</span>
-            </div>
-            <div class="info-item full-width">
-              <span class="info-label">相关卫星</span>
-              <span class="info-value text-left">{{ metadata.related_satellites || "--" }}</span>
-            </div>
-            <div class="info-item full-width">
-              <span class="info-label">摘要</span>
-              <span class="info-value text-left summary">{{ metadata.summary || "--" }}</span>
-            </div>
-          </div>
-        </div>
-      </transition>
-    </div>
-
     <!-- 技术规格 -->
     <div class="section" v-if="metadata">
       <div class="section-header" @click="expandedSections.technical = !expandedSections.technical">
@@ -504,6 +357,153 @@
                   </span>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      </transition>
+    </div>
+
+    <!-- 发射信息 -->
+    <div class="section" v-if="metadata">
+      <div class="section-header" @click="expandedSections.launch = !expandedSections.launch">
+        <div class="header-left">
+          <RocketOutlined class="section-icon" />
+          <span>发射信息</span>
+        </div>
+        <DownOutlined :class="['expand-icon', { expanded: expandedSections.launch }]" />
+      </div>
+      <transition name="collapse">
+        <div v-show="expandedSections.launch" class="section-content">
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="info-label">发射日期</span>
+              <span class="info-value">{{
+                metadata.launchDate ? formatDate(metadata.launchDate) : "--"
+              }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">首次轨道历元</span>
+              <span class="info-value">{{
+                metadata.firstEpoch ? formatDate(metadata.firstEpoch) : "--"
+              }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">发射地点</span>
+              <span class="info-value">{{
+                metadata.launchSite ? getLaunchSiteName(metadata.launchSite) : "--"
+              }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">发射场</span>
+              <span class="info-value">{{ metadata.launchSiteName || "--" }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">发射工位</span>
+              <span class="info-value">{{ metadata.launch_pad || "--" }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">运载工具</span>
+              <span class="info-value">{{ metadata.launchVehicle || "--" }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">发射序号</span>
+              <span class="info-value">{{ metadata.flightNo || "--" }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">COSPAR发射编号</span>
+              <span class="info-value">{{ metadata.cosparLaunchNo || "--" }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">发射状态</span>
+              <span
+                :class="[
+                  'info-value',
+                  'status-badge',
+                  metadata.launchFailure ? 'decayed' : 'active',
+                ]"
+              >
+                {{ metadata.launchFailure ? "发射失败" : "发射成功" }}
+              </span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">衰减日期</span>
+              <span class="info-value">{{
+                metadata.decayDate ? formatDate(metadata.decayDate) : "--"
+              }}</span>
+            </div>
+          </div>
+        </div>
+      </transition>
+    </div>
+
+    <!-- 任务与运营 -->
+    <div class="section" v-if="metadata">
+      <div class="section-header" @click="expandedSections.mission = !expandedSections.mission">
+        <div class="header-left">
+          <TeamOutlined class="section-icon" />
+          <span>任务与运营</span>
+        </div>
+        <DownOutlined :class="['expand-icon', { expanded: expandedSections.mission }]" />
+      </div>
+      <transition name="collapse">
+        <div v-show="expandedSections.mission" class="section-content">
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="info-label">任务</span>
+              <span class="info-value mission">{{ metadata.mission || "--" }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">运营商</span>
+              <span
+                v-if="metadata.operator"
+                class="info-value clickable-company"
+                @click="openCompanyDetail(metadata.operator)"
+              >
+                {{ metadata.operator }}
+              </span>
+              <span v-else class="info-value">--</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">承包商</span>
+              <span
+                v-if="metadata.contractor"
+                class="info-value clickable-company"
+                @click="openCompanyDetail(metadata.contractor)"
+              >
+                {{ metadata.contractor }}
+              </span>
+              <span v-else class="info-value">--</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">制造商</span>
+              <span
+                v-if="metadata.manufacturer"
+                class="info-value clickable-company"
+                @click="openCompanyDetail(metadata.manufacturer)"
+              >
+                {{ metadata.manufacturer }}
+              </span>
+              <span v-else class="info-value">--</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">星座名称</span>
+              <span class="info-value">{{ metadata.constellationName || "--" }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">设计寿命</span>
+              <span class="info-value">{{ metadata.lifetime || "--" }}</span>
+            </div>
+            <div class="info-item full-width">
+              <span class="info-label">主要事件</span>
+              <span class="info-value text-left">{{ metadata.major_events || "--" }}</span>
+            </div>
+            <div class="info-item full-width">
+              <span class="info-label">相关卫星</span>
+              <span class="info-value text-left">{{ metadata.related_satellites || "--" }}</span>
+            </div>
+            <div class="info-item full-width">
+              <span class="info-label">摘要</span>
+              <span class="info-value text-left summary">{{ metadata.summary || "--" }}</span>
             </div>
           </div>
         </div>
@@ -954,13 +954,15 @@ const formatAltNames = (altNames: string[] | string | undefined): string => {
 const getOrbitType = (alt: number): string => {
   if (alt < 2000000) return "低轨 LEO";
   if (alt < 35000000) return "中轨 MEO";
-  return "地球同步 GEO";
+  if (alt < 45000000) return "地球同步 GEO";
+  return "大椭圆轨道 HEO";
 };
 
 const getOrbitClass = (alt: number): string => {
   if (alt < 2000000) return "leo";
   if (alt < 35000000) return "meo";
-  return "geo";
+  if (alt < 45000000) return "geo";
+  return "heo";
 };
 
 const getCountryName = (code: string): string => {
@@ -1432,6 +1434,9 @@ const getRcsClass = (rcs: string | undefined): string => {
         }
         &.geo {
           color: #b366e8;
+        }
+        &.heo {
+          color: #ffaa00;
         }
       }
     }
