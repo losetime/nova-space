@@ -87,9 +87,19 @@
       <div class="footer-content">
         <p>© 2026 Nova Space. All rights reserved.</p>
         <div class="footer-links">
-          <a href="#">关于我们</a>
-          <a href="#">隐私政策</a>
-          <a href="#">联系方式</a>
+          <a
+            href="http://www.nwbd.net/?m=home&c=Lists&a=index&tid=8"
+            target="_blank"
+            rel="noopener noreferrer"
+            >关于我们</a
+          >
+          <!-- <a href="#">隐私政策</a> -->
+          <a
+            href="http://www.nwbd.net/?m=home&c=Lists&a=index&tid=75"
+            target="_blank"
+            rel="noopener noreferrer"
+            >联系方式</a
+          >
         </div>
       </div>
     </footer>

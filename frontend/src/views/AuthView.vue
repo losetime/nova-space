@@ -4,7 +4,7 @@
     <div class="stars stars-layer-2"></div>
     <div class="stars stars-layer-3"></div>
     <div class="planet"></div>
-    
+
     <div class="auth-left">
       <div class="brand-content">
         <div class="logo">
@@ -21,18 +21,9 @@
       <div class="auth-card">
         <a-tabs v-model:activeKey="activeTab" centered>
           <a-tab-pane key="login" tab="登录">
-            <a-form
-              :model="loginForm"
-              :rules="loginRules"
-              layout="vertical"
-              @finish="handleLogin"
-            >
+            <a-form :model="loginForm" :rules="loginRules" layout="vertical" @finish="handleLogin">
               <a-form-item name="username" label="用户名">
-                <a-input
-                  v-model:value="loginForm.username"
-                  placeholder="请输入用户名"
-                  size="large"
-                >
+                <a-input v-model:value="loginForm.username" placeholder="请输入用户名" size="large">
                   <template #prefix>
                     <UserOutlined />
                   </template>
@@ -52,13 +43,7 @@
               </a-form-item>
 
               <a-form-item>
-                <a-button
-                  type="primary"
-                  html-type="submit"
-                  size="large"
-                  block
-                  :loading="loading"
-                >
+                <a-button type="primary" html-type="submit" size="large" block :loading="loading">
                   登录
                 </a-button>
               </a-form-item>
@@ -85,11 +70,7 @@
               </a-form-item>
 
               <a-form-item name="email" label="邮箱">
-                <a-input
-                  v-model:value="registerForm.email"
-                  placeholder="请输入邮箱"
-                  size="large"
-                >
+                <a-input v-model:value="registerForm.email" placeholder="请输入邮箱" size="large">
                   <template #prefix>
                     <MailOutlined />
                   </template>
@@ -121,13 +102,7 @@
               </a-form-item>
 
               <a-form-item>
-                <a-button
-                  type="primary"
-                  html-type="submit"
-                  size="large"
-                  block
-                  :loading="loading"
-                >
+                <a-button type="primary" html-type="submit" size="large" block :loading="loading">
                   注册
                 </a-button>
               </a-form-item>
@@ -135,105 +110,101 @@
           </a-tab-pane>
         </a-tabs>
 
-        <div class="auth-footer">
+        <!-- <div class="auth-footer">
           <p>注册即表示同意 <a href="#">服务条款</a> 和 <a href="#">隐私政策</a></p>
-        </div>
+        </div> -->
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
-import { useRouter } from 'vue-router'
-import { message } from 'ant-design-vue'
-import {
-  UserOutlined,
-  LockOutlined,
-  MailOutlined,
-} from '@ant-design/icons-vue'
-import { useUserStore } from '@/stores/user'
+import { ref, reactive } from "vue";
+import { useRouter } from "vue-router";
+import { message } from "ant-design-vue";
+import { UserOutlined, LockOutlined, MailOutlined } from "@ant-design/icons-vue";
+import { useUserStore } from "@/stores/user";
 
-const router = useRouter()
-const userStore = useUserStore()
+const router = useRouter();
+const userStore = useUserStore();
 
-const activeTab = ref('login')
-const loading = ref(false)
+const activeTab = ref("login");
+const loading = ref(false);
 
 const loginForm = reactive({
-  username: '',
-  password: '',
-})
+  username: "",
+  password: "",
+});
 
 const registerForm = reactive({
-  username: '',
-  email: '',
-  password: '',
-  confirmPassword: '',
-})
+  username: "",
+  email: "",
+  password: "",
+  confirmPassword: "",
+});
 
 const loginRules = {
-  username: [{ required: true, message: '请输入用户名' }],
-  password: [{ required: true, message: '请输入密码' }],
-}
+  username: [{ required: true, message: "请输入用户名" }],
+  password: [{ required: true, message: "请输入密码" }],
+};
 
 const registerRules = {
   username: [
-    { required: true, message: '请输入用户名' },
-    { min: 3, max: 20, message: '用户名长度为3-20个字符' },
+    { required: true, message: "请输入用户名" },
+    { min: 3, max: 20, message: "用户名长度为3-20个字符" },
   ],
   email: [
-    { required: true, message: '请输入邮箱' },
-    { type: 'email', message: '请输入有效的邮箱地址' },
+    { required: true, message: "请输入邮箱" },
+    { type: "email", message: "请输入有效的邮箱地址" },
   ],
   password: [
-    { required: true, message: '请输入密码' },
-    { min: 6, message: '密码至少6个字符' },
+    { required: true, message: "请输入密码" },
+    { min: 6, message: "密码至少6个字符" },
   ],
   confirmPassword: [
-    { required: true, message: '请确认密码' },
+    { required: true, message: "请确认密码" },
     {
       validator: (_rule: unknown, value: string) => {
         if (value !== registerForm.password) {
-          return Promise.reject('两次输入的密码不一致')
+          return Promise.reject("两次输入的密码不一致");
         }
-        return Promise.resolve()
+        return Promise.resolve();
       },
     },
   ],
-}
+};
 
 async function handleLogin() {
-  loading.value = true
+  loading.value = true;
   try {
-    const result = await userStore.login(loginForm.username, loginForm.password)
+    const result = await userStore.login(loginForm.username, loginForm.password);
     if (result.success) {
-      message.success('登录成功')
-      router.push('/')
+      message.success("登录成功");
+      router.push("/");
     } else {
-      message.error(result.message || '登录失败')
+      message.error(result.message || "登录失败");
     }
   } finally {
-    loading.value = false
+    loading.value = false;
   }
 }
 
 async function handleRegister() {
-  loading.value = true
+  loading.value = true;
   try {
     const result = await userStore.register(
       registerForm.username,
       registerForm.email,
-      registerForm.password
-    )
+      registerForm.password,
+    );
     if (result.success) {
-      message.success('注册成功！')
-      router.push('/')
+      message.success("注册成功！");
+      router.push("/");
     } else {
-      message.error(result.message || '注册失败')
+      message.error(result.message || "注册失败");
     }
   } finally {
-    loading.value = false
+    loading.value = false;
   }
 }
 </script>
@@ -265,34 +236,40 @@ async function handleRegister() {
 
 .stars-layer-1 {
   background-image:
-    radial-gradient(1px 1px at 10px 20px, rgba(255,255,255,0.8), rgba(0,0,0,0)),
-    radial-gradient(1px 1px at 50px 80px, rgba(255,255,255,0.6), rgba(0,0,0,0)),
-    radial-gradient(1px 1px at 90px 40px, rgba(255,255,255,0.7), rgba(0,0,0,0)),
-    radial-gradient(1px 1px at 130px 120px, rgba(255,255,255,0.5), rgba(0,0,0,0)),
-    radial-gradient(1px 1px at 170px 60px, rgba(255,255,255,0.6), rgba(0,0,0,0));
+    radial-gradient(1px 1px at 10px 20px, rgba(255, 255, 255, 0.8), rgba(0, 0, 0, 0)),
+    radial-gradient(1px 1px at 50px 80px, rgba(255, 255, 255, 0.6), rgba(0, 0, 0, 0)),
+    radial-gradient(1px 1px at 90px 40px, rgba(255, 255, 255, 0.7), rgba(0, 0, 0, 0)),
+    radial-gradient(1px 1px at 130px 120px, rgba(255, 255, 255, 0.5), rgba(0, 0, 0, 0)),
+    radial-gradient(1px 1px at 170px 60px, rgba(255, 255, 255, 0.6), rgba(0, 0, 0, 0));
   background-size: 200px 200px;
-  animation: starDrift1 60s linear infinite, twinkle1 3s ease-in-out infinite;
+  animation:
+    starDrift1 60s linear infinite,
+    twinkle1 3s ease-in-out infinite;
 }
 
 .stars-layer-2 {
   background-image:
-    radial-gradient(2px 2px at 20px 30px, #fff, rgba(0,0,0,0)),
-    radial-gradient(2px 2px at 60px 90px, #eee, rgba(0,0,0,0)),
-    radial-gradient(2px 2px at 100px 50px, #fff, rgba(0,0,0,0)),
-    radial-gradient(2px 2px at 140px 130px, #ddd, rgba(0,0,0,0)),
-    radial-gradient(2px 2px at 180px 70px, #fff, rgba(0,0,0,0));
+    radial-gradient(2px 2px at 20px 30px, #fff, rgba(0, 0, 0, 0)),
+    radial-gradient(2px 2px at 60px 90px, #eee, rgba(0, 0, 0, 0)),
+    radial-gradient(2px 2px at 100px 50px, #fff, rgba(0, 0, 0, 0)),
+    radial-gradient(2px 2px at 140px 130px, #ddd, rgba(0, 0, 0, 0)),
+    radial-gradient(2px 2px at 180px 70px, #fff, rgba(0, 0, 0, 0));
   background-size: 250px 250px;
-  animation: starDrift2 80s linear infinite, twinkle2 4s ease-in-out infinite;
+  animation:
+    starDrift2 80s linear infinite,
+    twinkle2 4s ease-in-out infinite;
 }
 
 .stars-layer-3 {
   background-image:
-    radial-gradient(3px 3px at 30px 60px, #00d4ff, rgba(0,0,0,0)),
-    radial-gradient(2px 2px at 80px 150px, #fff, rgba(0,0,0,0)),
-    radial-gradient(3px 3px at 150px 30px, #7b2cbf, rgba(0,0,0,0)),
-    radial-gradient(2px 2px at 200px 100px, #fff, rgba(0,0,0,0));
+    radial-gradient(3px 3px at 30px 60px, #00d4ff, rgba(0, 0, 0, 0)),
+    radial-gradient(2px 2px at 80px 150px, #fff, rgba(0, 0, 0, 0)),
+    radial-gradient(3px 3px at 150px 30px, #7b2cbf, rgba(0, 0, 0, 0)),
+    radial-gradient(2px 2px at 200px 100px, #fff, rgba(0, 0, 0, 0));
   background-size: 300px 300px;
-  animation: starDrift3 100s linear infinite, twinkle3 5s ease-in-out infinite;
+  animation:
+    starDrift3 100s linear infinite,
+    twinkle3 5s ease-in-out infinite;
 }
 
 .planet {
@@ -310,36 +287,69 @@ async function handleRegister() {
 }
 
 @keyframes starDrift1 {
-  from { transform: translateX(0) translateY(0); }
-  to { transform: translateX(-200px) translateY(-200px); }
+  from {
+    transform: translateX(0) translateY(0);
+  }
+  to {
+    transform: translateX(-200px) translateY(-200px);
+  }
 }
 
 @keyframes starDrift2 {
-  from { transform: translateX(0) translateY(0); }
-  to { transform: translateX(250px) translateY(-250px); }
+  from {
+    transform: translateX(0) translateY(0);
+  }
+  to {
+    transform: translateX(250px) translateY(-250px);
+  }
 }
 
 @keyframes starDrift3 {
-  from { transform: translateX(0) translateY(0); }
-  to { transform: translateX(-150px) translateY(-150px); }
+  from {
+    transform: translateX(0) translateY(0);
+  }
+  to {
+    transform: translateX(-150px) translateY(-150px);
+  }
 }
 
 @keyframes twinkle1 {
-  0%, 100% { opacity: 0.4; }
-  50% { opacity: 0.8; }
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.8;
+  }
 }
 
 @keyframes twinkle2 {
-  0%, 100% { opacity: 0.5; }
-  30% { opacity: 1; }
-  70% { opacity: 0.3; }
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  30% {
+    opacity: 1;
+  }
+  70% {
+    opacity: 0.3;
+  }
 }
 
 @keyframes twinkle3 {
-  0%, 100% { opacity: 0.6; }
-  25% { opacity: 0.2; }
-  50% { opacity: 1; }
-  75% { opacity: 0.4; }
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  25% {
+    opacity: 0.2;
+  }
+  50% {
+    opacity: 1;
+  }
+  75% {
+    opacity: 0.4;
+  }
 }
 
 .brand-content {
@@ -384,7 +394,9 @@ async function handleRegister() {
 }
 
 @keyframes shine {
-  to { background-position: 200% center; }
+  to {
+    background-position: 200% center;
+  }
 }
 
 .auth-right {
