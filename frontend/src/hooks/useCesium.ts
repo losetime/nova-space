@@ -41,8 +41,8 @@ function getOrbitType(alt: number): string {
 const ORBIT_LEGEND: LegendItem[] = [
   { color: '#00ff88', label: '低轨 LEO (<2000km)' },
   { color: '#00d4ff', label: '中轨 MEO (2000-35000km)' },
-  { color: '#b366e8', label: '地球同步 GEO (>35000km)' },
-  { color: '#ffaa00', label: '大椭圆轨道' },
+  { color: '#b366e8', label: '地球同步 GEO (35000-45000km)' },
+  { color: '#ffaa00', label: '大椭圆轨道 HEO (>45000km)' },
 ];
 
 // 卫星渲染器 - PointPrimitive + Model 混合方案
@@ -224,7 +224,10 @@ class SatelliteRenderer {
     const point = this.pointMap.get(noradId);
     if (point && noradId !== this.selectedNoradId) {
       point.pixelSize = this.DEFAULT_PIXEL_SIZE;
-      point.color = this.DEFAULT_COLOR;
+      // 恢复原来的轨道类型颜色（从缓存获取）
+      const orbitType = this.orbitTypeCache.get(noradId);
+      const color = orbitType ? ORBIT_COLORS[orbitType]?.color || this.DEFAULT_COLOR : this.DEFAULT_COLOR;
+      point.color = color;
       // 移除发光效果
       point.outlineWidth = 0;
     }
@@ -421,7 +424,12 @@ class SatelliteRenderer {
       const point = this.pointMap.get(this.selectedNoradId);
       if (point) {
         point.pixelSize = this.DEFAULT_PIXEL_SIZE;
-        point.color = this.DEFAULT_COLOR;
+        // 恢复原来的轨道类型颜色（从缓存获取）
+        const orbitType = this.orbitTypeCache.get(this.selectedNoradId);
+        const color = orbitType ? ORBIT_COLORS[orbitType]?.color || this.DEFAULT_COLOR : this.DEFAULT_COLOR;
+        point.color = color;
+        // 移除发光效果
+        point.outlineWidth = 0;
       }
     }
 

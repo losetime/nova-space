@@ -40,14 +40,14 @@ export function useSatellite(
       selectedMetadata.value = metadata
 
       // 更新卫星位置（使用最新计算的位置）
-      // 后端返回的 position 结构: { noradId, name, lat, lng, alt, velocity? }
+      // 后端返回的 position 结构: { noradId, name, position: { lat, lng, alt }, timestamp }
       if (position && selectedSatellite.value) {
         selectedSatellite.value = {
           ...selectedSatellite.value,
           position: {
-            lat: position.lat,
-            lng: position.lng,
-            alt: position.alt,
+            lat: position.position.lat,
+            lng: position.position.lng,
+            alt: position.position.alt,
           }
         }
       }

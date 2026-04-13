@@ -161,6 +161,14 @@
                     <RocketOutlined class="option-icon geo" />
                     <span>地球同步 (GEO)</span>
                   </div>
+                  <div
+                    class="filter-option"
+                    :class="{ active: filterType === 'heo' }"
+                    @click="filterType = 'heo'"
+                  >
+                    <RocketOutlined class="option-icon heo" />
+                    <span>大椭圆轨道 (HEO)</span>
+                  </div>
                 </div>
               </transition>
             </div>
@@ -662,7 +670,8 @@ const getOrbitTypeLabel = (type: string): string => {
     all: '全部',
     leo: '低轨(LEO)',
     meo: '中轨(MEO)',
-    geo: '地球同步(GEO)'
+    geo: '地球同步(GEO)',
+    heo: '大椭圆轨道(HEO)'
   }
   return labels[type] || ''
 }
@@ -748,16 +757,17 @@ const formattedLastUpdate = computed(() => {
 const filteredSatellites = computed(() => {
   let result = satellites.value
 
-  // 按轨道类型筛选（alt 单位是米）
-  if (filterType.value !== 'all') {
-    result = result.filter(sat => {
-      const alt = sat.position.alt
-      if (filterType.value === 'leo') return alt < 2000000      // < 2000 km
-      if (filterType.value === 'meo') return alt >= 2000000 && alt < 35000000  // 2000-35000 km
-      if (filterType.value === 'geo') return alt >= 35000000    // >= 35000 km
-      return true
-    })
-  }
+// 按轨道类型筛选（alt 单位是米）
+    if (filterType.value !== 'all') {
+      result = result.filter(sat => {
+        const alt = sat.position.alt
+        if (filterType.value === 'leo') return alt < 2000000      // < 2000 km
+        if (filterType.value === 'meo') return alt >= 2000000 && alt < 35000000  // 2000-35000 km
+        if (filterType.value === 'geo') return alt >= 35000000 && alt < 45000000  // 35000-45000 km
+        if (filterType.value === 'heo') return alt >= 45000000    // >= 45000 km
+        return true
+      })
+    }
 
   // 按国家筛选（直接使用卫星数据中的字段）
   if (selectedCountry.value) {
@@ -1607,6 +1617,7 @@ const toggleFullscreen = () => {
       &.leo { color: #00ff88; }
       &.meo { color: #00d4ff; }
       &.geo { color: #b366e8; }
+      &.heo { color: #ffaa00; }
       &.favorited { color: #ffc107; }
       &.unfavorited { color: rgba(255, 255, 255, 0.4); }
     }
