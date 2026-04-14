@@ -2,62 +2,66 @@ import {
   Injectable,
   BadRequestException,
   NotFoundException,
+  Inject,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { PointsRecord } from '../../common/entities/points-record.entity';
-import { User } from '../../common/entities/user.entity';
-import { PointsAction } from '../../common/enums/user.enum';
+import { DRIZZLE } from '../../db/drizzle.module';
+import type { DrizzleClient } from '../../db';
+import * as schema from '../../db/schema';
+import { eq, and, gte, lt, desc, sql } from 'drizzle-orm';
 import { AddPointsDto, ConsumePointsDto, AdminGrantPointsDto } from './dto';
 
 @Injectable()
 export class PointsService {
-  constructor(
-    @InjectRepository(PointsRecord)
-    private pointsRecordRepository: Repository<PointsRecord>,
-    @InjectRepository(User)
-    private userRepository: Repository<User>,
-  ) {}
+  constructor(@Inject(DRIZZLE) private db: DrizzleClient) {}
 
-  // 积分配置
   private readonly pointsConfig = {
-    [PointsAction.REGISTER]: 100,
-    [PointsAction.DAILY_LOGIN]: 10,
-    [PointsAction.SHARE]: 5,
-    [PointsAction.INVITE]: 50,
-    [PointsAction.TASK_COMPLETE]: 20,
+    register: 100,
+    daily_login: 10,
+    share: 5,
+    invite: 50,
+    task_complete: 20,
   };
 
-  // 添加积分
-  async addPoints(userId: string, dto: AddPointsDto): Promise<PointsRecord> {
-    const user = await this.userRepository.findOne({ where: { id: userId } });
+  async addPoints(userId: string, dto: AddPointsDto): Promise<schema.PointsRecord> {
+    const [user] = await this.db
+      .select()
+      .from(schema.users)
+      .where(eq(schema.users.id, userId));
+
     if (!user) {
       throw new NotFoundException('用户不存在');
     }
 
-    const record = this.pointsRecordRepository.create({
+    const [record] = await this.db.insert(schema.pointsRecords).values({
       userId,
       points: dto.points,
       action: dto.action,
-      balance: user.points + dto.points,
+      balance: String(user.points + dto.points),
       description: dto.description || this.getDefaultDescription(dto.action),
       relatedId: dto.relatedId,
       relatedType: dto.relatedType,
-    });
+    }).returning();
 
-    user.points += dto.points;
-    user.totalPoints += dto.points;
+    await this.db
+      .update(schema.users)
+      .set({
+        points: user.points + dto.points,
+        totalPoints: user.totalPoints + dto.points,
+      })
+      .where(eq(schema.users.id, userId));
 
-    await this.userRepository.save(user);
-    return this.pointsRecordRepository.save(record);
+    return record;
   }
 
-  // 消费积分
   async consumePoints(
     userId: string,
     dto: ConsumePointsDto,
-  ): Promise<PointsRecord> {
-    const user = await this.userRepository.findOne({ where: { id: userId } });
+  ): Promise<schema.PointsRecord> {
+    const [user] = await this.db
+      .select()
+      .from(schema.users)
+      .where(eq(schema.users.id, userId));
+
     if (!user) {
       throw new NotFoundException('用户不存在');
     }
@@ -66,120 +70,147 @@ export class PointsService {
       throw new BadRequestException('积分不足');
     }
 
-    const record = this.pointsRecordRepository.create({
+    const [record] = await this.db.insert(schema.pointsRecords).values({
       userId,
       points: -dto.points,
-      action: PointsAction.CONSUME,
-      balance: user.points - dto.points,
+      action: 'consume',
+      balance: String(user.points - dto.points),
       description: dto.description,
       relatedId: dto.relatedId,
       relatedType: dto.relatedType,
-    });
+    }).returning();
 
-    user.points -= dto.points;
+    await this.db
+      .update(schema.users)
+      .set({
+        points: user.points - dto.points,
+      })
+      .where(eq(schema.users.id, userId));
 
-    await this.userRepository.save(user);
-    return this.pointsRecordRepository.save(record);
+    return record;
   }
 
-  // 获取积分记录
   async getPointsHistory(
     userId: string,
     page = 1,
     limit = 20,
-  ): Promise<{ records: PointsRecord[]; total: number }> {
-    const [records, total] = await this.pointsRecordRepository.findAndCount({
-      where: { userId },
-      skip: (page - 1) * limit,
-      take: limit,
-      order: { createdAt: 'DESC' },
-    });
+  ): Promise<{ records: schema.PointsRecord[]; total: number }> {
+    const offset = (page - 1) * limit;
 
-    return { records, total };
+    const records = await this.db
+      .select()
+      .from(schema.pointsRecords)
+      .where(eq(schema.pointsRecords.userId, userId))
+      .orderBy(desc(schema.pointsRecords.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    const [{ count }] = await this.db
+      .select({ count: sql<number>`count(*)` })
+      .from(schema.pointsRecords)
+      .where(eq(schema.pointsRecords.userId, userId));
+
+    return { records, total: count };
   }
 
-  // 每日登录奖励
-  async dailyLoginReward(userId: string): Promise<PointsRecord | null> {
+  async dailyLoginReward(userId: string): Promise<schema.PointsRecord | null> {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const existingRecord = await this.pointsRecordRepository.findOne({
-      where: {
-        userId,
-        action: PointsAction.DAILY_LOGIN,
-        createdAt: Between(today, new Date()),
-      },
-    });
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const [existingRecord] = await this.db
+      .select()
+      .from(schema.pointsRecords)
+      .where(
+        and(
+          eq(schema.pointsRecords.userId, userId),
+          eq(schema.pointsRecords.action, 'daily_login'),
+          gte(schema.pointsRecords.createdAt, today),
+          lt(schema.pointsRecords.createdAt, tomorrow)
+        )
+      );
 
     if (existingRecord) {
-      return null; // 今日已领取
+      return null;
     }
 
     return this.addPoints(userId, {
-      points: this.pointsConfig[PointsAction.DAILY_LOGIN],
-      action: PointsAction.DAILY_LOGIN,
+      points: this.pointsConfig['daily_login'],
+      action: 'daily_login',
     });
   }
 
-  // 管理员发放积分
-  async adminGrant(dto: AdminGrantPointsDto): Promise<PointsRecord> {
+  async adminGrant(dto: AdminGrantPointsDto): Promise<schema.PointsRecord> {
     return this.addPoints(dto.userId, {
       points: dto.points,
-      action: PointsAction.ADMIN_GRANT,
+      action: 'admin_grant',
       description: dto.description,
     });
   }
 
-  // 获取用户积分统计
   async getPointsStats(userId: string) {
-    const user = await this.userRepository.findOne({ where: { id: userId } });
+    const [user] = await this.db
+      .select()
+      .from(schema.users)
+      .where(eq(schema.users.id, userId));
+
     if (!user) {
       throw new NotFoundException('用户不存在');
     }
 
-    const totalEarned = await this.pointsRecordRepository
-      .createQueryBuilder('record')
-      .where('record.userId = :userId', { userId })
-      .andWhere('record.points > 0')
-      .select('SUM(record.points)', 'total')
-      .getRawOne();
+    const [{ totalEarned }] = await this.db
+      .select({ totalEarned: sql<number>`sum(points)` })
+      .from(schema.pointsRecords)
+      .where(
+        and(
+          eq(schema.pointsRecords.userId, userId),
+          sql`${schema.pointsRecords.points} > 0`
+        )
+      );
 
-    const totalConsumed = await this.pointsRecordRepository
-      .createQueryBuilder('record')
-      .where('record.userId = :userId', { userId })
-      .andWhere('record.points < 0')
-      .select('SUM(ABS(record.points))', 'total')
-      .getRawOne();
+    const [{ totalConsumed }] = await this.db
+      .select({ totalConsumed: sql<number>`sum(abs(points))` })
+      .from(schema.pointsRecords)
+      .where(
+        and(
+          eq(schema.pointsRecords.userId, userId),
+          sql`${schema.pointsRecords.points} < 0`
+        )
+      );
 
-    // 获取签到天数
-    const checkinCount = await this.pointsRecordRepository.count({
-      where: { userId, action: PointsAction.DAILY_LOGIN },
-    });
+    const [{ checkinCount }] = await this.db
+      .select({ checkinCount: sql<number>`count(*)` })
+      .from(schema.pointsRecords)
+      .where(
+        and(
+          eq(schema.pointsRecords.userId, userId),
+          eq(schema.pointsRecords.action, 'daily_login')
+        )
+      );
 
     return {
       currentPoints: user.points,
       totalPoints: user.totalPoints,
-      totalEarned: Number(totalEarned.total) || 0,
-      totalConsumed: Number(totalConsumed.total) || 0,
+      totalEarned: Number(totalEarned) || 0,
+      totalConsumed: Number(totalConsumed) || 0,
       checkinDays: checkinCount,
     };
   }
 
-  private getDefaultDescription(action: PointsAction): string {
-    const descriptions = {
-      [PointsAction.REGISTER]: '注册奖励',
-      [PointsAction.DAILY_LOGIN]: '每日登录奖励',
-      [PointsAction.SHARE]: '分享奖励',
-      [PointsAction.INVITE]: '邀请好友奖励',
-      [PointsAction.TASK_COMPLETE]: '任务完成奖励',
-      [PointsAction.PURCHASE]: '购买获得积分',
-      [PointsAction.CONSUME]: '积分消费',
-      [PointsAction.ADMIN_GRANT]: '管理员发放',
-      [PointsAction.EXPIRE]: '积分过期',
+  private getDefaultDescription(action: string): string {
+    const descriptions: Record<string, string> = {
+      register: '注册奖励',
+      daily_login: '每日登录奖励',
+      share: '分享奖励',
+      invite: '邀请好友奖励',
+      task_complete: '任务完成奖励',
+      purchase: '购买获得积分',
+      consume: '积分消费',
+      admin_grant: '管理员发放',
+      expire: '积分过期',
     };
     return descriptions[action] || '积分变动';
   }
 }
-
-// 导入 Between
-import { Between } from 'typeorm';

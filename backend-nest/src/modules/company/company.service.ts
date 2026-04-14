@@ -1,9 +1,8 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { CompanyEntity } from './entities/company.entity';
-import { SatelliteMetadataEntity } from '../satellite/entities/satellite-metadata.entity';
-import { SatelliteTle } from '../satellite/entities/satellite-tle.entity';
+import { Injectable, Logger, Inject } from '@nestjs/common';
+import { DRIZZLE } from '../../db/drizzle.module';
+import type { DrizzleClient } from '../../db';
+import * as schema from '../../db/schema';
+import { eq } from 'drizzle-orm';
 
 export interface CompanyStats {
   operatorCount: number;
@@ -35,36 +34,33 @@ export interface CompanyDetail {
 export class CompanyService {
   private readonly logger = new Logger(CompanyService.name);
 
-  constructor(
-    @InjectRepository(CompanyEntity)
-    private companyRepository: Repository<CompanyEntity>,
-    @InjectRepository(SatelliteMetadataEntity)
-    private metadataRepository: Repository<SatelliteMetadataEntity>,
-    @InjectRepository(SatelliteTle)
-    private tleRepository: Repository<SatelliteTle>,
-  ) {}
+  constructor(@Inject(DRIZZLE) private db: DrizzleClient) {}
 
   async getCompanyByName(name: string): Promise<CompanyDetail> {
-    const company = await this.companyRepository.findOne({
-      where: { name },
-    });
+    const [company] = await this.db
+      .select()
+      .from(schema.company)
+      .where(eq(schema.company.name, name));
 
-    const tleData = await this.tleRepository.find();
+    const tleData = await this.db.select().from(schema.satelliteTle);
     const tleNoradIds = new Set(tleData.map((tle) => tle.noradId));
 
-    const operatorSatellites = await this.metadataRepository.find({
-      where: { operator: name },
-    });
+    const operatorSatellites = await this.db
+      .select()
+      .from(schema.satelliteMetadata)
+      .where(eq(schema.satelliteMetadata.operator, name));
 
-    const contractorSatellites = await this.metadataRepository.find({
-      where: { contractor: name },
-    });
+    const contractorSatellites = await this.db
+      .select()
+      .from(schema.satelliteMetadata)
+      .where(eq(schema.satelliteMetadata.contractor, name));
 
-    const manufacturerSatellites = await this.metadataRepository.find({
-      where: { manufacturer: name },
-    });
+    const manufacturerSatellites = await this.db
+      .select()
+      .from(schema.satelliteMetadata)
+      .where(eq(schema.satelliteMetadata.manufacturer, name));
 
-    const filterByTLE = (sats: SatelliteMetadataEntity[]): SatelliteBrief[] => {
+    const filterByTLE = (sats: schema.SatelliteMetadata[]): SatelliteBrief[] => {
       return sats
         .filter((sat) => tleNoradIds.has(sat.noradId))
         .map((sat) => ({

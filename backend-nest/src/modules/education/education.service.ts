@@ -1,94 +1,102 @@
-import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Article } from './entities/article.entity';
-import { Quiz } from './entities/quiz.entity';
-import { QuizAnswer } from './entities/quiz-answer.entity';
-import { ArticleCollect } from './entities/article-collect.entity';
-import { ArticleLike } from './entities/article-like.entity';
+import { Injectable, Inject } from '@nestjs/common';
+import { DRIZZLE } from '../../db/drizzle.module';
+import type { DrizzleClient } from '../../db';
+import * as schema from '../../db/schema';
+import { eq, desc, and, gte, sql, lt, isNull } from 'drizzle-orm';
 import { CreateArticleDto } from './dto/create-article.dto';
 import { SubmitAnswerDto } from './dto/submit-answer.dto';
 
 @Injectable()
 export class EducationService {
-  constructor(
-    @InjectRepository(Article)
-    private articleRepository: Repository<Article>,
-    @InjectRepository(Quiz)
-    private quizRepository: Repository<Quiz>,
-    @InjectRepository(QuizAnswer)
-    private quizAnswerRepository: Repository<QuizAnswer>,
-    @InjectRepository(ArticleCollect)
-    private articleCollectRepository: Repository<ArticleCollect>,
-    @InjectRepository(ArticleLike)
-    private articleLikeRepository: Repository<ArticleLike>,
-  ) {}
+  constructor(@Inject(DRIZZLE) private db: DrizzleClient) {}
 
-  // 获取文章列表
   async getArticles(
     category?: string,
     page = 1,
     limit = 12,
-  ): Promise<{ list: Article[]; total: number }> {
-    const queryBuilder = this.articleRepository
-      .createQueryBuilder('article')
-      .where('article.isPublished = :isPublished', { isPublished: true })
-      .orderBy('article.createdAt', 'DESC');
+  ): Promise<{ list: schema.Article[]; total: number }> {
+    const offset = (page - 1) * limit;
 
+    const conditions = [eq(schema.educationArticles.isPublished, true)];
     if (category && category !== 'all') {
-      queryBuilder.andWhere('article.category = :category', { category });
+      conditions.push(eq(schema.educationArticles.category, category as any));
     }
 
-    const [list, total] = await queryBuilder
-      .skip((page - 1) * limit)
-      .take(limit)
-      .getManyAndCount();
+    const list = await this.db
+      .select()
+      .from(schema.educationArticles)
+      .where(and(...conditions))
+      .orderBy(desc(schema.educationArticles.createdAt))
+      .limit(limit)
+      .offset(offset);
 
-    return { list, total };
+    const [{ count }] = await this.db
+      .select({ count: sql<number>`count(*)` })
+      .from(schema.educationArticles)
+      .where(and(...conditions));
+
+    return { list, total: count };
   }
 
-  // 获取文章详情
-  async getArticleById(id: number): Promise<Article | null> {
-    const article = await this.articleRepository.findOne({ where: { id } });
+  async getArticleById(id: number): Promise<schema.Article | null> {
+    const [article] = await this.db
+      .select()
+      .from(schema.educationArticles)
+      .where(eq(schema.educationArticles.id, id));
+
     if (article) {
-      // 增加浏览量
-      await this.articleRepository.increment({ id }, 'views', 1);
+      await this.db
+        .update(schema.educationArticles)
+        .set({ views: article.views + 1 })
+        .where(eq(schema.educationArticles.id, id));
     }
+    return article || null;
+  }
+
+  async createArticle(dto: CreateArticleDto): Promise<schema.Article> {
+    const [article] = await this.db
+      .insert(schema.educationArticles)
+      .values({
+        title: dto.title,
+        content: dto.content,
+        summary: dto.summary,
+        cover: dto.cover,
+        category: dto.category,
+        type: dto.type,
+        duration: dto.duration,
+        tags: dto.tags ? dto.tags.join(',') : null,
+      })
+      .returning();
     return article;
   }
 
-  // 创建文章（管理员用）
-  async createArticle(dto: CreateArticleDto): Promise<Article> {
-    const article = this.articleRepository.create(dto);
-    return this.articleRepository.save(article);
-  }
-
-  // 获取每日问答
-  async getDailyQuiz(userId: string): Promise<Quiz | null> {
+  async getDailyQuiz(userId: string): Promise<schema.Quiz | null> {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // 检查今天是否已经回答过任何题目（每天只能答一题）
-    const answeredToday = await this.quizAnswerRepository
-      .createQueryBuilder('answer')
-      .where('answer.userId = :userId', { userId })
-      .andWhere('answer.createdAt >= :today', { today })
-      .getOne();
+    const [answeredToday] = await this.db
+      .select()
+      .from(schema.educationQuizAnswers)
+      .where(
+        and(
+          eq(schema.educationQuizAnswers.userId, userId),
+          gte(schema.educationQuizAnswers.createdAt, today)
+        )
+      );
 
-    // 如果今天已答过，直接返回 null
     if (answeredToday) {
       return null;
     }
 
-    // 随机返回一道题目
-    return this.quizRepository
-      .createQueryBuilder('quiz')
-      .orderBy('RANDOM()')
-      .limit(1)
-      .getOne();
+    const [quiz] = await this.db
+      .select()
+      .from(schema.educationQuizzes)
+      .orderBy(sql`RANDOM()`)
+      .limit(1);
+
+    return quiz || null;
   }
 
-  // 提交答案
   async submitAnswer(
     userId: string,
     dto: SubmitAnswerDto,
@@ -98,9 +106,10 @@ export class EducationService {
     explanation: string;
     pointsEarned: number;
   }> {
-    const quiz = await this.quizRepository.findOne({
-      where: { id: dto.quizId },
-    });
+    const [quiz] = await this.db
+      .select()
+      .from(schema.educationQuizzes)
+      .where(eq(schema.educationQuizzes.id, dto.quizId));
 
     if (!quiz) {
       throw new Error('题目不存在');
@@ -109,15 +118,13 @@ export class EducationService {
     const isCorrect = dto.selectedIndex === quiz.correctIndex;
     const pointsEarned = isCorrect ? quiz.points : 0;
 
-    // 保存答题记录
-    const answer = this.quizAnswerRepository.create({
+    await this.db.insert(schema.educationQuizAnswers).values({
       userId,
       quizId: dto.quizId,
       selectedIndex: dto.selectedIndex,
       isCorrect,
       pointsEarned,
     });
-    await this.quizAnswerRepository.save(answer);
 
     return {
       isCorrect,
@@ -127,23 +134,22 @@ export class EducationService {
     };
   }
 
-  // 获取用户答题统计
   async getQuizStats(userId: string): Promise<{
     totalAnswered: number;
     correctCount: number;
     totalPoints: number;
     streak: number;
   }> {
-    const answers = await this.quizAnswerRepository.find({
-      where: { userId },
-      order: { createdAt: 'DESC' },
-    });
+    const answers = await this.db
+      .select()
+      .from(schema.educationQuizAnswers)
+      .where(eq(schema.educationQuizAnswers.userId, userId))
+      .orderBy(desc(schema.educationQuizAnswers.createdAt));
 
     const totalAnswered = answers.length;
     const correctCount = answers.filter((a) => a.isCorrect).length;
     const totalPoints = answers.reduce((sum, a) => sum + a.pointsEarned, 0);
 
-    // 计算连续答对天数
     let streak = 0;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -166,96 +172,149 @@ export class EducationService {
     return { totalAnswered, correctCount, totalPoints, streak };
   }
 
-  // 收藏/取消收藏文章
   async toggleCollect(
     userId: string,
     articleId: number,
   ): Promise<{ isCollected: boolean }> {
-    const existing = await this.articleCollectRepository.findOne({
-      where: { userId, articleId },
-    });
+    const [existing] = await this.db
+      .select()
+      .from(schema.educationArticleCollects)
+      .where(
+        and(
+          eq(schema.educationArticleCollects.userId, userId),
+          eq(schema.educationArticleCollects.articleId, articleId)
+        )
+      );
 
     if (existing) {
-      await this.articleCollectRepository.remove(existing);
+      await this.db
+        .delete(schema.educationArticleCollects)
+        .where(eq(schema.educationArticleCollects.id, existing.id));
       return { isCollected: false };
     } else {
-      const collect = this.articleCollectRepository.create({
+      await this.db.insert(schema.educationArticleCollects).values({
         userId,
         articleId,
       });
-      await this.articleCollectRepository.save(collect);
       return { isCollected: true };
     }
   }
 
-  // 检查是否已收藏
   async isCollected(userId: string, articleId: number): Promise<boolean> {
-    const count = await this.articleCollectRepository.count({
-      where: { userId, articleId },
-    });
-    return count > 0;
+    const [collect] = await this.db
+      .select()
+      .from(schema.educationArticleCollects)
+      .where(
+        and(
+          eq(schema.educationArticleCollects.userId, userId),
+          eq(schema.educationArticleCollects.articleId, articleId)
+        )
+      );
+    return !!collect;
   }
 
-  // 获取用户收藏的文章列表
   async getUserCollects(
     userId: string,
     page = 1,
     limit = 10,
   ): Promise<{ data: any[]; total: number }> {
-    const [collects, total] = await this.articleCollectRepository.findAndCount({
-      where: { userId },
-      order: { createdAt: 'DESC' },
-      skip: (page - 1) * limit,
-      take: limit,
-      relations: ['article'],
-    });
+    const offset = (page - 1) * limit;
+
+    const collects = await this.db
+      .select({
+        id: schema.educationArticleCollects.id,
+        articleId: schema.educationArticleCollects.articleId,
+        createdAt: schema.educationArticleCollects.createdAt,
+        title: schema.educationArticles.title,
+        summary: schema.educationArticles.summary,
+        cover: schema.educationArticles.cover,
+        category: schema.educationArticles.category,
+      })
+      .from(schema.educationArticleCollects)
+      .leftJoin(schema.educationArticles, eq(schema.educationArticleCollects.articleId, schema.educationArticles.id))
+      .where(eq(schema.educationArticleCollects.userId, userId))
+      .orderBy(desc(schema.educationArticleCollects.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    const [{ count }] = await this.db
+      .select({ count: sql<number>`count(*)` })
+      .from(schema.educationArticleCollects)
+      .where(eq(schema.educationArticleCollects.userId, userId));
 
     const data = collects.map((collect) => ({
       id: collect.id,
       articleId: collect.articleId,
-      title: collect.article?.title,
-      summary: collect.article?.summary,
-      cover: collect.article?.cover,
-      category: collect.article?.category,
+      title: collect.title,
+      summary: collect.summary,
+      cover: collect.cover,
+      category: collect.category,
       collectedAt: collect.createdAt,
     }));
 
-    return { data, total };
+    return { data, total: count };
   }
 
   async toggleLike(
     userId: string,
     articleId: number,
   ): Promise<{ isLiked: boolean; likes: number }> {
-    const existing = await this.articleLikeRepository.findOne({
-      where: { userId, articleId },
-    });
+    const [existing] = await this.db
+      .select()
+      .from(schema.articleLikes)
+      .where(
+        and(
+          eq(schema.articleLikes.userId, userId),
+          eq(schema.articleLikes.articleId, articleId)
+        )
+      );
 
     if (existing) {
-      await this.articleLikeRepository.remove(existing);
-      await this.articleRepository.decrement({ id: articleId }, 'likes', 1);
-      const article = await this.articleRepository.findOne({
-        where: { id: articleId },
-      });
-      return { isLiked: false, likes: article?.likes || 0 };
+      await this.db
+        .delete(schema.articleLikes)
+        .where(eq(schema.articleLikes.id, existing.id));
+
+      const [article] = await this.db
+        .select()
+        .from(schema.educationArticles)
+        .where(eq(schema.educationArticles.id, articleId));
+
+      await this.db
+        .update(schema.educationArticles)
+        .set({ likes: (article?.likes || 1) - 1 })
+        .where(eq(schema.educationArticles.id, articleId));
+
+      return { isLiked: false, likes: (article?.likes || 1) - 1 };
     } else {
-      const like = this.articleLikeRepository.create({
+      await this.db.insert(schema.articleLikes).values({
         userId,
         articleId,
       });
-      await this.articleLikeRepository.save(like);
-      await this.articleRepository.increment({ id: articleId }, 'likes', 1);
-      const article = await this.articleRepository.findOne({
-        where: { id: articleId },
-      });
-      return { isLiked: true, likes: article?.likes || 1 };
+
+      const [article] = await this.db
+        .select()
+        .from(schema.educationArticles)
+        .where(eq(schema.educationArticles.id, articleId));
+
+      await this.db
+        .update(schema.educationArticles)
+        .set({ likes: (article?.likes || 0) + 1 })
+        .where(eq(schema.educationArticles.id, articleId));
+
+      return { isLiked: true, likes: (article?.likes || 0) + 1 };
     }
   }
 
   async isLiked(userId: string, articleId: number): Promise<boolean> {
-    const count = await this.articleLikeRepository.count({
-      where: { userId, articleId },
-    });
-    return count > 0;
+    const [like] = await this.db
+      .select()
+      .from(schema.articleLikes)
+      .where(
+        and(
+          eq(schema.articleLikes.userId, userId),
+          eq(schema.articleLikes.articleId, articleId)
+        )
+      );
+    return !!like;
   }
 }

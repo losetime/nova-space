@@ -1,7 +1,8 @@
-import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In } from 'typeorm';
-import { Notification, NotificationType } from './entities/notification.entity';
+import { Injectable, Inject } from '@nestjs/common';
+import { DRIZZLE } from '../../db/drizzle.module';
+import type { DrizzleClient } from '../../db';
+import * as schema from '../../db/schema';
+import { eq, and, desc, sql } from 'drizzle-orm';
 import {
   CreateNotificationDto,
   NotificationQueryDto,
@@ -9,111 +10,138 @@ import {
 
 @Injectable()
 export class NotificationService {
-  constructor(
-    @InjectRepository(Notification)
-    private notificationRepository: Repository<Notification>,
-  ) {}
+  constructor(@Inject(DRIZZLE) private db: DrizzleClient) {}
 
-  // 创建通知
-  async create(dto: CreateNotificationDto): Promise<Notification> {
-    const notification = this.notificationRepository.create(dto);
-    return this.notificationRepository.save(notification);
+  async create(dto: CreateNotificationDto): Promise<schema.Notification> {
+    const [notification] = await this.db
+      .insert(schema.notifications)
+      .values(dto)
+      .returning();
+    return notification;
   }
 
-  // 批量创建通知（给多个用户推送）
   async createBatch(
     userIds: string[],
     dto: Omit<CreateNotificationDto, 'userId'>,
   ): Promise<void> {
-    const notifications = userIds.map((userId) =>
-      this.notificationRepository.create({
-        ...dto,
-        userId,
-      }),
-    );
-    await this.notificationRepository.save(notifications);
+    const notifications = userIds.map((userId) => ({
+      userId,
+      type: dto.type,
+      title: dto.title,
+      content: dto.content,
+      isRead: false,
+      relatedId: dto.relatedId,
+      relatedType: dto.relatedType,
+    }));
+
+    await this.db.insert(schema.notifications).values(notifications);
   }
 
-  // 获取用户通知列表
   async findByUser(userId: string, query: NotificationQueryDto) {
     const { isRead, type, page = 1, limit = 20 } = query;
-    const qb = this.notificationRepository
-      .createQueryBuilder('notification')
-      .where('notification.userId = :userId', { userId })
-      .orderBy('notification.createdAt', 'DESC');
+    const offset = (page - 1) * limit;
+
+    const conditions = [eq(schema.notifications.userId, userId)];
 
     if (isRead !== undefined) {
-      qb.andWhere('notification.isRead = :isRead', { isRead });
+      conditions.push(eq(schema.notifications.isRead, isRead));
     }
 
     if (type) {
-      qb.andWhere('notification.type = :type', { type });
+      conditions.push(eq(schema.notifications.type, type));
     }
 
-    const [list, total] = await qb
-      .skip((page - 1) * limit)
-      .take(limit)
-      .getManyAndCount();
+    const list = await this.db
+      .select()
+      .from(schema.notifications)
+      .where(and(...conditions))
+      .orderBy(desc(schema.notifications.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    const [{ count }] = await this.db
+      .select({ count: sql<number>`count(*)` })
+      .from(schema.notifications)
+      .where(and(...conditions));
 
     return {
       list,
-      total,
+      total: count,
       page,
       pageSize: limit,
     };
   }
 
-  // 获取未读数量
   async getUnreadCount(userId: string): Promise<number> {
-    return this.notificationRepository.count({
-      where: { userId, isRead: false },
-    });
+    const [{ count }] = await this.db
+      .select({ count: sql<number>`count(*)` })
+      .from(schema.notifications)
+      .where(
+        and(
+          eq(schema.notifications.userId, userId),
+          eq(schema.notifications.isRead, false)
+        )
+      );
+    return count;
   }
 
-  // 标记单条已读
   async markAsRead(userId: string, notificationId: string): Promise<boolean> {
-    const result = await this.notificationRepository.update(
-      { id: notificationId, userId },
-      { isRead: true },
-    );
-    return (result.affected ?? 0) > 0;
+    const result = await this.db
+      .update(schema.notifications)
+      .set({ isRead: true })
+      .where(
+        and(
+          eq(schema.notifications.id, notificationId),
+          eq(schema.notifications.userId, userId)
+        )
+      );
+    return (result as any).rowCount > 0;
   }
 
-  // 标记全部已读
   async markAllAsRead(userId: string): Promise<number> {
-    const result = await this.notificationRepository.update(
-      { userId, isRead: false },
-      { isRead: true },
-    );
-    return result.affected ?? 0;
+    const result = await this.db
+      .update(schema.notifications)
+      .set({ isRead: true })
+      .where(
+        and(
+          eq(schema.notifications.userId, userId),
+          eq(schema.notifications.isRead, false)
+        )
+      );
+    return (result as any).rowCount;
   }
 
-  // 删除通知
   async delete(userId: string, notificationId: string): Promise<boolean> {
-    const result = await this.notificationRepository.delete({
-      id: notificationId,
-      userId,
-    });
-    return (result.affected ?? 0) > 0;
+    const result = await this.db
+      .delete(schema.notifications)
+      .where(
+        and(
+          eq(schema.notifications.id, notificationId),
+          eq(schema.notifications.userId, userId)
+        )
+      );
+    return (result as any).rowCount > 0;
   }
 
-  // 清空已读通知
   async clearRead(userId: string): Promise<number> {
-    const result = await this.notificationRepository.delete({
-      userId,
-      isRead: true,
-    });
-    return result.affected ?? 0;
+    const result = await this.db
+      .delete(schema.notifications)
+      .where(
+        and(
+          eq(schema.notifications.userId, userId),
+          eq(schema.notifications.isRead, true)
+        )
+      );
+    return (result as any).rowCount;
   }
 
-  // 情报发布时推送通知给订阅用户
   async notifyIntelligencePublish(
     intelligenceId: string,
     intelligenceTitle: string,
     subscriberIds: string[],
   ): Promise<void> {
     await this.createBatch(subscriberIds, {
-      type: NotificationType.INTELLIGENCE,
+      type: 'intelligence',
       title: '新情报发布',
       content: `您关注的领域有新情报发布：${intelligenceTitle}`,
       relatedId: intelligenceId,
@@ -121,33 +149,29 @@ export class NotificationService {
     });
   }
 
-  // 系统通知
   async sendSystemNotification(
     userIds: string[] | 'all',
     title: string,
     content: string,
   ): Promise<void> {
     if (userIds === 'all') {
-      // 如果需要给所有用户发送，需要先查询所有用户ID
-      // 这里简化处理，实际应该通过 User 模块获取
       return;
     }
     await this.createBatch(userIds, {
-      type: NotificationType.SYSTEM,
+      type: 'system',
       title,
       content,
     });
   }
 
-  // 成就通知
   async sendAchievementNotification(
     userId: string,
     title: string,
     content: string,
-  ): Promise<Notification> {
+  ): Promise<schema.Notification> {
     return this.create({
       userId,
-      type: NotificationType.ACHIEVEMENT,
+      type: 'achievement',
       title,
       content,
     });

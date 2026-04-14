@@ -7,6 +7,9 @@ import {
   IsArray,
 } from 'class-validator';
 
+export type ArticleCategory = 'basic' | 'advanced' | 'mission' | 'people';
+export type ArticleType = 'article' | 'video';
+
 export class CreateArticleDto {
   @IsString()
   title: string;
@@ -23,10 +26,10 @@ export class CreateArticleDto {
   cover?: string;
 
   @IsEnum(['basic', 'advanced', 'mission', 'people'])
-  category: string;
+  category: ArticleCategory;
 
   @IsEnum(['article', 'video'])
-  type: string;
+  type: ArticleType;
 
   @IsOptional()
   @IsInt()

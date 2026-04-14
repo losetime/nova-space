@@ -3,11 +3,13 @@ import {
   NotFoundException,
   ConflictException,
   BadRequestException,
+  Inject,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DRIZZLE } from '../../db/drizzle.module';
+import type { DrizzleClient } from '../../db';
+import * as schema from '../../db/schema';
+import { eq, or, sql, and, isNotNull, desc } from 'drizzle-orm';
 import * as bcrypt from 'bcrypt';
-import { User } from '../../common/entities/user.entity';
 import { UserRole, UserLevel } from '../../common/enums/user.enum';
 import {
   RegisterDto,
@@ -18,24 +20,22 @@ import {
 
 @Injectable()
 export class UserService {
-  constructor(
-    @InjectRepository(User)
-    private userRepository: Repository<User>,
-  ) {}
+  constructor(@Inject(DRIZZLE) private db: DrizzleClient) {}
 
-  async create(registerDto: RegisterDto): Promise<User> {
+  async create(registerDto: RegisterDto): Promise<schema.User> {
     const { username, password, email, phone, nickname } = registerDto;
 
-    // 检查用户名是否已存在
-    const existingUser = await this.userRepository.findOne({
-      where: [
-        { username },
-        ...(email ? [{ email }] : []),
-        ...(phone ? [{ phone }] : []),
-      ],
-    });
+    const conditions = [eq(schema.users.username, username)];
+    if (email) conditions.push(eq(schema.users.email, email));
+    if (phone) conditions.push(eq(schema.users.phone, phone));
 
-    if (existingUser) {
+    const existingUsers = await this.db
+      .select()
+      .from(schema.users)
+      .where(or(...conditions));
+
+    if (existingUsers.length > 0) {
+      const existingUser = existingUsers[0];
       if (existingUser.username === username) {
         throw new ConflictException('用户名已存在');
       }
@@ -47,45 +47,62 @@ export class UserService {
       }
     }
 
-    // 加密密码
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const user = this.userRepository.create({
-      username,
-      password: hashedPassword,
-      email,
-      phone,
-      nickname: nickname || username,
-      role: UserRole.USER,
-      level: UserLevel.BASIC,
-      points: 100, // 注册奖励100积分
-      totalPoints: 100,
-    });
+    const [user] = await this.db
+      .insert(schema.users)
+      .values({
+        username,
+        password: hashedPassword,
+        email,
+        phone,
+        nickname: nickname || username,
+        role: UserRole.USER,
+        level: UserLevel.BASIC,
+        points: 100,
+        totalPoints: 100,
+      })
+      .returning();
 
-    return this.userRepository.save(user);
+    return user;
   }
 
-  async findByUsername(username: string): Promise<User | null> {
-    return this.userRepository.findOne({ where: { username } });
+  async findByUsername(username: string): Promise<schema.User | null> {
+    const [user] = await this.db
+      .select()
+      .from(schema.users)
+      .where(eq(schema.users.username, username));
+    return user || null;
   }
 
-  async findById(id: string): Promise<User | null> {
-    return this.userRepository.findOne({ where: { id } });
+  async findById(id: string): Promise<schema.User | null> {
+    const [user] = await this.db
+      .select()
+      .from(schema.users)
+      .where(eq(schema.users.id, id));
+    return user || null;
   }
 
-  async findByIdWithSubscription(id: string): Promise<User | null> {
-    return this.userRepository.findOne({
-      where: { id },
-      relations: ['subscription'],
-    });
+  async findByIdWithSubscription(id: string): Promise<any | null> {
+    const [user] = await this.db
+      .select()
+      .from(schema.users)
+      .where(eq(schema.users.id, id));
+    if (!user) return null;
+    
+    const [subscription] = await this.db
+      .select()
+      .from(schema.subscriptions)
+      .where(eq(schema.subscriptions.userId, id));
+    
+    return { ...user, subscription };
   }
 
-  async validateUser(username: string, password: string): Promise<User | null> {
-    const user = await this.userRepository
-      .createQueryBuilder('user')
-      .where('user.username = :username', { username })
-      .addSelect('user.password')
-      .getOne();
+  async validateUser(username: string, password: string): Promise<schema.User | null> {
+    const [user] = await this.db
+      .select()
+      .from(schema.users)
+      .where(eq(schema.users.username, username));
 
     if (!user) {
       return null;
@@ -96,52 +113,57 @@ export class UserService {
       return null;
     }
 
-    // 更新最后登录时间
-    await this.userRepository.update(user.id, {
-      lastLoginAt: new Date(),
-    });
+    await this.db
+      .update(schema.users)
+      .set({ lastLoginAt: new Date() })
+      .where(eq(schema.users.id, user.id));
 
     return user;
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
+  async update(id: string, updateUserDto: UpdateUserDto): Promise<schema.User> {
     const user = await this.findById(id);
     if (!user) {
       throw new NotFoundException('用户不存在');
     }
 
-    // 检查邮箱和手机号是否已被使用
     if (updateUserDto.email && updateUserDto.email !== user.email) {
-      const existingEmail = await this.userRepository.findOne({
-        where: { email: updateUserDto.email },
-      });
+      const [existingEmail] = await this.db
+        .select()
+        .from(schema.users)
+        .where(eq(schema.users.email, updateUserDto.email));
       if (existingEmail) {
         throw new ConflictException('邮箱已被使用');
       }
     }
 
     if (updateUserDto.phone && updateUserDto.phone !== user.phone) {
-      const existingPhone = await this.userRepository.findOne({
-        where: { phone: updateUserDto.phone },
-      });
+      const [existingPhone] = await this.db
+        .select()
+        .from(schema.users)
+        .where(eq(schema.users.phone, updateUserDto.phone));
       if (existingPhone) {
         throw new ConflictException('手机号已被使用');
       }
     }
 
-    Object.assign(user, updateUserDto);
-    return this.userRepository.save(user);
+    const [updatedUser] = await this.db
+      .update(schema.users)
+      .set(updateUserDto)
+      .where(eq(schema.users.id, id))
+      .returning();
+
+    return updatedUser;
   }
 
   async changePassword(
     id: string,
     changePasswordDto: ChangePasswordDto,
   ): Promise<void> {
-    const user = await this.userRepository
-      .createQueryBuilder('user')
-      .where('user.id = :id', { id })
-      .addSelect('user.password')
-      .getOne();
+    const [user] = await this.db
+      .select()
+      .from(schema.users)
+      .where(eq(schema.users.id, id));
 
     if (!user) {
       throw new NotFoundException('用户不存在');
@@ -156,46 +178,60 @@ export class UserService {
     }
 
     const hashedPassword = await bcrypt.hash(changePasswordDto.newPassword, 10);
-    await this.userRepository.update(id, { password: hashedPassword });
+    await this.db
+      .update(schema.users)
+      .set({ password: hashedPassword })
+      .where(eq(schema.users.id, id));
   }
 
   async findAll(
     page = 1,
     limit = 10,
-  ): Promise<{ users: User[]; total: number }> {
-    const [users, total] = await this.userRepository.findAndCount({
-      skip: (page - 1) * limit,
-      take: limit,
-      order: { createdAt: 'DESC' },
-      select: [
-        'id',
-        'username',
-        'email',
-        'phone',
-        'nickname',
-        'avatar',
-        'role',
-        'level',
-        'points',
-        'isActive',
-        'createdAt',
-      ],
-    });
+  ): Promise<{ users: any[]; total: number }> {
+    const offset = (page - 1) * limit;
 
-    return { users, total };
+    const users = await this.db
+      .select({
+        id: schema.users.id,
+        username: schema.users.username,
+        email: schema.users.email,
+        phone: schema.users.phone,
+        nickname: schema.users.nickname,
+        avatar: schema.users.avatar,
+        role: schema.users.role,
+        level: schema.users.level,
+        points: schema.users.points,
+        isActive: schema.users.isActive,
+        createdAt: schema.users.createdAt,
+      })
+      .from(schema.users)
+      .orderBy(desc(schema.users.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    const [{ count }] = await this.db
+      .select({ count: sql<number>`count(*)` })
+      .from(schema.users);
+
+    return { users, total: count };
   }
 
   async adminUpdate(
     id: string,
     adminUpdateDto: AdminUpdateUserDto,
-  ): Promise<User> {
+  ): Promise<schema.User> {
     const user = await this.findById(id);
     if (!user) {
       throw new NotFoundException('用户不存在');
     }
 
-    Object.assign(user, adminUpdateDto);
-    return this.userRepository.save(user);
+    const [updatedUser] = await this.db
+      .update(schema.users)
+      .set(adminUpdateDto)
+      .where(eq(schema.users.id, id))
+      .returning();
+
+    return updatedUser;
   }
 
   async delete(id: string): Promise<void> {
@@ -204,21 +240,27 @@ export class UserService {
       throw new NotFoundException('用户不存在');
     }
 
-    await this.userRepository.softDelete(id);
+    await this.db.delete(schema.users).where(eq(schema.users.id, id));
   }
 
-  // 更新积分
-  async updatePoints(id: string, points: number): Promise<User> {
+  async updatePoints(id: string, points: number): Promise<schema.User> {
     const user = await this.findById(id);
     if (!user) {
       throw new NotFoundException('用户不存在');
     }
 
-    user.points += points;
-    if (points > 0) {
-      user.totalPoints += points;
-    }
+    const newPoints = user.points + points;
+    const newTotalPoints = points > 0 ? user.totalPoints + points : user.totalPoints;
 
-    return this.userRepository.save(user);
+    const [updatedUser] = await this.db
+      .update(schema.users)
+      .set({
+        points: newPoints,
+        totalPoints: newTotalPoints,
+      })
+      .where(eq(schema.users.id, id))
+      .returning();
+
+    return updatedUser;
   }
 }

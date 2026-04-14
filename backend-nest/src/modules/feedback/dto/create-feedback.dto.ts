@@ -5,14 +5,15 @@ import {
   IsString,
   MaxLength,
 } from 'class-validator';
-import { FeedbackType } from '../entities/feedback.entity';
+
+export type FeedbackType = 'bug' | 'feature' | 'suggestion' | 'other';
 
 export class CreateFeedbackDto {
   @IsOptional()
   @IsString()
   userId?: string;
 
-  @IsEnum(FeedbackType)
+  @IsEnum(['bug', 'feature', 'suggestion', 'other'])
   type: FeedbackType;
 
   @IsNotEmpty({ message: '标题不能为空' })

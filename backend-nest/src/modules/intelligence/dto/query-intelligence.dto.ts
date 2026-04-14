@@ -1,10 +1,11 @@
 import { IsEnum, IsOptional, IsInt, Min } from 'class-validator';
 import { Type } from 'class-transformer';
-import { IntelligenceCategory } from '../entities/intelligence.entity';
+
+export type IntelligenceCategory = 'launch' | 'satellite' | 'industry' | 'research' | 'environment';
 
 export class QueryIntelligenceDto {
   @IsOptional()
-  @IsEnum(IntelligenceCategory)
+  @IsEnum(['launch', 'satellite', 'industry', 'research', 'environment'])
   category?: IntelligenceCategory;
 
   @IsOptional()

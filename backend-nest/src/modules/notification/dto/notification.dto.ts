@@ -1,11 +1,12 @@
 import { IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
-import { NotificationType } from '../entities/notification.entity';
+
+export type NotificationType = 'intelligence' | 'system' | 'achievement';
 
 export class CreateNotificationDto {
   @IsUUID()
   userId: string;
 
-  @IsEnum(NotificationType)
+  @IsEnum(['intelligence', 'system', 'achievement'])
   type: NotificationType;
 
   @IsString()
@@ -28,6 +29,7 @@ export class NotificationQueryDto {
   isRead?: boolean;
 
   @IsOptional()
+  @IsEnum(['intelligence', 'system', 'achievement'])
   type?: NotificationType;
 
   @IsOptional()

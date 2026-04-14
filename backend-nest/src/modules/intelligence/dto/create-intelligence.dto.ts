@@ -1,8 +1,7 @@
 import { IsString, IsOptional, IsEnum, IsUrl } from 'class-validator';
-import {
-  IntelligenceCategory,
-  IntelligenceLevel,
-} from '../entities/intelligence.entity';
+
+export type IntelligenceCategory = 'launch' | 'satellite' | 'industry' | 'research' | 'environment';
+export type IntelligenceLevel = 'free' | 'advanced' | 'professional';
 
 export class CreateIntelligenceDto {
   @IsString()
@@ -18,11 +17,11 @@ export class CreateIntelligenceDto {
   @IsString()
   cover?: string;
 
-  @IsEnum(IntelligenceCategory)
+  @IsEnum(['launch', 'satellite', 'industry', 'research', 'environment'])
   category: IntelligenceCategory;
 
   @IsOptional()
-  @IsEnum(IntelligenceLevel)
+  @IsEnum(['free', 'advanced', 'professional'])
   level?: IntelligenceLevel;
 
   @IsString()

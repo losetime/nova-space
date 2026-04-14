@@ -1,83 +1,85 @@
-import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In } from 'typeorm';
-import {
-  Intelligence,
-  IntelligenceCategory,
-  IntelligenceLevel,
-} from './entities/intelligence.entity';
-import { IntelligenceCollect } from './entities/intelligence-collect.entity';
+import { Injectable, Inject } from '@nestjs/common';
+import { DRIZZLE } from '../../db/drizzle.module';
+import type { DrizzleClient } from '../../db';
+import * as schema from '../../db/schema';
+import { eq, desc, and, inArray, sql } from 'drizzle-orm';
 import { CreateIntelligenceDto } from './dto/create-intelligence.dto';
 import { QueryIntelligenceDto } from './dto/query-intelligence.dto';
 
 @Injectable()
 export class IntelligenceService {
-  constructor(
-    @InjectRepository(Intelligence)
-    private intelligenceRepository: Repository<Intelligence>,
-    @InjectRepository(IntelligenceCollect)
-    private collectRepository: Repository<IntelligenceCollect>,
-  ) {}
+  constructor(@Inject(DRIZZLE) private db: DrizzleClient) {}
 
-  // 获取情报列表
   async findAll(query: QueryIntelligenceDto, userLevel?: string) {
     const { category, page = 1, pageSize = 12 } = query;
+    const offset = (page - 1) * pageSize;
 
-    const qb = this.intelligenceRepository.createQueryBuilder('intel');
+    const conditions: any[] = [];
 
     if (category) {
-      qb.andWhere('intel.category = :category', { category });
+      conditions.push(eq(schema.intelligences.category, category as any));
     }
 
-    // 根据用户等级过滤可见情报
     if (userLevel === 'professional') {
-      // 专业会员可见所有
     } else if (userLevel === 'advanced') {
-      qb.andWhere('intel.level IN (:...levels)', {
-        levels: [IntelligenceLevel.FREE, IntelligenceLevel.ADVANCED],
-      });
+      conditions.push(
+        inArray(schema.intelligences.level, ['free', 'advanced'])
+      );
     } else {
-      qb.andWhere('intel.level = :level', { level: IntelligenceLevel.FREE });
+      conditions.push(eq(schema.intelligences.level, 'free'));
     }
 
-    qb.orderBy('intel.publishedAt', 'DESC')
-      .skip((page - 1) * pageSize)
-      .take(pageSize);
+    const list = await this.db
+      .select()
+      .from(schema.intelligences)
+      .where(and(...conditions))
+      .orderBy(desc(schema.intelligences.publishedAt))
+      .limit(pageSize)
+      .offset(offset);
 
-    const [list, total] = await qb.getManyAndCount();
+    const [{ count }] = await this.db
+      .select({ count: sql<number>`count(*)` })
+      .from(schema.intelligences)
+      .where(and(...conditions));
 
     return {
       list: list.map((item) => ({
         ...item,
         tags: item.tags ? JSON.parse(item.tags) : [],
-        isLocked:
-          userLevel === 'basic' && item.level !== IntelligenceLevel.FREE,
+        isLocked: userLevel === 'basic' && item.level !== 'free',
       })),
-      total,
+      total: count,
       page,
       pageSize,
     };
   }
 
-  // 获取情报详情
   async findOne(id: number, userId?: string) {
-    const intelligence = await this.intelligenceRepository.findOne({
-      where: { id },
-    });
+    const [intelligence] = await this.db
+      .select()
+      .from(schema.intelligences)
+      .where(eq(schema.intelligences.id, id));
 
     if (!intelligence) {
       return null;
     }
 
-    // 增加浏览量
-    await this.intelligenceRepository.increment({ id }, 'views', 1);
+    await this.db
+      .update(schema.intelligences)
+      .set({ views: intelligence.views + 1 })
+      .where(eq(schema.intelligences.id, id));
 
-    // 检查是否已收藏
     let isCollected = false;
     if (userId) {
-      const collect = await this.collectRepository.findOne({
-        where: { userId, intelligenceId: id },
-      });
+      const [collect] = await this.db
+        .select()
+        .from(schema.intelligenceCollects)
+        .where(
+          and(
+            eq(schema.intelligenceCollects.userId, userId),
+            eq(schema.intelligenceCollects.intelligenceId, id)
+          )
+        );
       isCollected = !!collect;
     }
 
@@ -88,69 +90,102 @@ export class IntelligenceService {
     };
   }
 
-  // 获取热门排行
   async getHotList(limit: number = 5) {
-    const list = await this.intelligenceRepository.find({
-      order: { views: 'DESC' },
-      take: limit,
-    });
+    const list = await this.db
+      .select({
+        id: schema.intelligences.id,
+        title: schema.intelligences.title,
+        views: schema.intelligences.views,
+      })
+      .from(schema.intelligences)
+      .orderBy(desc(schema.intelligences.views))
+      .limit(limit);
 
-    return list.map((item) => ({
-      id: item.id,
-      title: item.title,
-      views: item.views,
-    }));
+    return list;
   }
 
-  // 收藏情报
   async collect(userId: string, intelligenceId: number) {
-    const existing = await this.collectRepository.findOne({
-      where: { userId, intelligenceId },
-    });
+    const [existing] = await this.db
+      .select()
+      .from(schema.intelligenceCollects)
+      .where(
+        and(
+          eq(schema.intelligenceCollects.userId, userId),
+          eq(schema.intelligenceCollects.intelligenceId, intelligenceId)
+        )
+      );
 
     if (existing) {
-      // 取消收藏
-      await this.collectRepository.remove(existing);
-      await this.intelligenceRepository.decrement(
-        { id: intelligenceId },
-        'collects',
-        1,
-      );
+      await this.db
+        .delete(schema.intelligenceCollects)
+        .where(eq(schema.intelligenceCollects.id, existing.id));
+
+      const [intel] = await this.db
+        .select()
+        .from(schema.intelligences)
+        .where(eq(schema.intelligences.id, intelligenceId));
+
+      await this.db
+        .update(schema.intelligences)
+        .set({ collects: (intel?.collects || 1) - 1 })
+        .where(eq(schema.intelligences.id, intelligenceId));
+
       return { collected: false };
     } else {
-      // 添加收藏
-      const collect = this.collectRepository.create({
+      await this.db.insert(schema.intelligenceCollects).values({
         userId,
         intelligenceId,
       });
-      await this.collectRepository.save(collect);
-      await this.intelligenceRepository.increment(
-        { id: intelligenceId },
-        'collects',
-        1,
-      );
+
+      const [intel] = await this.db
+        .select()
+        .from(schema.intelligences)
+        .where(eq(schema.intelligences.id, intelligenceId));
+
+      await this.db
+        .update(schema.intelligences)
+        .set({ collects: (intel?.collects || 0) + 1 })
+        .where(eq(schema.intelligences.id, intelligenceId));
+
       return { collected: true };
     }
   }
 
-  // 获取用户收藏列表
   async getUserCollects(userId: string) {
-    const collects = await this.collectRepository.find({
-      where: { userId },
-      relations: ['intelligence'],
-      order: { createdAt: 'DESC' },
-    });
+    const collects = await this.db
+      .select({
+        intelligenceId: schema.intelligenceCollects.intelligenceId,
+        createdAt: schema.intelligenceCollects.createdAt,
+        title: schema.intelligences.title,
+        summary: schema.intelligences.summary,
+        content: schema.intelligences.content,
+        cover: schema.intelligences.cover,
+        category: schema.intelligences.category,
+        level: schema.intelligences.level,
+        tags: schema.intelligences.tags,
+      })
+      .from(schema.intelligenceCollects)
+      .leftJoin(schema.intelligences, eq(schema.intelligenceCollects.intelligenceId, schema.intelligences.id))
+      .where(eq(schema.intelligenceCollects.userId, userId))
+      .orderBy(desc(schema.intelligenceCollects.createdAt));
 
     return collects.map((c) => ({
-      ...c.intelligence,
-      tags: c.intelligence.tags ? JSON.parse(c.intelligence.tags) : [],
+      title: c.title,
+      summary: c.summary,
+      content: c.content,
+      cover: c.cover,
+      category: c.category,
+      level: c.level,
+      tags: c.tags ? JSON.parse(c.tags) : [],
       collectedAt: c.createdAt,
     }));
   }
 
-  // 创建情报（管理功能）
   async create(dto: CreateIntelligenceDto) {
-    const intelligence = this.intelligenceRepository.create(dto);
-    return this.intelligenceRepository.save(intelligence);
+    const [intelligence] = await this.db
+      .insert(schema.intelligences)
+      .values(dto)
+      .returning();
+    return intelligence;
   }
 }

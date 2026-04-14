@@ -10,7 +10,9 @@ import {
   IsBoolean,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
-import { MilestoneCategory, MediaItem } from '../entities/milestone.entity';
+
+export type MilestoneCategory = 'launch' | 'recovery' | 'orbit' | 'mission' | 'other';
+export type MediaItem = { type: 'image' | 'video'; url: string; caption?: string };
 
 export class CreateMilestoneDto {
   @IsString()
@@ -29,7 +31,7 @@ export class CreateMilestoneDto {
   @IsNotEmpty()
   eventDate: string;
 
-  @IsEnum(MilestoneCategory)
+  @IsEnum(['launch', 'recovery', 'orbit', 'mission', 'other'])
   @IsOptional()
   category?: MilestoneCategory;
 
@@ -81,7 +83,7 @@ export class UpdateMilestoneDto {
   @IsOptional()
   eventDate?: string;
 
-  @IsEnum(MilestoneCategory)
+  @IsEnum(['launch', 'recovery', 'orbit', 'mission', 'other'])
   @IsOptional()
   category?: MilestoneCategory;
 
@@ -118,7 +120,7 @@ export class UpdateMilestoneDto {
 
 export class QueryMilestoneDto {
   @IsOptional()
-  @IsEnum(MilestoneCategory)
+  @IsEnum(['launch', 'recovery', 'orbit', 'mission', 'other'])
   category?: MilestoneCategory;
 
   @IsOptional()

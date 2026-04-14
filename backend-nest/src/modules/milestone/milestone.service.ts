@@ -1,7 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Milestone, MilestoneCategory } from './entities/milestone.entity';
+import { Injectable, NotFoundException, Inject } from '@nestjs/common';
+import { DRIZZLE } from '../../db/drizzle.module';
+import type { DrizzleClient } from '../../db';
+import * as schema from '../../db/schema';
+import { eq, and, desc, sql, gte, asc } from 'drizzle-orm';
 import {
   CreateMilestoneDto,
   UpdateMilestoneDto,
@@ -10,12 +11,8 @@ import {
 
 @Injectable()
 export class MilestoneService {
-  constructor(
-    @InjectRepository(Milestone)
-    private milestoneRepository: Repository<Milestone>,
-  ) {}
+  constructor(@Inject(DRIZZLE) private db: DrizzleClient) {}
 
-  // 获取里程碑列表（时间线）
   async findAll(query: QueryMilestoneDto) {
     const {
       category,
@@ -25,36 +22,47 @@ export class MilestoneService {
       sortOrder = 'DESC',
     } = query;
 
-    const qb = this.milestoneRepository.createQueryBuilder('milestone');
-    qb.where('milestone.isPublished = :isPublished', { isPublished: true });
+    const offset = (page - 1) * pageSize;
+
+    const conditions = [eq(schema.milestones.isPublished, true)];
 
     if (category) {
-      qb.andWhere('milestone.category = :category', { category });
+      conditions.push(eq(schema.milestones.category, category as any));
     }
 
-    qb.orderBy(`milestone.${sortBy}`, sortOrder)
-      .skip((page - 1) * pageSize)
-      .take(pageSize);
+    const list = await this.db
+      .select()
+      .from(schema.milestones)
+      .where(and(...conditions))
+      .orderBy(
+        sortOrder === 'DESC'
+          ? desc(schema.milestones[sortBy as keyof typeof schema.milestones.$inferSelect] as any)
+          : asc(schema.milestones[sortBy as keyof typeof schema.milestones.$inferSelect] as any)
+      )
+      .limit(pageSize)
+      .offset(offset);
 
-    const [list, total] = await qb.getManyAndCount();
+    const [{ count }] = await this.db
+      .select({ count: sql<number>`count(*)` })
+      .from(schema.milestones)
+      .where(and(...conditions));
 
     return {
       list,
-      total,
+      total: count,
       page,
       pageSize,
     };
   }
 
-  // 按年代分组获取里程碑
   async getTimelineByDecade() {
-    const milestones = await this.milestoneRepository
-      .createQueryBuilder('milestone')
-      .where('milestone.isPublished = :isPublished', { isPublished: true })
-      .orderBy('milestone.eventDate', 'DESC')
-      .getMany();
+    const milestones = await this.db
+      .select()
+      .from(schema.milestones)
+      .where(eq(schema.milestones.isPublished, true))
+      .orderBy(desc(schema.milestones.eventDate));
 
-    const decadeMap = new Map<string, Milestone[]>();
+    const decadeMap = new Map<string, schema.Milestone[]>();
 
     milestones.forEach((milestone) => {
       const year = new Date(milestone.eventDate).getFullYear();
@@ -65,7 +73,6 @@ export class MilestoneService {
       decadeMap.get(decade)!.push(milestone);
     });
 
-    // 按年代排序
     const sortedDecades = Array.from(decadeMap.keys()).sort((a, b) => {
       const aDecade = parseInt(a.replace('s', ''));
       const bDecade = parseInt(b.replace('s', ''));
@@ -78,11 +85,11 @@ export class MilestoneService {
     }));
   }
 
-  // 获取里程碑详情
   async findOne(id: number) {
-    const milestone = await this.milestoneRepository.findOne({
-      where: { id },
-    });
+    const [milestone] = await this.db
+      .select()
+      .from(schema.milestones)
+      .where(eq(schema.milestones.id, id));
 
     if (!milestone) {
       throw new NotFoundException(`里程碑 ${id} 不存在`);
@@ -91,59 +98,66 @@ export class MilestoneService {
     return milestone;
   }
 
-  // 创建里程碑（管理员）
   async create(dto: CreateMilestoneDto) {
-    const milestone = this.milestoneRepository.create({
-      ...dto,
-      eventDate: new Date(dto.eventDate),
-    });
-    return this.milestoneRepository.save(milestone);
+    const [milestone] = await this.db
+      .insert(schema.milestones)
+      .values({
+        ...dto,
+        eventDate: dto.eventDate,
+      })
+      .returning();
+    return milestone;
   }
 
-  // 更新里程碑（管理员）
   async update(id: number, dto: UpdateMilestoneDto) {
-    const milestone = await this.findOne(id);
+    await this.findOne(id);
 
-    Object.assign(milestone, dto);
-    if (dto.eventDate) {
-      milestone.eventDate = new Date(dto.eventDate);
-    }
+    const [milestone] = await this.db
+      .update(schema.milestones)
+      .set({
+        ...dto,
+        eventDate: dto.eventDate,
+        updatedAt: new Date(),
+      })
+      .where(eq(schema.milestones.id, id))
+      .returning();
 
-    return this.milestoneRepository.save(milestone);
+    return milestone;
   }
 
-  // 删除里程碑（管理员）
   async remove(id: number) {
-    const milestone = await this.findOne(id);
-    await this.milestoneRepository.remove(milestone);
+    await this.findOne(id);
+    await this.db.delete(schema.milestones).where(eq(schema.milestones.id, id));
     return { success: true };
   }
 
-  // 获取所有分类
   async getCategories() {
-    const categories = await this.milestoneRepository
-      .createQueryBuilder('milestone')
-      .select('milestone.category', 'category')
-      .addSelect('COUNT(milestone.id)', 'count')
-      .where('milestone.isPublished = :isPublished', { isPublished: true })
-      .groupBy('milestone.category')
-      .getRawMany();
+    const categories = await this.db
+      .select({
+        category: schema.milestones.category,
+        count: sql<number>`count(*)`,
+      })
+      .from(schema.milestones)
+      .where(eq(schema.milestones.isPublished, true))
+      .groupBy(schema.milestones.category);
 
     return categories.map((c) => ({
-      category: c.category as MilestoneCategory,
-      count: parseInt(c.count),
+      category: c.category,
+      count: c.count,
     }));
   }
 
-  // 获取重要里程碑（用于首页展示）
   async getFeatured(limit = 5) {
-    return this.milestoneRepository
-      .createQueryBuilder('milestone')
-      .where('milestone.isPublished = :isPublished', { isPublished: true })
-      .andWhere('milestone.importance >= :minImportance', { minImportance: 4 })
-      .orderBy('milestone.importance', 'DESC')
-      .addOrderBy('milestone.eventDate', 'DESC')
-      .take(limit)
-      .getMany();
+    return this.db
+      .select()
+      .from(schema.milestones)
+      .where(
+        and(
+          eq(schema.milestones.isPublished, true),
+          gte(schema.milestones.importance, 4)
+        )
+      )
+      .orderBy(desc(schema.milestones.importance), desc(schema.milestones.eventDate))
+      .limit(limit);
   }
 }

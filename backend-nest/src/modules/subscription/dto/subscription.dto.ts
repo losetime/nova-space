@@ -6,11 +6,12 @@ import {
   IsString,
   IsDateString,
 } from 'class-validator';
-import { SubscriptionPlan } from '../../../common/enums/user.enum';
+
+export type SubscriptionPlanType = 'monthly' | 'quarterly' | 'yearly' | 'lifetime' | 'custom';
 
 export class CreateSubscriptionDto {
-  @IsEnum(SubscriptionPlan)
-  plan: SubscriptionPlan;
+  @IsEnum(['monthly', 'quarterly', 'yearly', 'lifetime', 'custom'])
+  plan: SubscriptionPlanType;
 
   @IsNumber()
   price: number;

@@ -1,39 +1,55 @@
-import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Feedback } from './entities/feedback.entity';
+import { Injectable, Inject } from '@nestjs/common';
+import { DRIZZLE } from '../../db/drizzle.module';
+import type { DrizzleClient } from '../../db';
+import * as schema from '../../db/schema';
+import { eq, desc, sql } from 'drizzle-orm';
 import { CreateFeedbackDto } from './dto/create-feedback.dto';
 
 @Injectable()
 export class FeedbackService {
-  constructor(
-    @InjectRepository(Feedback)
-    private feedbackRepository: Repository<Feedback>,
-  ) {}
+  constructor(@Inject(DRIZZLE) private db: DrizzleClient) {}
 
-  async create(createFeedbackDto: CreateFeedbackDto): Promise<Feedback> {
-    const feedback = this.feedbackRepository.create(createFeedbackDto);
-    return this.feedbackRepository.save(feedback);
+  async create(createFeedbackDto: CreateFeedbackDto): Promise<schema.Feedback> {
+    const [feedback] = await this.db
+      .insert(schema.feedback)
+      .values(createFeedbackDto)
+      .returning();
+    return feedback;
   }
 
   async findAll(
     page: number = 1,
     limit: number = 10,
-  ): Promise<{ data: Feedback[]; total: number }> {
-    const [data, total] = await this.feedbackRepository.findAndCount({
-      order: { createdAt: 'DESC' },
-      skip: (page - 1) * limit,
-      take: limit,
-    });
-    return { data, total };
+  ): Promise<{ data: schema.Feedback[]; total: number }> {
+    const offset = (page - 1) * limit;
+
+    const data = await this.db
+      .select()
+      .from(schema.feedback)
+      .orderBy(desc(schema.feedback.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    const [{ count }] = await this.db
+      .select({ count: sql<number>`count(*)` })
+      .from(schema.feedback);
+
+    return { data, total: count };
   }
 
-  async findOne(id: string): Promise<Feedback | null> {
-    return this.feedbackRepository.findOne({ where: { id } });
+  async findOne(id: string): Promise<schema.Feedback | null> {
+    const [feedback] = await this.db
+      .select()
+      .from(schema.feedback)
+      .where(eq(schema.feedback.id, id));
+    return feedback || null;
   }
 
-  async updateStatus(id: string, status: string): Promise<Feedback | null> {
-    await this.feedbackRepository.update(id, { status: status as any });
+  async updateStatus(id: string, status: string): Promise<schema.Feedback | null> {
+    await this.db
+      .update(schema.feedback)
+      .set({ status: status as any, updatedAt: new Date() })
+      .where(eq(schema.feedback.id, id));
     return this.findOne(id);
   }
 }

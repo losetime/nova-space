@@ -2,7 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UserService } from '../user/user.service';
 import { RegisterDto, LoginDto } from '../user/dto';
-import { User } from '../../common/entities/user.entity';
+import * as schema from '../../db/schema';
 
 @Injectable()
 export class AuthService {
@@ -13,13 +13,13 @@ export class AuthService {
 
   async register(
     registerDto: RegisterDto,
-  ): Promise<{ user: User; token: string }> {
+  ): Promise<{ user: schema.User; token: string }> {
     const user = await this.userService.create(registerDto);
     const token = this.generateToken(user);
     return { user, token };
   }
 
-  async login(loginDto: LoginDto): Promise<{ user: User; token: string }> {
+  async login(loginDto: LoginDto): Promise<{ user: schema.User; token: string }> {
     const user = await this.userService.validateUser(
       loginDto.username,
       loginDto.password,
@@ -37,11 +37,11 @@ export class AuthService {
     return { user, token };
   }
 
-  async validateUserById(userId: string): Promise<User | null> {
+  async validateUserById(userId: string): Promise<schema.User | null> {
     return this.userService.findById(userId);
   }
 
-  private generateToken(user: User): string {
+  private generateToken(user: schema.User): string {
     const payload = {
       sub: user.id,
       username: user.username,

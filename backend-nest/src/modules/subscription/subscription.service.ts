@@ -2,166 +2,197 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  Inject,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between } from 'typeorm';
-import { Subscription } from '../../common/entities/subscription.entity';
-import { User } from '../../common/entities/user.entity';
-import {
-  SubscriptionStatus,
-  SubscriptionPlan,
-  UserLevel,
-} from '../../common/enums/user.enum';
+import { DRIZZLE } from '../../db/drizzle.module';
+import type { DrizzleClient } from '../../db';
+import * as schema from '../../db/schema';
+import { eq, and, desc, lt, gte, sql } from 'drizzle-orm';
 import { CreateSubscriptionDto, UpdateSubscriptionDto } from './dto';
 
 @Injectable()
 export class SubscriptionService {
-  constructor(
-    @InjectRepository(Subscription)
-    private subscriptionRepository: Repository<Subscription>,
-    @InjectRepository(User)
-    private userRepository: Repository<User>,
-  ) {}
+  constructor(@Inject(DRIZZLE) private db: DrizzleClient) {}
 
-  // 创建订阅
   async create(
     userId: string,
     createDto: CreateSubscriptionDto,
-  ): Promise<Subscription> {
-    const user = await this.userRepository.findOne({ where: { id: userId } });
+  ): Promise<schema.Subscription> {
+    const [user] = await this.db
+      .select()
+      .from(schema.users)
+      .where(eq(schema.users.id, userId));
+
     if (!user) {
       throw new NotFoundException('用户不存在');
     }
 
-    // 检查是否已有有效订阅
-    const existingSubscription = await this.subscriptionRepository.findOne({
-      where: { userId, status: SubscriptionStatus.ACTIVE },
-    });
+    const [existingSubscription] = await this.db
+      .select()
+      .from(schema.subscriptions)
+      .where(
+        and(
+          eq(schema.subscriptions.userId, userId),
+          eq(schema.subscriptions.status, 'active')
+        )
+      );
 
     if (existingSubscription) {
       throw new BadRequestException('已有有效订阅');
     }
 
-    const subscription = this.subscriptionRepository.create({
-      ...createDto,
-      userId,
-      status: SubscriptionStatus.ACTIVE,
-    });
+    const [subscription] = await this.db
+      .insert(schema.subscriptions)
+      .values({
+        userId,
+        status: 'active',
+        plan: createDto.plan,
+        price: String(createDto.price),
+        startDate: new Date(createDto.startDate),
+        endDate: new Date(createDto.endDate),
+        paymentMethod: createDto.paymentMethod,
+        paymentId: createDto.paymentId,
+        autoRenew: createDto.autoRenew ?? false,
+      })
+      .returning();
 
-    // 更新用户等级
-    const levelMap = {
-      [SubscriptionPlan.MONTHLY]: UserLevel.ADVANCED,
-      [SubscriptionPlan.QUARTERLY]: UserLevel.ADVANCED,
-      [SubscriptionPlan.YEARLY]: UserLevel.ADVANCED,
-      [SubscriptionPlan.LIFETIME]: UserLevel.PROFESSIONAL,
-      [SubscriptionPlan.CUSTOM]: UserLevel.PROFESSIONAL,
+    const levelMap: Record<string, 'basic' | 'advanced' | 'professional'> = {
+      monthly: 'advanced',
+      quarterly: 'advanced',
+      yearly: 'advanced',
+      lifetime: 'professional',
+      custom: 'professional',
     };
 
-    user.level = levelMap[createDto.plan] || UserLevel.ADVANCED;
-    await this.userRepository.save(user);
+    await this.db
+      .update(schema.users)
+      .set({ level: levelMap[createDto.plan] || 'advanced' })
+      .where(eq(schema.users.id, userId));
 
-    return this.subscriptionRepository.save(subscription);
+    return subscription;
   }
 
-  // 获取用户当前订阅
-  async getCurrentSubscription(userId: string): Promise<Subscription | null> {
-    return this.subscriptionRepository.findOne({
-      where: { userId, status: SubscriptionStatus.ACTIVE },
-      order: { endDate: 'DESC' },
-    });
+  async getCurrentSubscription(userId: string): Promise<schema.Subscription | null> {
+    const [subscription] = await this.db
+      .select()
+      .from(schema.subscriptions)
+      .where(
+        and(
+          eq(schema.subscriptions.userId, userId),
+          eq(schema.subscriptions.status, 'active')
+        )
+      )
+      .orderBy(desc(schema.subscriptions.endDate));
+    return subscription || null;
   }
 
-  // 获取用户订阅历史
   async getSubscriptionHistory(
     userId: string,
     page = 1,
     limit = 10,
-  ): Promise<{ subscriptions: Subscription[]; total: number }> {
-    const [subscriptions, total] =
-      await this.subscriptionRepository.findAndCount({
-        where: { userId },
-        skip: (page - 1) * limit,
-        take: limit,
-        order: { createdAt: 'DESC' },
-      });
+  ): Promise<{ subscriptions: schema.Subscription[]; total: number }> {
+    const offset = (page - 1) * limit;
 
-    return { subscriptions, total };
+    const subscriptions = await this.db
+      .select()
+      .from(schema.subscriptions)
+      .where(eq(schema.subscriptions.userId, userId))
+      .orderBy(desc(schema.subscriptions.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    const [{ count }] = await this.db
+      .select({ count: sql<number>`count(*)` })
+      .from(schema.subscriptions)
+      .where(eq(schema.subscriptions.userId, userId));
+
+    return { subscriptions, total: count };
   }
 
-  // 取消订阅
-  async cancel(userId: string, cancelReason?: string): Promise<Subscription> {
+  async cancel(userId: string, cancelReason?: string): Promise<schema.Subscription> {
     const subscription = await this.getCurrentSubscription(userId);
     if (!subscription) {
       throw new NotFoundException('没有有效订阅');
     }
 
-    subscription.autoRenew = false;
-    subscription.cancelledAt = new Date();
-    subscription.cancelReason = cancelReason || '';
+    const [updated] = await this.db
+      .update(schema.subscriptions)
+      .set({
+        autoRenew: false,
+        cancelledAt: new Date(),
+        cancelReason: cancelReason || '',
+        updatedAt: new Date(),
+      })
+      .where(eq(schema.subscriptions.id, subscription.id))
+      .returning();
 
-    return this.subscriptionRepository.save(subscription);
+    return updated;
   }
 
-  // 检查并更新过期订阅
   async checkExpiredSubscriptions(): Promise<void> {
     const now = new Date();
-    const expiredSubscriptions = await this.subscriptionRepository.find({
-      where: {
-        status: SubscriptionStatus.ACTIVE,
-        endDate: Between(new Date(0), now),
-      },
-    });
+
+    const expiredSubscriptions = await this.db
+      .select()
+      .from(schema.subscriptions)
+      .where(
+        and(
+          eq(schema.subscriptions.status, 'active'),
+          lt(schema.subscriptions.endDate, now)
+        )
+      );
 
     for (const subscription of expiredSubscriptions) {
-      subscription.status = SubscriptionStatus.EXPIRED;
-      await this.subscriptionRepository.save(subscription);
+      await this.db
+        .update(schema.subscriptions)
+        .set({ status: 'expired', updatedAt: new Date() })
+        .where(eq(schema.subscriptions.id, subscription.id));
 
-      // 更新用户等级
-      const user = await this.userRepository.findOne({
-        where: { id: subscription.userId },
-      });
-      if (user) {
-        user.level = UserLevel.BASIC;
-        await this.userRepository.save(user);
-      }
+      await this.db
+        .update(schema.users)
+        .set({ level: 'basic' })
+        .where(eq(schema.users.id, subscription.userId));
     }
   }
 
-  // 续费
   async renew(
     userId: string,
     createDto: CreateSubscriptionDto,
-  ): Promise<Subscription> {
+  ): Promise<schema.Subscription> {
     const currentSubscription = await this.getCurrentSubscription(userId);
 
     if (currentSubscription) {
-      // 延长现有订阅
       const newEndDate = new Date(currentSubscription.endDate);
-      const startDate = new Date(createDto.startDate);
 
       switch (createDto.plan) {
-        case SubscriptionPlan.MONTHLY:
+        case 'monthly':
           newEndDate.setMonth(newEndDate.getMonth() + 1);
           break;
-        case SubscriptionPlan.QUARTERLY:
+        case 'quarterly':
           newEndDate.setMonth(newEndDate.getMonth() + 3);
           break;
-        case SubscriptionPlan.YEARLY:
+        case 'yearly':
           newEndDate.setFullYear(newEndDate.getFullYear() + 1);
           break;
-        case SubscriptionPlan.LIFETIME:
+        case 'lifetime':
           newEndDate.setFullYear(newEndDate.getFullYear() + 100);
           break;
       }
 
-      currentSubscription.endDate = newEndDate;
-      currentSubscription.plan = createDto.plan;
-      currentSubscription.price += createDto.price;
+      const [updated] = await this.db
+        .update(schema.subscriptions)
+        .set({
+          endDate: newEndDate,
+          plan: createDto.plan,
+          price: String(parseFloat(currentSubscription.price) + createDto.price),
+          updatedAt: new Date(),
+        })
+        .where(eq(schema.subscriptions.id, currentSubscription.id))
+        .returning();
 
-      return this.subscriptionRepository.save(currentSubscription);
+      return updated;
     }
 
-    // 创建新订阅
     return this.create(userId, createDto);
   }
 }

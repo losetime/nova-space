@@ -1,55 +1,49 @@
-import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { SatelliteTle } from './modules/satellite/entities/satellite-tle.entity';
-import { SatelliteMetadataEntity } from './modules/satellite/entities/satellite-metadata.entity';
-import { User } from './common/entities/user.entity';
-import { Article } from './modules/education/entities/article.entity';
+import { Injectable, Inject } from '@nestjs/common';
+import { DRIZZLE } from './db/drizzle.module';
+import type { DrizzleClient } from './db';
+import * as schema from './db/schema';
+import { eq, sql, and, isNotNull, ne } from 'drizzle-orm';
 
 @Injectable()
 export class AppService {
-  constructor(
-    @InjectRepository(SatelliteTle)
-    private readonly satelliteTleRepository: Repository<SatelliteTle>,
-    @InjectRepository(SatelliteMetadataEntity)
-    private readonly satelliteMetadataRepository: Repository<SatelliteMetadataEntity>,
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
-    @InjectRepository(Article)
-    private readonly articleRepository: Repository<Article>,
-  ) {}
+  constructor(@Inject(DRIZZLE) private db: DrizzleClient) {}
 
   getHello(): string {
     return 'Nova Space API v1.0.0';
   }
 
   async getStats() {
-    // 统计在轨卫星数量
-    const satelliteCount = await this.satelliteTleRepository.count();
+    const [{ satelliteCount }] = await this.db
+      .select({ satelliteCount: sql<number>`count(*)` })
+      .from(schema.satelliteTle);
 
-    // 统计国家/地区数量
-    const countryCount = await this.satelliteMetadataRepository
-      .createQueryBuilder('metadata')
-      .where('metadata.countryCode IS NOT NULL')
-      .andWhere('metadata.countryCode != :empty', { empty: '' })
-      .select('COUNT(DISTINCT metadata.countryCode)', 'count')
-      .getRawOne();
+    const [{ countryCount }] = await this.db
+      .select({
+        countryCount: sql<number>`count(distinct ${schema.satelliteMetadata.countryCode})`,
+      })
+      .from(schema.satelliteMetadata)
+      .where(
+        and(
+          isNotNull(schema.satelliteMetadata.countryCode),
+          ne(schema.satelliteMetadata.countryCode, ''),
+        ),
+      );
 
-    // 统计知识条目数量（已发布的文章）
-    const articleCount = await this.articleRepository.count({
-      where: { isPublished: true },
-    });
+    const [{ articleCount }] = await this.db
+      .select({ articleCount: sql<number>`count(*)` })
+      .from(schema.educationArticles)
+      .where(eq(schema.educationArticles.isPublished, true));
 
-    // 统计活跃用户数量
-    const userCount = await this.userRepository.count({
-      where: { isActive: true },
-    });
+    const [{ userCount }] = await this.db
+      .select({ userCount: sql<number>`count(*)` })
+      .from(schema.users)
+      .where(eq(schema.users.isActive, true));
 
     return {
-      satellites: satelliteCount,
-      countries: parseInt(countryCount?.count || '0', 10),
-      articles: articleCount,
-      users: userCount,
+      satellites: Number(satelliteCount),
+      countries: Number(countryCount),
+      articles: Number(articleCount),
+      users: Number(userCount),
     };
   }
 }

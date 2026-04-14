@@ -14,7 +14,7 @@ import {
   CreatePushSubscriptionDto,
   UpdatePushSubscriptionDto,
 } from './dto/subscription.dto';
-import { PushSubscription } from '../../common/entities/push-subscription.entity';
+import type { PushSubscription } from '../../db/schema';
 
 interface RequestWithUser {
   user: { id: string };

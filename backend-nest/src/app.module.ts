@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { TypeOrmModule } from '@nestjs/typeorm';
+import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { AppController } from './app.controller';
@@ -20,10 +19,7 @@ import { SpaceWeatherModule } from './modules/space-weather/space-weather.module
 import { PushModule } from './modules/push/push.module';
 import { MilestoneModule } from './modules/milestone/milestone.module';
 import { CompanyModule } from './modules/company/company.module';
-import { SatelliteTle } from './modules/satellite/entities/satellite-tle.entity';
-import { SatelliteMetadataEntity } from './modules/satellite/entities/satellite-metadata.entity';
-import { User } from './common/entities/user.entity';
-import { Article } from './modules/education/entities/article.entity';
+import { DrizzleModule } from './db/drizzle.module';
 import appConfig from './config/app.config';
 
 @Module({
@@ -33,27 +29,7 @@ import appConfig from './config/app.config';
       load: [appConfig],
     }),
     ScheduleModule.forRoot(),
-    TypeOrmModule.forRootAsync({
-      imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
-        host: configService.get<string>('app.database.host'),
-        port: configService.get<number>('app.database.port'),
-        username: configService.get<string>('app.database.username'),
-        password: configService.get<string>('app.database.password'),
-        database: configService.get<string>('app.database.database'),
-        entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: false, // 生产环境设为 false
-        autoLoadEntities: true,
-      }),
-      inject: [ConfigService],
-    }),
-    TypeOrmModule.forFeature([
-      SatelliteTle,
-      SatelliteMetadataEntity,
-      User,
-      Article,
-    ]),
+    DrizzleModule,
     UserModule,
     AuthModule,
     SubscriptionModule,

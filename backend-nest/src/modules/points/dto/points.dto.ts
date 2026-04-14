@@ -5,14 +5,15 @@ import {
   IsOptional,
   IsUUID,
 } from 'class-validator';
-import { PointsAction } from '../../../common/enums/user.enum';
+
+export type PointsActionType = 'register' | 'daily_login' | 'share' | 'invite' | 'task_complete' | 'purchase' | 'consume' | 'admin_grant' | 'expire';
 
 export class AddPointsDto {
   @IsNumber()
   points: number;
 
-  @IsEnum(PointsAction)
-  action: PointsAction;
+  @IsEnum(['register', 'daily_login', 'share', 'invite', 'task_complete', 'purchase', 'consume', 'admin_grant', 'expire'])
+  action: PointsActionType;
 
   @IsOptional()
   @IsString()
