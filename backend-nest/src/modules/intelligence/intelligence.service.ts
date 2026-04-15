@@ -2,7 +2,7 @@ import { Injectable, Inject } from '@nestjs/common';
 import { DRIZZLE } from '../../db/drizzle.module';
 import type { DrizzleClient } from '../../db';
 import * as schema from '../../db/schema';
-import { eq, desc, and, inArray, sql } from 'drizzle-orm';
+import { eq, desc, and, inArray, sql, type SQLWrapper } from 'drizzle-orm';
 import { CreateIntelligenceDto } from './dto/create-intelligence.dto';
 import { QueryIntelligenceDto } from './dto/query-intelligence.dto';
 
@@ -22,7 +22,7 @@ export class IntelligenceService {
     const { category, page = 1, pageSize = 12 } = query;
     const offset = (page - 1) * pageSize;
 
-    const conditions: unknown[] = [];
+    const conditions: SQLWrapper[] = [];
 
     if (category) {
       conditions.push(
@@ -45,10 +45,12 @@ export class IntelligenceService {
       );
     }
 
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
     const list = await this.db
       .select()
       .from(schema.intelligences)
-      .where(and(...conditions))
+      .where(whereClause)
       .orderBy(desc(schema.intelligences.publishedAt))
       .limit(pageSize)
       .offset(offset);
@@ -56,7 +58,7 @@ export class IntelligenceService {
     const [{ count }] = await this.db
       .select({ count: sql<number>`count(*)` })
       .from(schema.intelligences)
-      .where(and(...conditions));
+      .where(whereClause);
 
     return {
       list: list.map((item) => ({

@@ -14,3 +14,5 @@ const client = postgres(connectionString, { max: 10 });
 export const db = drizzle(client, { schema });
 
 export type DrizzleClient = ReturnType<typeof drizzle>;
+
+export { schema };
