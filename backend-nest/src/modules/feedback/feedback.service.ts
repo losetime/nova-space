@@ -45,7 +45,10 @@ export class FeedbackService {
     return feedback || null;
   }
 
-  async updateStatus(id: string, status: string): Promise<schema.Feedback | null> {
+  async updateStatus(
+    id: string,
+    status: string,
+  ): Promise<schema.Feedback | null> {
     await this.db
       .update(schema.feedback)
       .set({ status: status as any, updatedAt: new Date() })

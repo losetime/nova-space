@@ -33,8 +33,8 @@ export class SubscriptionService {
       .where(
         and(
           eq(schema.subscriptions.userId, userId),
-          eq(schema.subscriptions.status, 'active')
-        )
+          eq(schema.subscriptions.status, 'active'),
+        ),
       );
 
     if (existingSubscription) {
@@ -72,15 +72,17 @@ export class SubscriptionService {
     return subscription;
   }
 
-  async getCurrentSubscription(userId: string): Promise<schema.Subscription | null> {
+  async getCurrentSubscription(
+    userId: string,
+  ): Promise<schema.Subscription | null> {
     const [subscription] = await this.db
       .select()
       .from(schema.subscriptions)
       .where(
         and(
           eq(schema.subscriptions.userId, userId),
-          eq(schema.subscriptions.status, 'active')
-        )
+          eq(schema.subscriptions.status, 'active'),
+        ),
       )
       .orderBy(desc(schema.subscriptions.endDate));
     return subscription || null;
@@ -109,7 +111,10 @@ export class SubscriptionService {
     return { subscriptions, total: count };
   }
 
-  async cancel(userId: string, cancelReason?: string): Promise<schema.Subscription> {
+  async cancel(
+    userId: string,
+    cancelReason?: string,
+  ): Promise<schema.Subscription> {
     const subscription = await this.getCurrentSubscription(userId);
     if (!subscription) {
       throw new NotFoundException('没有有效订阅');
@@ -138,8 +143,8 @@ export class SubscriptionService {
       .where(
         and(
           eq(schema.subscriptions.status, 'active'),
-          lt(schema.subscriptions.endDate, now)
-        )
+          lt(schema.subscriptions.endDate, now),
+        ),
       );
 
     for (const subscription of expiredSubscriptions) {
@@ -184,7 +189,9 @@ export class SubscriptionService {
         .set({
           endDate: newEndDate,
           plan: createDto.plan,
-          price: String(parseFloat(currentSubscription.price) + createDto.price),
+          price: String(
+            parseFloat(currentSubscription.price) + createDto.price,
+          ),
           updatedAt: new Date(),
         })
         .where(eq(schema.subscriptions.id, currentSubscription.id))

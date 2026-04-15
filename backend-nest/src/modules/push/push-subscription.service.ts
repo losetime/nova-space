@@ -35,7 +35,8 @@ export class PushSubscriptionService {
             status: 'active',
             enabled: true,
             email: dto.email,
-            subscriptionTypes: dto.subscriptionTypes?.join(',') || 'space_weather',
+            subscriptionTypes:
+              dto.subscriptionTypes?.join(',') || 'space_weather',
             updatedAt: new Date(),
           })
           .where(eq(schema.pushSubscriptions.id, existing.id))
@@ -68,7 +69,9 @@ export class PushSubscriptionService {
       throw new NotFoundException('订阅不存在');
     }
 
-    const updateData: Partial<schema.PushSubscription> = { updatedAt: new Date() };
+    const updateData: Partial<schema.PushSubscription> = {
+      updatedAt: new Date(),
+    };
 
     if (dto.email !== undefined) {
       updateData.email = dto.email;

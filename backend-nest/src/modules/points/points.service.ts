@@ -22,7 +22,10 @@ export class PointsService {
     task_complete: 20,
   };
 
-  async addPoints(userId: string, dto: AddPointsDto): Promise<schema.PointsRecord> {
+  async addPoints(
+    userId: string,
+    dto: AddPointsDto,
+  ): Promise<schema.PointsRecord> {
     const [user] = await this.db
       .select()
       .from(schema.users)
@@ -32,15 +35,18 @@ export class PointsService {
       throw new NotFoundException('用户不存在');
     }
 
-    const [record] = await this.db.insert(schema.pointsRecords).values({
-      userId,
-      points: dto.points,
-      action: dto.action,
-      balance: String(user.points + dto.points),
-      description: dto.description || this.getDefaultDescription(dto.action),
-      relatedId: dto.relatedId,
-      relatedType: dto.relatedType,
-    }).returning();
+    const [record] = await this.db
+      .insert(schema.pointsRecords)
+      .values({
+        userId,
+        points: dto.points,
+        action: dto.action,
+        balance: String(user.points + dto.points),
+        description: dto.description || this.getDefaultDescription(dto.action),
+        relatedId: dto.relatedId,
+        relatedType: dto.relatedType,
+      })
+      .returning();
 
     await this.db
       .update(schema.users)
@@ -70,15 +76,18 @@ export class PointsService {
       throw new BadRequestException('积分不足');
     }
 
-    const [record] = await this.db.insert(schema.pointsRecords).values({
-      userId,
-      points: -dto.points,
-      action: 'consume',
-      balance: String(user.points - dto.points),
-      description: dto.description,
-      relatedId: dto.relatedId,
-      relatedType: dto.relatedType,
-    }).returning();
+    const [record] = await this.db
+      .insert(schema.pointsRecords)
+      .values({
+        userId,
+        points: -dto.points,
+        action: 'consume',
+        balance: String(user.points - dto.points),
+        description: dto.description,
+        relatedId: dto.relatedId,
+        relatedType: dto.relatedType,
+      })
+      .returning();
 
     await this.db
       .update(schema.users)
@@ -128,8 +137,8 @@ export class PointsService {
           eq(schema.pointsRecords.userId, userId),
           eq(schema.pointsRecords.action, 'daily_login'),
           gte(schema.pointsRecords.createdAt, today),
-          lt(schema.pointsRecords.createdAt, tomorrow)
-        )
+          lt(schema.pointsRecords.createdAt, tomorrow),
+        ),
       );
 
     if (existingRecord) {
@@ -166,8 +175,8 @@ export class PointsService {
       .where(
         and(
           eq(schema.pointsRecords.userId, userId),
-          sql`${schema.pointsRecords.points} > 0`
-        )
+          sql`${schema.pointsRecords.points} > 0`,
+        ),
       );
 
     const [{ totalConsumed }] = await this.db
@@ -176,8 +185,8 @@ export class PointsService {
       .where(
         and(
           eq(schema.pointsRecords.userId, userId),
-          sql`${schema.pointsRecords.points} < 0`
-        )
+          sql`${schema.pointsRecords.points} < 0`,
+        ),
       );
 
     const [{ checkinCount }] = await this.db
@@ -186,8 +195,8 @@ export class PointsService {
       .where(
         and(
           eq(schema.pointsRecords.userId, userId),
-          eq(schema.pointsRecords.action, 'daily_login')
-        )
+          eq(schema.pointsRecords.action, 'daily_login'),
+        ),
       );
 
     return {

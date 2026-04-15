@@ -7,7 +7,12 @@ import {
   IsDateString,
 } from 'class-validator';
 
-export type SubscriptionPlanType = 'monthly' | 'quarterly' | 'yearly' | 'lifetime' | 'custom';
+export type SubscriptionPlanType =
+  | 'monthly'
+  | 'quarterly'
+  | 'yearly'
+  | 'lifetime'
+  | 'custom';
 
 export class CreateSubscriptionDto {
   @IsEnum(['monthly', 'quarterly', 'yearly', 'lifetime', 'custom'])

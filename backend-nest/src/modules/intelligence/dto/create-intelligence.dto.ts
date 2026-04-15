@@ -1,6 +1,11 @@
 import { IsString, IsOptional, IsEnum, IsUrl } from 'class-validator';
 
-export type IntelligenceCategory = 'launch' | 'satellite' | 'industry' | 'research' | 'environment';
+export type IntelligenceCategory =
+  | 'launch'
+  | 'satellite'
+  | 'industry'
+  | 'research'
+  | 'environment';
 export type IntelligenceLevel = 'free' | 'advanced' | 'professional';
 
 export class CreateIntelligenceDto {

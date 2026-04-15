@@ -60,7 +60,9 @@ export class CompanyService {
       .from(schema.satelliteMetadata)
       .where(eq(schema.satelliteMetadata.manufacturer, name));
 
-    const filterByTLE = (sats: schema.SatelliteMetadata[]): SatelliteBrief[] => {
+    const filterByTLE = (
+      sats: schema.SatelliteMetadata[],
+    ): SatelliteBrief[] => {
       return sats
         .filter((sat) => tleNoradIds.has(sat.noradId))
         .map((sat) => ({

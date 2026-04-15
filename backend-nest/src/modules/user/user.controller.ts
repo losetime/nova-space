@@ -30,7 +30,7 @@ export class UserController {
     if (!user) {
       return { code: 404, message: '用户不存在' };
     }
-    const { password, ...result } = user as any;
+    const { password, ...result } = user;
     return { code: 0, data: result };
   }
 

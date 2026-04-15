@@ -1,7 +1,12 @@
 import { IsEnum, IsOptional, IsInt, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 
-export type IntelligenceCategory = 'launch' | 'satellite' | 'industry' | 'research' | 'environment';
+export type IntelligenceCategory =
+  | 'launch'
+  | 'satellite'
+  | 'industry'
+  | 'research'
+  | 'environment';
 
 export class QueryIntelligenceDto {
   @IsOptional()

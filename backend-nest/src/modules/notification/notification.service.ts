@@ -79,8 +79,8 @@ export class NotificationService {
       .where(
         and(
           eq(schema.notifications.userId, userId),
-          eq(schema.notifications.isRead, false)
-        )
+          eq(schema.notifications.isRead, false),
+        ),
       );
     return count;
   }
@@ -92,8 +92,8 @@ export class NotificationService {
       .where(
         and(
           eq(schema.notifications.id, notificationId),
-          eq(schema.notifications.userId, userId)
-        )
+          eq(schema.notifications.userId, userId),
+        ),
       );
     return (result as any).rowCount > 0;
   }
@@ -105,8 +105,8 @@ export class NotificationService {
       .where(
         and(
           eq(schema.notifications.userId, userId),
-          eq(schema.notifications.isRead, false)
-        )
+          eq(schema.notifications.isRead, false),
+        ),
       );
     return (result as any).rowCount;
   }
@@ -117,8 +117,8 @@ export class NotificationService {
       .where(
         and(
           eq(schema.notifications.id, notificationId),
-          eq(schema.notifications.userId, userId)
-        )
+          eq(schema.notifications.userId, userId),
+        ),
       );
     return (result as any).rowCount > 0;
   }
@@ -129,8 +129,8 @@ export class NotificationService {
       .where(
         and(
           eq(schema.notifications.userId, userId),
-          eq(schema.notifications.isRead, true)
-        )
+          eq(schema.notifications.isRead, true),
+        ),
       );
     return (result as any).rowCount;
   }

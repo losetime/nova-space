@@ -36,8 +36,16 @@ export class MilestoneService {
       .where(and(...conditions))
       .orderBy(
         sortOrder === 'DESC'
-          ? desc(schema.milestones[sortBy as keyof typeof schema.milestones.$inferSelect] as any)
-          : asc(schema.milestones[sortBy as keyof typeof schema.milestones.$inferSelect] as any)
+          ? desc(
+              schema.milestones[
+                sortBy as keyof typeof schema.milestones.$inferSelect
+              ] as any,
+            )
+          : asc(
+              schema.milestones[
+                sortBy as keyof typeof schema.milestones.$inferSelect
+              ] as any,
+            ),
       )
       .limit(pageSize)
       .offset(offset);
@@ -154,10 +162,13 @@ export class MilestoneService {
       .where(
         and(
           eq(schema.milestones.isPublished, true),
-          gte(schema.milestones.importance, 4)
-        )
+          gte(schema.milestones.importance, 4),
+        ),
       )
-      .orderBy(desc(schema.milestones.importance), desc(schema.milestones.eventDate))
+      .orderBy(
+        desc(schema.milestones.importance),
+        desc(schema.milestones.eventDate),
+      )
       .limit(limit);
   }
 }

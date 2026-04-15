@@ -11,8 +11,17 @@ import {
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 
-export type MilestoneCategory = 'launch' | 'recovery' | 'orbit' | 'mission' | 'other';
-export type MediaItem = { type: 'image' | 'video'; url: string; caption?: string };
+export type MilestoneCategory =
+  | 'launch'
+  | 'recovery'
+  | 'orbit'
+  | 'mission'
+  | 'other';
+export type MediaItem = {
+  type: 'image' | 'video';
+  url: string;
+  caption?: string;
+};
 
 export class CreateMilestoneDto {
   @IsString()

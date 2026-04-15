@@ -19,8 +19,8 @@ export class SatelliteFavoriteService {
         and(
           eq(schema.userFavorites.userId, userId),
           eq(schema.userFavorites.targetId, noradId),
-          eq(schema.userFavorites.type, 'satellite')
-        )
+          eq(schema.userFavorites.type, 'satellite'),
+        ),
       );
 
     if (existing) {
@@ -46,8 +46,8 @@ export class SatelliteFavoriteService {
         and(
           eq(schema.userFavorites.userId, userId),
           eq(schema.userFavorites.targetId, noradId),
-          eq(schema.userFavorites.type, 'satellite')
-        )
+          eq(schema.userFavorites.type, 'satellite'),
+        ),
       );
     return !!favorite;
   }
@@ -59,8 +59,8 @@ export class SatelliteFavoriteService {
       .where(
         and(
           eq(schema.userFavorites.userId, userId),
-          eq(schema.userFavorites.type, 'satellite')
-        )
+          eq(schema.userFavorites.type, 'satellite'),
+        ),
       )
       .orderBy(desc(schema.userFavorites.createdAt));
   }
@@ -73,8 +73,8 @@ export class SatelliteFavoriteService {
         and(
           eq(schema.userFavorites.userId, userId),
           eq(schema.userFavorites.targetId, noradId),
-          eq(schema.userFavorites.type, 'satellite')
-        )
+          eq(schema.userFavorites.type, 'satellite'),
+        ),
       );
 
     if (!favorite) {

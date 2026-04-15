@@ -6,13 +6,32 @@ import {
   IsUUID,
 } from 'class-validator';
 
-export type PointsActionType = 'register' | 'daily_login' | 'share' | 'invite' | 'task_complete' | 'purchase' | 'consume' | 'admin_grant' | 'expire';
+export type PointsActionType =
+  | 'register'
+  | 'daily_login'
+  | 'share'
+  | 'invite'
+  | 'task_complete'
+  | 'purchase'
+  | 'consume'
+  | 'admin_grant'
+  | 'expire';
 
 export class AddPointsDto {
   @IsNumber()
   points: number;
 
-  @IsEnum(['register', 'daily_login', 'share', 'invite', 'task_complete', 'purchase', 'consume', 'admin_grant', 'expire'])
+  @IsEnum([
+    'register',
+    'daily_login',
+    'share',
+    'invite',
+    'task_complete',
+    'purchase',
+    'consume',
+    'admin_grant',
+    'expire',
+  ])
   action: PointsActionType;
 
   @IsOptional()
