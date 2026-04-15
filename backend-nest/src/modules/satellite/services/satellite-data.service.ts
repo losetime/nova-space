@@ -2,15 +2,21 @@ import { Injectable, Logger, OnModuleInit, Inject } from '@nestjs/common';
 import { DRIZZLE } from '../../../db/drizzle.module';
 import type { DrizzleClient } from '../../../db';
 import * as schema from '../../../db/schema';
-import { eq, desc, sql, and, isNotNull, ne, gte } from 'drizzle-orm';
+import { eq, desc, sql } from 'drizzle-orm';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import type { TLEData, SatelliteMetadata } from '../interfaces/satellite.interface';
+import type {
+  TLEData,
+  SatelliteMetadata,
+} from '../interfaces/satellite.interface';
 
 @Injectable()
 export class SatelliteDataService implements OnModuleInit {
   private readonly logger = new Logger(SatelliteDataService.name);
   private cachedTLEs: TLEData[] = [];
-  private cachedMetadata: Map<string, { countryCode?: string; mission?: string; operator?: string }> = new Map();
+  private cachedMetadata: Map<
+    string,
+    { countryCode?: string; mission?: string; operator?: string }
+  > = new Map();
 
   constructor(@Inject(DRIZZLE) private db: DrizzleClient) {}
 
@@ -20,7 +26,9 @@ export class SatelliteDataService implements OnModuleInit {
 
   @Cron(CronExpression.EVERY_HOUR)
   async refreshFromDatabase(): Promise<void> {
-    const [{ count }] = await this.db.select({ count: sql<number>`count(*)` }).from(schema.satelliteTle);
+    const [{ count }] = await this.db
+      .select({ count: sql<number>`count(*)` })
+      .from(schema.satelliteTle);
     if (Number(count) > 0) {
       this.logger.log(`从数据库刷新卫星数据: ${count} TLE`);
       await this.loadFromDatabase();
@@ -30,7 +38,10 @@ export class SatelliteDataService implements OnModuleInit {
   }
 
   private async loadFromDatabase(): Promise<void> {
-    const tleEntities = await this.db.select().from(schema.satelliteTle).orderBy(desc(schema.satelliteTle.updatedAt));
+    const tleEntities = await this.db
+      .select()
+      .from(schema.satelliteTle)
+      .orderBy(desc(schema.satelliteTle.updatedAt));
     this.cachedTLEs = tleEntities.map((entity: any) => ({
       name: entity.name,
       noradId: entity.noradId,
@@ -44,7 +55,9 @@ export class SatelliteDataService implements OnModuleInit {
       meanMotion: entity.meanMotion ?? undefined,
     }));
 
-    const metadataEntities = await this.db.select().from(schema.satelliteMetadata);
+    const metadataEntities = await this.db
+      .select()
+      .from(schema.satelliteMetadata);
     this.cachedMetadata.clear();
     metadataEntities.forEach((entity: any) => {
       this.cachedMetadata.set(entity.noradId, {
@@ -56,8 +69,12 @@ export class SatelliteDataService implements OnModuleInit {
     this.logger.log(`已加载 ${this.cachedTLEs.length} 条 TLE 数据`);
   }
 
-  getCachedMetadata() { return this.cachedMetadata; }
-  getCachedTLEs(): TLEData[] { return this.cachedTLEs; }
+  getCachedMetadata() {
+    return this.cachedMetadata;
+  }
+  getCachedTLEs(): TLEData[] {
+    return this.cachedTLEs;
+  }
 
   getAllTLEsForClient() {
     return this.cachedTLEs.map((tle) => ({
@@ -71,8 +88,13 @@ export class SatelliteDataService implements OnModuleInit {
     }));
   }
 
-  async getSatelliteMetadata(noradId: string): Promise<SatelliteMetadata | null> {
-    const [entity] = await this.db.select().from(schema.satelliteMetadata).where(eq(schema.satelliteMetadata.noradId, noradId));
+  async getSatelliteMetadata(
+    noradId: string,
+  ): Promise<SatelliteMetadata | null> {
+    const [entity] = await this.db
+      .select()
+      .from(schema.satelliteMetadata)
+      .where(eq(schema.satelliteMetadata.noradId, noradId));
     if (!entity) return null;
     return this.entityToMetadata(entity as any);
   }
@@ -80,7 +102,9 @@ export class SatelliteDataService implements OnModuleInit {
   async getAllMetadata(): Promise<Map<string, SatelliteMetadata>> {
     const entities = await this.db.select().from(schema.satelliteMetadata);
     const map = new Map<string, SatelliteMetadata>();
-    entities.forEach((entity: any) => map.set(entity.noradId, this.entityToMetadata(entity)));
+    entities.forEach((entity: any) =>
+      map.set(entity.noradId, this.entityToMetadata(entity)),
+    );
     return map;
   }
 
@@ -154,7 +178,10 @@ export class SatelliteDataService implements OnModuleInit {
   }
 
   async updateSatelliteMetadata(noradId: string, data: any): Promise<void> {
-    await this.db.update(schema.satelliteMetadata).set(data).where(eq(schema.satelliteMetadata.noradId, noradId));
+    await this.db
+      .update(schema.satelliteMetadata)
+      .set(data)
+      .where(eq(schema.satelliteMetadata.noradId, noradId));
   }
 
   async getMissionCounts(): Promise<{ name: string; count: number }[]> {
@@ -167,7 +194,9 @@ export class SatelliteDataService implements OnModuleInit {
         missionCount.set(category, (missionCount.get(category) || 0) + 1);
       }
     });
-    return Array.from(missionCount.entries()).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count);
+    return Array.from(missionCount.entries())
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count);
   }
 
   async getOperatorCounts(): Promise<{ name: string; count: number }[]> {
@@ -176,15 +205,26 @@ export class SatelliteDataService implements OnModuleInit {
     const operatorCount = new Map<string, number>();
     metadata.forEach((meta, noradId) => {
       if (tleNoradIds.has(noradId) && meta.operator) {
-        operatorCount.set(meta.operator, (operatorCount.get(meta.operator) || 0) + 1);
+        operatorCount.set(
+          meta.operator,
+          (operatorCount.get(meta.operator) || 0) + 1,
+        );
       }
     });
-    return Array.from(operatorCount.entries()).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count);
+    return Array.from(operatorCount.entries())
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count);
   }
 
   private readonly MISSION_CATEGORIES: Record<string, string> = {
-    Communications: '通信', Navigation: '导航', 'Earth Observation': '遥感', Weather: '气象',
-    'Space Science': '科学', Technology: '技术试验', Defense: '国防', 'Space Station': '载人航天',
+    Communications: '通信',
+    Navigation: '导航',
+    'Earth Observation': '遥感',
+    Weather: '气象',
+    'Space Science': '科学',
+    Technology: '技术试验',
+    Defense: '国防',
+    'Space Station': '载人航天',
   };
 
   private categorizeMission(mission: string): string {

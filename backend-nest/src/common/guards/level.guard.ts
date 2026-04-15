@@ -5,13 +5,15 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { UserLevel } from '../enums/user.enum';
+import type { RequestWithUser } from '../interfaces/request.interface';
 
 @Injectable()
 export class LevelGuard implements CanActivate {
   constructor(private requiredLevel: UserLevel) {}
 
   canActivate(context: ExecutionContext): boolean {
-    const { user } = context.switchToHttp().getRequest();
+    const request = context.switchToHttp().getRequest<RequestWithUser>();
+    const { user } = request;
 
     if (!user) {
       throw new ForbiddenException('请先登录');

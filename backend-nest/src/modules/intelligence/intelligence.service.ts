@@ -6,6 +6,9 @@ import { eq, desc, and, inArray, sql } from 'drizzle-orm';
 import { CreateIntelligenceDto } from './dto/create-intelligence.dto';
 import { QueryIntelligenceDto } from './dto/query-intelligence.dto';
 
+type IntelligenceLevel = 'free' | 'advanced' | 'professional';
+type IntelligenceCategory = 'satellite' | 'launch' | 'industry' | 'research' | 'environment';
+
 @Injectable()
 export class IntelligenceService {
   constructor(@Inject(DRIZZLE) private db: DrizzleClient) {}
@@ -14,19 +17,20 @@ export class IntelligenceService {
     const { category, page = 1, pageSize = 12 } = query;
     const offset = (page - 1) * pageSize;
 
-    const conditions: any[] = [];
+    const conditions: unknown[] = [];
 
     if (category) {
-      conditions.push(eq(schema.intelligences.category, category as any));
+      conditions.push(eq(schema.intelligences.category, category as IntelligenceCategory));
     }
 
     if (userLevel === 'professional') {
+      // professional 用户可以访问所有内容
     } else if (userLevel === 'advanced') {
       conditions.push(
-        inArray(schema.intelligences.level, ['free', 'advanced'])
+        inArray(schema.intelligences.level, ['free', 'advanced'] as IntelligenceLevel[]),
       );
     } else {
-      conditions.push(eq(schema.intelligences.level, 'free'));
+      conditions.push(eq(schema.intelligences.level, 'free' as IntelligenceLevel));
     }
 
     const list = await this.db
@@ -77,8 +81,8 @@ export class IntelligenceService {
         .where(
           and(
             eq(schema.intelligenceCollects.userId, userId),
-            eq(schema.intelligenceCollects.intelligenceId, id)
-          )
+            eq(schema.intelligenceCollects.intelligenceId, id),
+          ),
         );
       isCollected = !!collect;
     }
@@ -111,8 +115,8 @@ export class IntelligenceService {
       .where(
         and(
           eq(schema.intelligenceCollects.userId, userId),
-          eq(schema.intelligenceCollects.intelligenceId, intelligenceId)
-        )
+          eq(schema.intelligenceCollects.intelligenceId, intelligenceId),
+        ),
       );
 
     if (existing) {
@@ -165,7 +169,10 @@ export class IntelligenceService {
         tags: schema.intelligences.tags,
       })
       .from(schema.intelligenceCollects)
-      .leftJoin(schema.intelligences, eq(schema.intelligenceCollects.intelligenceId, schema.intelligences.id))
+      .leftJoin(
+        schema.intelligences,
+        eq(schema.intelligenceCollects.intelligenceId, schema.intelligences.id),
+      )
       .where(eq(schema.intelligenceCollects.userId, userId))
       .orderBy(desc(schema.intelligenceCollects.createdAt));
 

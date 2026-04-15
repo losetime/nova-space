@@ -12,6 +12,7 @@ import {
 import { FeedbackService } from './feedback.service';
 import { CreateFeedbackDto } from './dto/create-feedback.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import type { RequestWithUser } from '../../common/interfaces';
 
 @Controller('feedback')
 export class FeedbackController {
@@ -20,9 +21,8 @@ export class FeedbackController {
   @Post()
   async create(
     @Body() createFeedbackDto: CreateFeedbackDto,
-    @Request() req: any,
+    @Request() req: RequestWithUser,
   ) {
-    // 如果用户已登录，自动关联用户ID
     if (req.user?.id) {
       createFeedbackDto.userId = req.user.id;
     }

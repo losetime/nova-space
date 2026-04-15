@@ -19,7 +19,9 @@ export class AuthService {
     return { user, token };
   }
 
-  async login(loginDto: LoginDto): Promise<{ user: schema.User; token: string }> {
+  async login(
+    loginDto: LoginDto,
+  ): Promise<{ user: schema.User; token: string }> {
     const user = await this.userService.validateUser(
       loginDto.username,
       loginDto.password,

@@ -8,7 +8,7 @@ import {
 import { DRIZZLE } from '../../db/drizzle.module';
 import type { DrizzleClient } from '../../db';
 import * as schema from '../../db/schema';
-import { eq, or, sql, and, isNotNull, desc } from 'drizzle-orm';
+import { eq, or, sql, desc } from 'drizzle-orm';
 import * as bcrypt from 'bcrypt';
 import { UserRole, UserLevel } from '../../common/enums/user.enum';
 import {
@@ -89,16 +89,19 @@ export class UserService {
       .from(schema.users)
       .where(eq(schema.users.id, id));
     if (!user) return null;
-    
+
     const [subscription] = await this.db
       .select()
       .from(schema.subscriptions)
       .where(eq(schema.subscriptions.userId, id));
-    
+
     return { ...user, subscription };
   }
 
-  async validateUser(username: string, password: string): Promise<schema.User | null> {
+  async validateUser(
+    username: string,
+    password: string,
+  ): Promise<schema.User | null> {
     const [user] = await this.db
       .select()
       .from(schema.users)
@@ -250,7 +253,8 @@ export class UserService {
     }
 
     const newPoints = user.points + points;
-    const newTotalPoints = points > 0 ? user.totalPoints + points : user.totalPoints;
+    const newTotalPoints =
+      points > 0 ? user.totalPoints + points : user.totalPoints;
 
     const [updatedUser] = await this.db
       .update(schema.users)

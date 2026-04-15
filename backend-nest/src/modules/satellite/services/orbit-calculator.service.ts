@@ -1,8 +1,7 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
+import { Cron } from '@nestjs/schedule';
 import * as satellite from 'satellite.js';
 import type {
-  TLEData,
   SatellitePosition,
   OrbitPoint,
   SatelliteData,

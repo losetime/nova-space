@@ -2,7 +2,7 @@ import { Injectable, Inject } from '@nestjs/common';
 import { DRIZZLE } from '../../db/drizzle.module';
 import type { DrizzleClient } from '../../db';
 import * as schema from '../../db/schema';
-import { eq, desc, and, gte, sql, lt, isNull } from 'drizzle-orm';
+import { eq, desc, and, gte, sql } from 'drizzle-orm';
 import { CreateArticleDto } from './dto/create-article.dto';
 import { SubmitAnswerDto } from './dto/submit-answer.dto';
 
@@ -80,8 +80,8 @@ export class EducationService {
       .where(
         and(
           eq(schema.educationQuizAnswers.userId, userId),
-          gte(schema.educationQuizAnswers.createdAt, today)
-        )
+          gte(schema.educationQuizAnswers.createdAt, today),
+        ),
       );
 
     if (answeredToday) {
@@ -182,8 +182,8 @@ export class EducationService {
       .where(
         and(
           eq(schema.educationArticleCollects.userId, userId),
-          eq(schema.educationArticleCollects.articleId, articleId)
-        )
+          eq(schema.educationArticleCollects.articleId, articleId),
+        ),
       );
 
     if (existing) {
@@ -207,8 +207,8 @@ export class EducationService {
       .where(
         and(
           eq(schema.educationArticleCollects.userId, userId),
-          eq(schema.educationArticleCollects.articleId, articleId)
-        )
+          eq(schema.educationArticleCollects.articleId, articleId),
+        ),
       );
     return !!collect;
   }
@@ -231,7 +231,13 @@ export class EducationService {
         category: schema.educationArticles.category,
       })
       .from(schema.educationArticleCollects)
-      .leftJoin(schema.educationArticles, eq(schema.educationArticleCollects.articleId, schema.educationArticles.id))
+      .leftJoin(
+        schema.educationArticles,
+        eq(
+          schema.educationArticleCollects.articleId,
+          schema.educationArticles.id,
+        ),
+      )
       .where(eq(schema.educationArticleCollects.userId, userId))
       .orderBy(desc(schema.educationArticleCollects.createdAt))
       .limit(limit)
@@ -265,8 +271,8 @@ export class EducationService {
       .where(
         and(
           eq(schema.articleLikes.userId, userId),
-          eq(schema.articleLikes.articleId, articleId)
-        )
+          eq(schema.articleLikes.articleId, articleId),
+        ),
       );
 
     if (existing) {
@@ -312,8 +318,8 @@ export class EducationService {
       .where(
         and(
           eq(schema.articleLikes.userId, userId),
-          eq(schema.articleLikes.articleId, articleId)
-        )
+          eq(schema.articleLikes.articleId, articleId),
+        ),
       );
     return !!like;
   }

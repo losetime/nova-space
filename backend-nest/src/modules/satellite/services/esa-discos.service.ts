@@ -6,62 +6,6 @@ import * as schema from '../../../db/schema';
 import { eq } from 'drizzle-orm';
 import type { SatelliteMetadata } from '../interfaces/satellite.interface';
 
-interface DiscosResponse {
-  data: Array<{
-    id: string;
-    type: string;
-    attributes: {
-      cosparId?: string;
-      satno?: number;
-      name?: string;
-      objectClass?: string;
-      mass?: number;
-      shape?: string;
-      width?: number;
-      height?: number;
-      depth?: number;
-      span?: number;
-      mission?: string;
-      firstEpoch?: string;
-      predDecayDate?: string;
-    };
-    relationships?: {
-      operators?: { data?: Array<{ type: string; id: string }> };
-      launch?: { data?: { type: string; id: string } | null };
-    };
-  }>;
-  included?: Array<{
-    type: string;
-    id: string;
-    attributes: {
-      name?: string;
-      flightNo?: string;
-      cosparLaunchNo?: string;
-      failure?: boolean;
-    };
-  }>;
-}
-
-interface DiscosSatelliteInfo {
-  cosparId?: string;
-  objectClass?: string;
-  mass?: number;
-  shape?: string;
-  width?: number;
-  height?: number;
-  depth?: number;
-  span?: number;
-  mission?: string;
-  firstEpoch?: string;
-  operator?: string;
-  predDecayDate?: string;
-  launchVehicle?: string;
-  flightNo?: string;
-  cosparLaunchNo?: string;
-  launchFailure?: boolean;
-  launchSiteName?: string;
-}
-
 @Injectable()
 export class EsaDiscosService {
   private readonly logger = new Logger(EsaDiscosService.name);
@@ -79,7 +23,9 @@ export class EsaDiscosService {
     return !!this.apiToken;
   }
 
-  async enrichSatelliteMetadata(noradId: string): Promise<SatelliteMetadata | null> {
+  async enrichSatelliteMetadata(
+    noradId: string,
+  ): Promise<SatelliteMetadata | null> {
     const [entity] = await this.db
       .select()
       .from(schema.satelliteMetadata)
@@ -90,7 +36,9 @@ export class EsaDiscosService {
     return this.entityToMetadata(entity);
   }
 
-  private entityToMetadata(entity: schema.SatelliteMetadata): SatelliteMetadata {
+  private entityToMetadata(
+    entity: schema.SatelliteMetadata,
+  ): SatelliteMetadata {
     let tleAge: number | undefined;
     if (entity.tleEpoch) {
       const ageMs = Date.now() - entity.tleEpoch.getTime();

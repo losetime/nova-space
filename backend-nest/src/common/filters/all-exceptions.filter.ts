@@ -7,6 +7,12 @@ import {
 } from '@nestjs/common';
 import { Response } from 'express';
 
+interface ExceptionResponseObject {
+  message?: string | string[];
+  code?: number;
+  error?: string;
+}
+
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost) {
@@ -24,8 +30,8 @@ export class AllExceptionsFilter implements ExceptionFilter {
       if (typeof exceptionResponse === 'string') {
         message = exceptionResponse;
       } else if (typeof exceptionResponse === 'object') {
-        const res = exceptionResponse as any;
-        message = res.message || message;
+        const res = exceptionResponse as ExceptionResponseObject;
+        message = Array.isArray(res.message) ? res.message[0] : (res.message || message);
         code = res.code || -1;
       }
     } else if (exception instanceof Error) {
