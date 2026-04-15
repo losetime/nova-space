@@ -116,7 +116,7 @@ export class OrbitCalculatorService implements OnModuleInit {
           }
           positionData.push(position);
         }
-      } catch (error) {
+      } catch (_error) {
         // 静默处理单个卫星计算错误
       }
     });

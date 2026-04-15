@@ -83,7 +83,7 @@ export class UserService {
     return user || null;
   }
 
-  async findByIdWithSubscription(id: string): Promise<any | null> {
+  async findByIdWithSubscription(id: string): Promise<schema.User | null> {
     const [user] = await this.db
       .select()
       .from(schema.users)

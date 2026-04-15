@@ -13,10 +13,7 @@ import { SatelliteDataService } from './services/satellite-data.service';
 import { SatelliteFavoriteService } from './services/satellite-favorite.service';
 import { EsaDiscosService } from './services/esa-discos.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import type {
-  OrbitPoint,
-  ObserverPosition,
-} from './interfaces/satellite.interface';
+import type { ObserverPosition } from './interfaces/satellite.interface';
 
 /**
  * 卫星控制器
