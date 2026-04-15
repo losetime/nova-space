@@ -31,7 +31,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
         message = exceptionResponse;
       } else if (typeof exceptionResponse === 'object') {
         const res = exceptionResponse as ExceptionResponseObject;
-        message = Array.isArray(res.message) ? res.message[0] : (res.message || message);
+        message = Array.isArray(res.message)
+          ? res.message[0]
+          : res.message || message;
         code = res.code || -1;
       }
     } else if (exception instanceof Error) {

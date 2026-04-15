@@ -7,7 +7,12 @@ import { CreateIntelligenceDto } from './dto/create-intelligence.dto';
 import { QueryIntelligenceDto } from './dto/query-intelligence.dto';
 
 type IntelligenceLevel = 'free' | 'advanced' | 'professional';
-type IntelligenceCategory = 'satellite' | 'launch' | 'industry' | 'research' | 'environment';
+type IntelligenceCategory =
+  | 'satellite'
+  | 'launch'
+  | 'industry'
+  | 'research'
+  | 'environment';
 
 @Injectable()
 export class IntelligenceService {
@@ -20,17 +25,24 @@ export class IntelligenceService {
     const conditions: unknown[] = [];
 
     if (category) {
-      conditions.push(eq(schema.intelligences.category, category as IntelligenceCategory));
+      conditions.push(
+        eq(schema.intelligences.category, category as IntelligenceCategory),
+      );
     }
 
     if (userLevel === 'professional') {
       // professional 用户可以访问所有内容
     } else if (userLevel === 'advanced') {
       conditions.push(
-        inArray(schema.intelligences.level, ['free', 'advanced'] as IntelligenceLevel[]),
+        inArray(schema.intelligences.level, [
+          'free',
+          'advanced',
+        ] as IntelligenceLevel[]),
       );
     } else {
-      conditions.push(eq(schema.intelligences.level, 'free' as IntelligenceLevel));
+      conditions.push(
+        eq(schema.intelligences.level, 'free' as IntelligenceLevel),
+      );
     }
 
     const list = await this.db

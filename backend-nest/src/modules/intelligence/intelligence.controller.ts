@@ -19,7 +19,10 @@ export class IntelligenceController {
   constructor(private readonly intelligenceService: IntelligenceService) {}
 
   @Get()
-  async findAll(@Query() query: QueryIntelligenceDto, @Request() req: RequestWithUser) {
+  async findAll(
+    @Query() query: QueryIntelligenceDto,
+    @Request() req: RequestWithUser,
+  ) {
     const userLevel = req.user?.level || 'basic';
     return this.intelligenceService.findAll(query, userLevel);
   }
@@ -37,10 +40,7 @@ export class IntelligenceController {
 
   @Post(':id/collect')
   @UseGuards(JwtAuthGuard)
-  async collect(
-    @Param('id') id: number,
-    @Request() req: RequestWithUser,
-  ) {
+  async collect(@Param('id') id: number, @Request() req: RequestWithUser) {
     return this.intelligenceService.collect(req.user.id, id);
   }
 
