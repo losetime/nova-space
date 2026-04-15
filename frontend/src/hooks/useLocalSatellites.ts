@@ -89,9 +89,10 @@ export function useLocalSatellites() {
         state.value.status = 'error'
         state.value.error = '没有可用的卫星数据'
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       state.value.status = 'error'
-      state.value.error = error.message || '加载卫星数据失败'
+      const err = error as { message?: string }
+      state.value.error = err.message || '加载卫星数据失败'
       console.error('[LocalSatellites] 加载 TLE 数据失败:', error)
     } finally {
       state.value.isLoading = false

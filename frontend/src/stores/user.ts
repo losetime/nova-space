@@ -20,7 +20,7 @@ export const useUserStore = defineStore('user', () => {
       const response = await authApi.login({ username, password })
       const data = response.data.data
       const userData = data.user
-      const accessToken = (data as any).token || (data as any).accessToken
+      const accessToken = data.accessToken ?? data.token
 
       console.log('Login response:', { userData, accessToken })
 
@@ -47,7 +47,7 @@ export const useUserStore = defineStore('user', () => {
       const response = await authApi.register({ username, email, password })
       const data = response.data.data
       const userData = data.user
-      const accessToken = (data as any).token || (data as any).accessToken
+      const accessToken = data.accessToken ?? data.token
 
       // 保存 Token
       localStorage.setItem('accessToken', accessToken)

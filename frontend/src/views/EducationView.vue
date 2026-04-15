@@ -274,8 +274,9 @@ const submitAnswer = async () => {
     });
     quizResult.value = res.data.data;
     showResult.value = true;
-  } catch (error: any) {
-    message.error(error.response?.data?.message || "提交失败");
+  } catch (error: unknown) {
+    const err = error as { response?: { data?: { message?: string } } }
+    message.error(err.response?.data?.message || "提交失败");
   } finally {
     submitting.value = false;
   }

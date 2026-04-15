@@ -772,7 +772,7 @@ export interface Milestone {
   eventDate: string
   category: 'launch' | 'recovery' | 'orbit' | 'mission' | 'other'
   cover?: string
-  media?: any[]
+  media?: Array<{ type: 'image' | 'video'; url: string; caption?: string }>
   relatedSatelliteNoradId?: string
   importance: number
   location?: string

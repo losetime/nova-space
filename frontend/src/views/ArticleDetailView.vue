@@ -219,9 +219,10 @@ const toggleLike = async () => {
       article.value.likes = res.data.data.likes
     }
     message.success(isLiked.value ? '已点赞' : '已取消点赞')
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('点赞失败:', error)
-    message.error(error.response?.data?.message || '操作失败')
+    const err = error as { response?: { data?: { message?: string } } }
+    message.error(err.response?.data?.message || '操作失败')
   } finally {
     likeLoading.value = false
   }
@@ -252,9 +253,10 @@ const collectArticle = async () => {
     const res = await educationApi.toggleCollect(article.value.id)
     isCollected.value = res.data.data.isCollected
     message.success(isCollected.value ? '已收藏' : '已取消收藏')
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('收藏失败:', error)
-    message.error(error.response?.data?.message || '操作失败')
+    const err = error as { response?: { data?: { message?: string } } }
+    message.error(err.response?.data?.message || '操作失败')
   } finally {
     collectLoading.value = false
   }

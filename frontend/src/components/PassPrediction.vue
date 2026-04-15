@@ -323,13 +323,14 @@ const detectLocation = async () => {
     observer.value.lat = position.coords.latitude
     observer.value.lng = position.coords.longitude
     observer.value.alt = position.coords.altitude || 0
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('获取位置失败:', error)
-    if (error.code === 1) {
+    const geolocationError = error as { code?: number }
+    if (geolocationError.code === 1) {
       message.error('位置权限被拒绝，请允许访问位置信息')
-    } else if (error.code === 2) {
+    } else if (geolocationError.code === 2) {
       message.error('无法获取位置信息，请检查设备设置')
-    } else if (error.code === 3) {
+    } else if (geolocationError.code === 3) {
       message.error('获取位置超时，请重试')
     } else {
       message.error('获取位置失败，请手动输入坐标')
@@ -363,9 +364,10 @@ const handlePredict = async () => {
     } else {
       message.error(res.data.message || '过境预测失败')
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('过境预测失败:', error)
-    message.error(error.response?.data?.message || '过境预测请求失败，请稍后重试')
+    const err = error as { response?: { data?: { message?: string } }; message?: string }
+    message.error(err.response?.data?.message || err.message || '过境预测请求失败，请稍后重试')
   } finally {
     loading.value = false
   }

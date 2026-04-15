@@ -430,7 +430,6 @@ import { usePanel } from '@/hooks/usePanel'
 import { useSatellite } from '@/hooks/useSatellite'
 import { satelliteApi } from '@/api'
 import { useUserStore } from '@/stores/user'
-import { getFlagClass } from '@/utils/countryFlags'
 
 const filterType = ref('all')
 const selectedCountry = ref('')
@@ -740,7 +739,7 @@ const {
 } = usePanel()
 
 // 解构本地卫星数据
-const { status, satellites, satelliteCount, lastUpdate } = localSatellites
+const { satellites, satelliteCount, lastUpdate } = localSatellites
 
 // 格式化最后更新时间
 const formattedLastUpdate = computed(() => {
@@ -850,7 +849,7 @@ const handleSelectSatellite = (satellite: typeof selectedSatellite.value) => {
 }
 
 // 处理 Cesium 点击卫星事件
-const handleSatelliteClick = (noradId: string, name: string) => {
+const handleSatelliteClick = (noradId: string, _name: string) => {
   // 从卫星列表中找到对应的卫星
   const satellite = satellites.value.find(s => s.noradId === noradId)
   if (satellite) {

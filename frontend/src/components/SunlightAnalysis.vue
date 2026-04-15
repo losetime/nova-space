@@ -143,7 +143,7 @@ import {
   DownOutlined,
 } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
-import { satelliteApi, type SunlightAnalysis, type SunlightStatus, type OrbitSegment } from '@/api'
+import { satelliteApi, type SunlightAnalysis, type OrbitSegment } from '@/api'
 import type { Satellite } from '@/hooks/useLocalSatellites'
 
 const props = defineProps<{
@@ -254,9 +254,10 @@ const handleAnalyze = async () => {
     } else {
       message.error(res.data.message || '日照分析失败')
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('日照分析失败:', error)
-    message.error(error.response?.data?.message || '日照分析请求失败，请稍后重试')
+    const err = error as { response?: { data?: { message?: string } }; message?: string }
+    message.error(err.response?.data?.message || err.message || '日照分析请求失败，请稍后重试')
   } finally {
     loading.value = false
   }

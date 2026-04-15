@@ -725,7 +725,7 @@ export function useCesium() {
     noradId: string,
     orbitPoints: Array<{ lat: number; lng: number; alt: number; timestamp?: string }>,
     observer: { lat: number; lng: number; alt: number },
-    passInfo?: { startTime: string; endTime: string; maxElevationTime?: string }
+    _passInfo?: { startTime: string; endTime: string; maxElevationTime?: string }
   ) => {
     if (!viewer.value || !orbitPoints.length) return;
 
@@ -896,8 +896,7 @@ export function useCesium() {
       ...orbitPoints.map(p => Cesium.Cartesian3.fromDegrees(p.lng, p.lat, p.alt))
     ];
 
-    // 使用观察者位置作为参考点
-    const observerPosition = Cesium.Cartesian3.fromDegrees(observer.lng, observer.lat, 0);
+    // 计算包围球，确保所有内容可见
     const boundingSphere = Cesium.BoundingSphere.fromPoints(allPoints);
 
     // 飞到包围球，确保所有内容可见
@@ -1282,9 +1281,8 @@ export function useCesium() {
   };
 
   // 清理卫星（兼容旧接口）
-  const cleanupSatellites = (currentNoradIds: string[]) => {
+  const cleanupSatellites = (_currentNoradIds: string[]) => {
     // 新方案中 updateSatellites 已经处理了清理逻辑
-    // 这里保留空实现以保持兼容性
   };
 
   // 设置卫星点击回调

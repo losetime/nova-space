@@ -302,9 +302,10 @@ async function loadTimeline() {
     } else {
       message.error(res.data.message || '加载失败')
     }
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('加载时间线数据失败:', err)
-    message.error(err.response?.data?.message || '加载数据失败，请稍后重试')
+    const error = err as { response?: { data?: { message?: string } } }
+    message.error(error.response?.data?.message || '加载数据失败，请稍后重试')
   } finally {
     loading.value = false
   }

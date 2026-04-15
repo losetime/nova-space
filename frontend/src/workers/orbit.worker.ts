@@ -47,7 +47,7 @@ interface SatelliteCache {
   operator?: string
 }
 
-let satellites: Map<string, SatelliteCache> = new Map()
+const satellites: Map<string, SatelliteCache> = new Map()
 let isInitialized = false
 
 self.onmessage = (e: MessageEvent) => {

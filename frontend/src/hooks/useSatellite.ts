@@ -2,9 +2,16 @@ import { ref } from 'vue'
 import type { Satellite } from './useLocalSatellites'
 import { satelliteApi, type SatelliteDetail } from '@/api'
 
+interface CesiumHelper {
+  showSatelliteLabel: (noradId: string, name: string) => void
+  clearAllOrbits: () => void
+  flyToSatellite: (satellite: Satellite) => void
+  updateOrbit: (noradId: string | number, points: Array<{ lat: number; lng: number; alt: number }>) => void
+}
+
 export function useSatellite(
-  cesium: any,
-  localSatellites: any
+  cesium: CesiumHelper | null,
+  _localSatellites: unknown
 ) {
   const selectedSatellite = ref<Satellite | null>(null)
   const selectedMetadata = ref<SatelliteDetail['metadata']>(null)

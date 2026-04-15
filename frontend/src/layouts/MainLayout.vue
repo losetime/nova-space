@@ -107,7 +107,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from "vue";
+import { onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { message } from "ant-design-vue";
 import { useUserStore } from "@/stores/user";

@@ -20,4 +20,17 @@ export default defineConfigWithVueTs(
   vueTsConfigs.recommended,
 
   ...pluginOxlint.buildFromOxlintConfigFile('.oxlintrc.json'),
+
+  {
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
+        },
+      ],
+    },
+  },
 )

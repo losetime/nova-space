@@ -246,15 +246,15 @@ import {
   WarningOutlined,
 } from '@ant-design/icons-vue'
 import * as echarts from 'echarts'
-import { spaceWeatherApi } from '@/api'
+import { spaceWeatherApi, type SpaceWeatherStatus, type SpaceWeatherAlert } from '@/api'
 
 // 数据
 const loading = ref(true)
 const alertsLoading = ref(false)
 const chartLoading = ref(false)
 const chartError = ref('')
-const currentStatus = ref<any>(null)
-const alerts = ref<any[]>([])
+const currentStatus = ref<SpaceWeatherStatus | null>(null)
+const alerts = ref<SpaceWeatherAlert[]>([])
 const lastUpdate = ref('')
 const chartRef = ref<HTMLElement | null>(null)
 const currentFluxClass = ref('')
@@ -263,7 +263,7 @@ let refreshTimer: number | null = null
 
 // 预警详情
 const detailVisible = ref(false)
-const selectedAlert = ref<any>(null)
+const selectedAlert = ref<SpaceWeatherAlert | null>(null)
 
 // 翻译等级文本
 const translateLevelText = (text: string, scale: number) => {
@@ -365,7 +365,7 @@ const getFluxClass = (flux: number): string => {
 }
 
 // 渲染图表
-const renderChart = (data: any[]) => {
+const renderChart = (data: Array<{ time: string; flux: number }>) => {
   if (!chartRef.value) {
     console.warn('Chart container not ready, retrying...')
     // 容器未就绪，延迟重试
@@ -382,12 +382,9 @@ const renderChart = (data: any[]) => {
   try {
     chartInstance = echarts.init(chartRef.value)
 
-    // 过滤并处理数据 - 只取短波数据
-  const shortwaveData = data.filter((d: any) => d.flux < 1e-5)
-  
-  // 按时间排序并去重
+    // 按时间排序并去重
   const timeMap = new Map<string, number>()
-  data.forEach((d: any) => {
+  data.forEach((d: { time: string; flux: number }) => {
     const time = d.time
     if (!timeMap.has(time) || d.flux > (timeMap.get(time) || 0)) {
       timeMap.set(time, d.flux)
@@ -408,7 +405,7 @@ const renderChart = (data: any[]) => {
       backgroundColor: 'rgba(24, 24, 27, 0.95)',
       borderColor: '#3f3f46',
       textStyle: { color: '#f4f4f5' },
-      formatter: (params: any) => {
+      formatter: (params: { axisValue: string; value: number }[]) => {
         const flux = params[0]?.value
         const fluxClass = getFluxClass(flux)
         return `${params[0].axisValue}<br/>通量: ${flux.toExponential(2)} W/m²<br/>等级: ${fluxClass}级`
@@ -543,14 +540,14 @@ const getLevelClass = (level: number) => {
 }
 
 // 获取预警样式类
-const getAlertClass = (alert: any) => {
+const getAlertClass = (alert: SpaceWeatherAlert) => {
   if (alert.level >= 4) return 'alert-critical'
   if (alert.level >= 2) return 'alert-warning'
   return 'alert-info'
 }
 
 // 获取预警颜色
-const getAlertColor = (alert: any) => {
+const getAlertColor = (alert: SpaceWeatherAlert) => {
   if (alert.level >= 4) return 'red'
   if (alert.level >= 2) return 'orange'
   return 'blue'
@@ -569,7 +566,7 @@ const getAlertTypeLabel = (type: string) => {
 }
 
 // 获取预警摘要（中文）
-const getAlertSummary = (alert: any) => {
+const getAlertSummary = (alert: SpaceWeatherAlert) => {
   const type = alert.type
   const level = alert.level
   
@@ -608,7 +605,7 @@ const getAlertSummary = (alert: any) => {
 }
 
 // 获取预警影响
-const getAlertImpacts = (alert: any) => {
+const getAlertImpacts = (alert: SpaceWeatherAlert) => {
   const type = alert.type
   const level = alert.level
   
@@ -644,7 +641,7 @@ const getAlertImpacts = (alert: any) => {
 }
 
 // 显示预警详情
-const showAlertDetail = (alert: any) => {
+const showAlertDetail = (alert: SpaceWeatherAlert) => {
   selectedAlert.value = alert
   detailVisible.value = true
 }

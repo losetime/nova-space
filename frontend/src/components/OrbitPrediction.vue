@@ -160,7 +160,6 @@
 import { ref, computed } from 'vue'
 import dayjs, { type Dayjs } from 'dayjs'
 import {
-  RocketOutlined,
   CalculatorOutlined,
   DownOutlined,
   EnvironmentOutlined,
@@ -247,9 +246,10 @@ const handlePredict = async () => {
     } else {
       message.error(res.data.message || '轨道预测失败')
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('轨道预测失败:', error)
-    message.error(error.response?.data?.message || '轨道预测请求失败，请稍后重试')
+    const err = error as { response?: { data?: { message?: string } }; message?: string }
+    message.error(err.response?.data?.message || err.message || '轨道预测请求失败，请稍后重试')
   } finally {
     loading.value = false
   }
@@ -271,9 +271,10 @@ const handlePositionPredict = async () => {
     } else {
       message.error(res.data.message || '位置预测失败')
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('位置预测失败:', error)
-    message.error(error.response?.data?.message || '位置预测请求失败，请稍后重试')
+    const err = error as { response?: { data?: { message?: string } }; message?: string }
+    message.error(err.response?.data?.message || err.message || '位置预测请求失败，请稍后重试')
   } finally {
     positionLoading.value = false
   }

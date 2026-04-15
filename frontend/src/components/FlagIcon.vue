@@ -6,7 +6,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { getFlagClass, getISOCode } from '@/utils/countryFlags'
+import { getFlagClass } from '@/utils/countryFlags'
 
 interface Props {
   /** CelesTrak 国家代码 */

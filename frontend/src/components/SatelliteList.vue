@@ -88,7 +88,7 @@ const props = withDefaults(defineProps<Props>(), {
   filterType: 'all',
   filterCountry: ''
 })
-const emit = defineEmits<{
+defineEmits<{
   'select-satellite': [satellite: Satellite]
 }>()
 
