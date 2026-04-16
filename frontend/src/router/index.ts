@@ -61,13 +61,19 @@ const router = createRouter({
           name: 'space-weather',
           component: () => import('@/views/SpaceWeatherView.vue'),
         },
-        {
-          path: 'milestone',
-          name: 'milestone',
-          component: () => import('@/views/MilestoneView.vue'),
-        },
-      ],
-    },
+{
+        path: 'milestone',
+        name: 'milestone',
+        component: () => import('@/views/MilestoneView.vue'),
+      },
+      {
+        path: 'membership',
+        name: 'membership',
+        component: () => import('@/views/MembershipView.vue'),
+        meta: { requiresAuth: true },
+      },
+    ],
+  },
     {
       path: '/login',
       name: 'login',

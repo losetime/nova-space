@@ -50,11 +50,12 @@ import api from '@/api'
 
 interface Notification {
   id: string
-  type: 'intelligence' | 'system' | 'achievement'
+  type: 'intelligence' | 'system' | 'achievement' | 'membership'
   title: string
   content: string
   isRead: boolean
   relatedId?: string
+  relatedType?: string
   createdAt: string
 }
 
@@ -68,6 +69,7 @@ const getTypeIcon = (type: string) => {
     intelligence: '📡',
     system: '⚙️',
     achievement: '🏆',
+    membership: '💎',
   }
   return icons[type] || '📢'
 }
@@ -133,9 +135,14 @@ const handleClick = async (notification: Notification) => {
     }
   }
   
-  // 如果有关联ID，可以跳转到对应页面
-  if (notification.relatedId && notification.type === 'intelligence') {
-    window.location.href = `/intelligence/${notification.relatedId}`
+  if (notification.relatedId) {
+    if (notification.type === 'intelligence') {
+      window.location.href = `/intelligence/${notification.relatedId}`
+    } else if (notification.type === 'membership') {
+      window.location.href = `/membership`
+    }
+  } else if (notification.type === 'membership') {
+    window.location.href = `/membership`
   }
   
   showPanel.value = false

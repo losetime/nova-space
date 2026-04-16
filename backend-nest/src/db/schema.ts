@@ -51,6 +51,7 @@ export const pointsAction = pgEnum('points_action', [
   'consume',
   'admin_grant',
   'expire',
+  'points_exchange_member',
 ]);
 
 export const favoriteType = pgEnum('favorite_type', [
@@ -64,6 +65,7 @@ export const notificationType = pgEnum('notification_type', [
   'intelligence',
   'system',
   'achievement',
+  'membership',
 ]);
 
 export const feedbackType = pgEnum('feedback_type', [
@@ -504,6 +506,54 @@ export const company = pgTable(
   ],
 );
 
+export const membershipPlans = pgTable('membership_plans', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  name: varchar('name', { length: 100 }).notNull(),
+  planCode: varchar('plan_code', { length: 50 }).notNull().unique(),
+  durationMonths: integer('duration_months').notNull(),
+  level: userLevel('level').notNull(),
+  price: numeric('price', { precision: 10, scale: 2 }).notNull(),
+  pointsPrice: integer('points_price'),
+  description: text('description'),
+  features: jsonb('features'),
+  isActive: boolean('is_active').notNull().default(true),
+  sortOrder: integer('sort_order').default(0),
+  createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { mode: 'date' }).notNull().defaultNow(),
+});
+
+export const benefits = pgTable('benefits', {
+  id: varchar('id', { length: 36 }).primaryKey(),
+  name: varchar('name', { length: 100 }).notNull(),
+  description: varchar('description', { length: 255 }),
+  valueType: varchar('value_type', { length: 20 }).default('number'),
+  unit: varchar('unit', { length: 50 }),
+  sortOrder: integer('sort_order').default(0),
+  createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { mode: 'date' }).notNull().defaultNow(),
+});
+
+export const memberLevels = pgTable('member_levels', {
+  id: varchar('id', { length: 36 }).primaryKey(),
+  code: varchar('code', { length: 50 }).notNull().unique(),
+  name: varchar('name', { length: 100 }).notNull(),
+  description: varchar('description', { length: 255 }),
+  icon: varchar('icon', { length: 10 }),
+  isDefault: boolean('is_default').default(false),
+  sortOrder: integer('sort_order').default(0),
+  createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { mode: 'date' }).notNull().defaultNow(),
+});
+
+export const levelBenefits = pgTable('level_benefits', {
+  id: varchar('id', { length: 36 }).primaryKey(),
+  levelId: varchar('level_id', { length: 36 }).notNull(),
+  benefitId: varchar('benefit_id', { length: 36 }).notNull(),
+  value: varchar('value', { length: 255 }).notNull(),
+  createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { mode: 'date' }).notNull().defaultNow(),
+}, (table) => [uniqueIndex('level_benefits_unique_idx').on(table.levelId, table.benefitId)]);
+
 // ============ Relations ============
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -686,3 +736,12 @@ export type NewMilestone = typeof milestones.$inferInsert;
 
 export type Company = typeof company.$inferSelect;
 export type NewCompany = typeof company.$inferInsert;
+
+export type MembershipPlan = typeof membershipPlans.$inferSelect;
+export type NewMembershipPlan = typeof membershipPlans.$inferInsert;
+export type Benefit = typeof benefits.$inferSelect;
+export type NewBenefit = typeof benefits.$inferInsert;
+export type MemberLevel = typeof memberLevels.$inferSelect;
+export type NewMemberLevel = typeof memberLevels.$inferInsert;
+export type LevelBenefit = typeof levelBenefits.$inferSelect;
+export type NewLevelBenefit = typeof levelBenefits.$inferInsert;

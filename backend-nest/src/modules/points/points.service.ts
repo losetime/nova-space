@@ -9,10 +9,16 @@ import type { DrizzleClient } from '../../db';
 import * as schema from '../../db/schema';
 import { eq, and, gte, lt, desc, sql } from 'drizzle-orm';
 import { AddPointsDto, ConsumePointsDto, AdminGrantPointsDto } from './dto';
+import { NotificationService } from '../notification/notification.service';
+
+type PlanLevel = 'basic' | 'advanced' | 'professional';
 
 @Injectable()
 export class PointsService {
-  constructor(@Inject(DRIZZLE) private db: DrizzleClient) {}
+  constructor(
+    @Inject(DRIZZLE) private db: DrizzleClient,
+    private notificationService: NotificationService,
+  ) {}
 
   private readonly pointsConfig = {
     register: 100,
@@ -21,6 +27,94 @@ export class PointsService {
     invite: 50,
     task_complete: 20,
   };
+
+  async exchangeMembership(userId: string, planCode: string) {
+    const [plan] = await this.db
+      .select()
+      .from(schema.membershipPlans)
+      .where(eq(schema.membershipPlans.planCode, planCode))
+      .limit(1);
+
+    if (!plan) {
+      throw new NotFoundException('套餐不存在');
+    }
+
+    if (!plan.pointsPrice) {
+      throw new BadRequestException('该套餐不支持积分兑换');
+    }
+
+    const [user] = await this.db
+      .select()
+      .from(schema.users)
+      .where(eq(schema.users.id, userId));
+
+    if (!user) {
+      throw new NotFoundException('用户不存在');
+    }
+
+    if (user.points < plan.pointsPrice) {
+      throw new BadRequestException('积分不足');
+    }
+
+    const startDate = new Date();
+    const endDate = new Date(startDate);
+    endDate.setMonth(endDate.getMonth() + plan.durationMonths);
+
+    const [subscription] = await this.db
+      .insert(schema.subscriptions)
+      .values({
+        userId,
+        plan: plan.planCode as 'monthly' | 'quarterly' | 'yearly' | 'lifetime' | 'custom',
+        status: 'active',
+        price: '0',
+        startDate,
+        endDate,
+        paymentMethod: 'points',
+        paymentId: `points_${plan.pointsPrice}_${new Date().toISOString()}`,
+      })
+      .returning();
+
+    await this.db
+      .insert(schema.pointsRecords)
+      .values({
+        userId,
+        points: -plan.pointsPrice,
+        action: 'points_exchange_member',
+        balance: String(user.points - plan.pointsPrice),
+        description: `使用${plan.pointsPrice}积分兑换${plan.name}`,
+        relatedId: subscription.id,
+        relatedType: 'subscription',
+      })
+      .returning();
+
+    await this.db
+      .update(schema.users)
+      .set({
+        points: user.points - plan.pointsPrice,
+        level: plan.level as PlanLevel,
+      })
+      .where(eq(schema.users.id, userId));
+
+    await this.notificationService.sendMembershipNotification(userId, 'points_exchange', {
+      planName: plan.name,
+      endDate: subscription.endDate,
+      points: plan.pointsPrice,
+      subscriptionId: subscription.id,
+    });
+
+    await this.notificationService.sendPointsNotification(
+      userId,
+      'consumed',
+      plan.pointsPrice,
+      `兑换${plan.name}`,
+    );
+
+    return {
+      subscription,
+      newLevel: plan.level,
+      pointsConsumed: plan.pointsPrice,
+    };
+  }
 
   async addPoints(
     userId: string,
@@ -219,6 +313,7 @@ export class PointsService {
       consume: '积分消费',
       admin_grant: '管理员发放',
       expire: '积分过期',
+      points_exchange_member: '积分兑换会员',
     };
     return descriptions[action] || '积分变动';
   }

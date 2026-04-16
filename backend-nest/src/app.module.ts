@@ -19,6 +19,7 @@ import { SpaceWeatherModule } from './modules/space-weather/space-weather.module
 import { PushModule } from './modules/push/push.module';
 import { MilestoneModule } from './modules/milestone/milestone.module';
 import { CompanyModule } from './modules/company/company.module';
+import { MembershipSchedulerModule } from './modules/membership-scheduler/membership-scheduler.module';
 import { DrizzleModule } from './db/drizzle.module';
 import appConfig from './config/app.config';
 
@@ -43,6 +44,7 @@ import appConfig from './config/app.config';
     PushModule,
     MilestoneModule,
     CompanyModule,
+    MembershipSchedulerModule,
   ],
   controllers: [AppController],
   providers: [

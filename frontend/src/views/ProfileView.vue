@@ -25,13 +25,42 @@
               <h1 class="username">
                 {{ userStore.user?.nickname || userStore.user?.username || "用户" }}
               </h1>
+              <span class="level-badge" :class="userStore.user?.level || 'basic'">
+                {{ getLevelText(userStore.user?.level) }}
+              </span>
             </div>
             <p class="user-meta">
               <span class="user-id">@{{ userStore.user?.username }}</span>
               <span class="divider">·</span>
               <span class="user-email">{{ userStore.user?.email }}</span>
+              <span class="divider">·</span>
+              <span class="user-points">💎 {{ userStore.user?.points || 0 }} 积分</span>
             </p>
           </div>
+        </div>
+        
+        <!-- 会员信息卡片 -->
+        <div class="membership-card" v-if="userStore.isLoggedIn">
+          <div class="membership-info">
+            <div class="info-item">
+              <span class="info-label">会员等级</span>
+              <span class="info-value level" :class="userStore.user?.level || 'basic'">
+                {{ getLevelText(userStore.user?.level) }}
+              </span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">可用积分</span>
+              <span class="info-value points">💎 {{ userStore.user?.points || 0 }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">累计积分</span>
+              <span class="info-value total">📊 {{ userStore.user?.totalPoints || 0 }}</span>
+            </div>
+          </div>
+          <a-button type="primary" class="membership-btn" @click="router.push('/membership')">
+            <CrownOutlined />
+            会员中心
+          </a-button>
         </div>
       </div>
 
@@ -215,6 +244,7 @@ import {
   LogoutOutlined,
   GlobalOutlined,
   RocketOutlined,
+  CrownOutlined,
 } from "@ant-design/icons-vue";
 import { useUserStore } from "@/stores/user";
 import { intelligenceApi, satelliteApi, type Intelligence, type SatelliteFavorite } from "@/api";
@@ -364,6 +394,16 @@ function handleLogout() {
   userStore.logout();
   message.success("已退出登录");
   router.push("/login");
+}
+
+// 获取等级显示文本
+function getLevelText(level?: string) {
+  const levelMap: Record<string, string> = {
+    basic: "普通会员",
+    advanced: "高级会员",
+    professional: "专业会员",
+  };
+  return levelMap[level || "basic"] || "普通会员";
 }
 
 onMounted(async () => {
@@ -538,6 +578,98 @@ $text-muted: rgba(255, 255, 255, 0.4);
 
   .divider {
     opacity: 0.4;
+  }
+
+  .user-points {
+    color: #ffd700;
+  }
+}
+
+// 等级徽章
+.level-badge {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+
+  &.basic {
+    background: rgba(255, 255, 255, 0.1);
+    color: $text-secondary;
+  }
+
+  &.advanced {
+    background: rgba(0, 212, 255, 0.15);
+    color: #00d4ff;
+    border: 1px solid rgba(0, 212, 255, 0.3);
+  }
+
+  &.professional {
+    background: rgba(255, 215, 0, 0.15);
+    color: #ffd700;
+    border: 1px solid rgba(255, 215, 0, 0.3);
+  }
+}
+
+// 会员信息卡片
+.membership-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 16px;
+  padding: 20px;
+  background: $bg-elevated;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+}
+
+.membership-info {
+  display: flex;
+  gap: 32px;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  .info-label {
+    font-size: 12px;
+    color: $text-muted;
+  }
+
+  .info-value {
+    font-size: 16px;
+    font-weight: 600;
+    color: $text-primary;
+
+    &.level.basic {
+      color: $text-secondary;
+    }
+
+    &.level.advanced {
+      color: #00d4ff;
+    }
+
+    &.level.professional {
+      color: #ffd700;
+    }
+
+    &.points {
+      color: #ffd700;
+    }
+
+    &.total {
+      color: $text-secondary;
+    }
+  }
+}
+
+.membership-btn {
+  background: linear-gradient(135deg, #ffd700 0%, #ff8c00 100%);
+  border: none;
+
+  &:hover {
+    opacity: 0.9;
   }
 }
 

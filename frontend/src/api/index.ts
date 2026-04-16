@@ -158,15 +158,87 @@ export const pointsApi = {
 
   getHistory: (params?: { page?: number; limit?: number }) =>
     api.get<ApiResponse<{ records: PointsRecord[]; total: number }>>('/points/history', { params }),
+
+  exchangeMembership: (planCode: string) =>
+    api.post<ApiResponse<{ subscription: Subscription; newLevel: string; pointsConsumed: number }>>('/points/exchange-membership', { planCode }),
 }
 
 // 订阅 API
 export const subscriptionApi = {
+  getPlans: () => api.get<ApiResponse<{ plans: MembershipPlan[] }>>('/subscriptions/plans'),
+
+  getStatus: () => api.get<ApiResponse<MembershipStatus>>('/subscriptions/status'),
+
   getCurrent: () => api.get<ApiResponse<Subscription | null>>('/subscriptions/current'),
 
-  create: (data: { plan: string }) => api.post<ApiResponse<Subscription>>('/subscriptions', data),
+  getHistory: (params?: { page?: number; limit?: number }) =>
+    api.get<ApiResponse<{ subscriptions: Subscription[]; total: number }>>('/subscriptions/history', { params }),
 
-  cancel: () => api.put<ApiResponse<void>>('/subscriptions/cancel'),
+  create: (data: { plan: string; price: number; startDate: string; endDate: string }) =>
+    api.post<ApiResponse<Subscription>>('/subscriptions', data),
+
+  renew: (data: { plan: string; price: number; startDate: string; endDate: string }) =>
+    api.post<ApiResponse<Subscription>>('/subscriptions/renew', data),
+
+  cancel: (cancelReason?: string) =>
+    api.put<ApiResponse<void>>('/subscriptions/cancel', { cancelReason }),
+}
+
+// 会员套餐
+export interface MembershipPlan {
+  id: string
+  name: string
+  planCode: string
+  durationMonths: number
+  level: string
+  price: number
+  pointsPrice: number | null
+  description: string | null
+  features: Record<string, any> | null
+  isActive: boolean
+  sortOrder: number
+  levelInfo: {
+    id: string
+    code: string
+    name: string
+    icon: string | null
+  } | null
+  benefits: Benefit[]
+  createdAt: string
+  updatedAt: string
+}
+
+// 权益（新结构）
+export interface Benefit {
+  id: string
+  name: string
+  description: string | null
+  valueType: string
+  unit: string | null
+  value: string
+}
+
+// 会员状态
+export interface MembershipStatus {
+  level: string
+  points: number
+  totalPoints: number
+  levelInfo: {
+    id: string
+    code: string
+    name: string
+    icon: string | null
+  } | null
+  subscription: {
+    id: string
+    plan: string
+    status: string
+    startDate: string
+    endDate: string
+    autoRenew: boolean
+    daysLeft: number
+  } | null
+  benefits: Benefit[]
 }
 
 // 科普文章
@@ -624,11 +696,12 @@ export const feedbackApi = {
 export interface Notification {
   id: string
   userId: string
-  type: 'intelligence' | 'system' | 'achievement'
+  type: 'intelligence' | 'system' | 'achievement' | 'membership'
   title: string
   content: string
   isRead: boolean
   relatedId?: string
+  relatedType?: string
   createdAt: string
 }
 

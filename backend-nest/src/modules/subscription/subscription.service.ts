@@ -7,12 +7,141 @@ import {
 import { DRIZZLE } from '../../db/drizzle.module';
 import type { DrizzleClient } from '../../db';
 import * as schema from '../../db/schema';
-import { eq, and, desc, lt, gte, sql } from 'drizzle-orm';
+import { eq, and, desc, lt, gte, sql, asc } from 'drizzle-orm';
 import { CreateSubscriptionDto, UpdateSubscriptionDto } from './dto';
+import { NotificationService } from '../notification/notification.service';
+
+type PlanLevel = 'basic' | 'advanced' | 'professional';
 
 @Injectable()
 export class SubscriptionService {
-  constructor(@Inject(DRIZZLE) private db: DrizzleClient) {}
+  constructor(
+    @Inject(DRIZZLE) private db: DrizzleClient,
+    private notificationService: NotificationService,
+  ) {}
+
+  async getPlans() {
+    const plans = await this.db
+      .select()
+      .from(schema.membershipPlans)
+      .where(eq(schema.membershipPlans.isActive, true))
+      .orderBy(asc(schema.membershipPlans.sortOrder));
+
+    const levels = await this.db
+      .select()
+      .from(schema.memberLevels)
+      .orderBy(asc(schema.memberLevels.sortOrder));
+
+    const levelBenefitsData = await this.db
+      .select({
+        levelId: schema.levelBenefits.levelId,
+        levelCode: schema.memberLevels.code,
+        benefitId: schema.benefits.id,
+        benefitName: schema.benefits.name,
+        benefitDescription: schema.benefits.description,
+        benefitValueType: schema.benefits.valueType,
+        benefitUnit: schema.benefits.unit,
+        value: schema.levelBenefits.value,
+      })
+      .from(schema.levelBenefits)
+      .innerJoin(schema.benefits, eq(schema.levelBenefits.benefitId, schema.benefits.id))
+      .innerJoin(schema.memberLevels, eq(schema.levelBenefits.levelId, schema.memberLevels.id));
+
+    const benefitsByLevel: Record<string, any[]> = {};
+    for (const lb of levelBenefitsData) {
+      if (!benefitsByLevel[lb.levelCode]) {
+        benefitsByLevel[lb.levelCode] = [];
+      }
+      benefitsByLevel[lb.levelCode].push({
+        id: lb.benefitId,
+        name: lb.benefitName,
+        description: lb.benefitDescription,
+        valueType: lb.benefitValueType,
+        unit: lb.benefitUnit,
+        value: lb.value,
+      });
+    }
+
+    const levelInfoByCode: Record<string, any> = {};
+    for (const level of levels) {
+      levelInfoByCode[level.code] = {
+        id: level.id,
+        code: level.code,
+        name: level.name,
+        icon: level.icon,
+      };
+    }
+
+    return {
+      plans: plans.map((plan) => ({
+        ...plan,
+        levelInfo: levelInfoByCode[plan.level] || null,
+        benefits: benefitsByLevel[plan.level] || [],
+      })),
+    };
+  }
+
+  async getMembershipStatus(userId: string) {
+    const [user] = await this.db
+      .select()
+      .from(schema.users)
+      .where(eq(schema.users.id, userId));
+
+    if (!user) {
+      throw new NotFoundException('用户不存在');
+    }
+
+    const subscription = await this.getCurrentSubscription(userId);
+
+    const [levelInfo] = await this.db
+      .select()
+      .from(schema.memberLevels)
+      .where(eq(schema.memberLevels.code, user.level));
+
+    const benefits = await this.db
+      .select({
+        id: schema.benefits.id,
+        name: schema.benefits.name,
+        description: schema.benefits.description,
+        valueType: schema.benefits.valueType,
+        unit: schema.benefits.unit,
+        value: schema.levelBenefits.value,
+      })
+      .from(schema.levelBenefits)
+      .innerJoin(schema.benefits, eq(schema.levelBenefits.benefitId, schema.benefits.id))
+      .innerJoin(schema.memberLevels, eq(schema.levelBenefits.levelId, schema.memberLevels.id))
+      .where(eq(schema.memberLevels.code, user.level));
+
+    return {
+      level: user.level,
+      points: user.points,
+      totalPoints: user.totalPoints,
+      levelInfo: levelInfo ? {
+        id: levelInfo.id,
+        code: levelInfo.code,
+        name: levelInfo.name,
+        icon: levelInfo.icon,
+      } : null,
+      subscription: subscription
+        ? {
+            id: subscription.id,
+            plan: subscription.plan,
+            status: subscription.status,
+            startDate: subscription.startDate,
+            endDate: subscription.endDate,
+            autoRenew: subscription.autoRenew,
+            daysLeft: Math.max(
+              0,
+              Math.ceil(
+                (new Date(subscription.endDate).getTime() - Date.now()) /
+                  (1000 * 60 * 60 * 24),
+              ),
+            ),
+          }
+        : null,
+      benefits,
+    };
+  }
 
   async create(
     userId: string,
@@ -64,10 +193,18 @@ export class SubscriptionService {
       custom: 'professional',
     };
 
+    const newLevel = levelMap[createDto.plan] || 'advanced';
+
     await this.db
       .update(schema.users)
-      .set({ level: levelMap[createDto.plan] || 'advanced' })
+      .set({ level: newLevel })
       .where(eq(schema.users.id, userId));
+
+    await this.notificationService.sendMembershipNotification(userId, 'activated', {
+      planName: createDto.plan,
+      endDate: subscription.endDate,
+      subscriptionId: subscription.id,
+    });
 
     return subscription;
   }
@@ -157,6 +294,12 @@ export class SubscriptionService {
         .update(schema.users)
         .set({ level: 'basic' })
         .where(eq(schema.users.id, subscription.userId));
+
+      await this.notificationService.sendMembershipNotification(
+        subscription.userId,
+        'expired',
+        { subscriptionId: subscription.id },
+      );
     }
   }
 
@@ -196,6 +339,11 @@ export class SubscriptionService {
         })
         .where(eq(schema.subscriptions.id, currentSubscription.id))
         .returning();
+
+      await this.notificationService.sendMembershipNotification(userId, 'renewed', {
+        endDate: newEndDate,
+        subscriptionId: updated.id,
+      });
 
       return updated;
     }

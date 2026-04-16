@@ -18,7 +18,18 @@ import type { RequestWithUser } from '../../common/interfaces';
 export class SubscriptionController {
   constructor(private readonly subscriptionService: SubscriptionService) {}
 
-  // 获取当前订阅
+  @Get('plans')
+  async getPlans() {
+    const result = await this.subscriptionService.getPlans();
+    return { code: 0, data: result };
+  }
+
+  @Get('status')
+  async getMembershipStatus(@Request() req: RequestWithUser) {
+    const status = await this.subscriptionService.getMembershipStatus(req.user.id);
+    return { code: 0, data: status };
+  }
+
   @Get('current')
   async getCurrentSubscription(@Request() req: RequestWithUser) {
     const subscription = await this.subscriptionService.getCurrentSubscription(
@@ -30,7 +41,6 @@ export class SubscriptionController {
     };
   }
 
-  // 获取订阅历史
   @Get('history')
   async getHistory(
     @Request() req: RequestWithUser,
@@ -45,7 +55,6 @@ export class SubscriptionController {
     return { code: 0, data: result };
   }
 
-  // 创建订阅（购买会员）
   @Post()
   async create(
     @Request() req: RequestWithUser,
@@ -62,7 +71,6 @@ export class SubscriptionController {
     };
   }
 
-  // 续费
   @Post('renew')
   async renew(
     @Request() req: RequestWithUser,
@@ -79,7 +87,6 @@ export class SubscriptionController {
     };
   }
 
-  // 取消订阅
   @Put('cancel')
   async cancel(
     @Request() req: RequestWithUser,

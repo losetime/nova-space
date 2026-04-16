@@ -20,14 +20,12 @@ import type { RequestWithUser } from '../../common/interfaces';
 export class PointsController {
   constructor(private readonly pointsService: PointsService) {}
 
-  // 获取积分统计
   @Get('stats')
   async getStats(@Request() req: RequestWithUser) {
     const stats = await this.pointsService.getPointsStats(req.user.id);
     return { code: 0, data: stats };
   }
 
-  // 获取积分记录
   @Get('history')
   async getHistory(
     @Request() req: RequestWithUser,
@@ -42,7 +40,6 @@ export class PointsController {
     return { code: 0, data: result };
   }
 
-  // 每日签到
   @Post('daily-checkin')
   async dailyCheckin(@Request() req: RequestWithUser) {
     const record = await this.pointsService.dailyLoginReward(req.user.id);
@@ -56,7 +53,22 @@ export class PointsController {
     };
   }
 
-  // 消费积分
+  @Post('exchange-membership')
+  async exchangeMembership(
+    @Request() req: RequestWithUser,
+    @Body('planCode') planCode: string,
+  ) {
+    const result = await this.pointsService.exchangeMembership(
+      req.user.id,
+      planCode,
+    );
+    return {
+      code: 0,
+      data: result,
+      message: `积分兑换成功，已获得${result.newLevel}会员`,
+    };
+  }
+
   @Post('consume')
   async consume(
     @Request() req: RequestWithUser,
@@ -70,7 +82,6 @@ export class PointsController {
     };
   }
 
-  // 管理员：发放积分
   @Post('admin/grant')
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
