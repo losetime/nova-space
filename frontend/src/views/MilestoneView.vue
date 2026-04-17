@@ -105,7 +105,7 @@
       <div v-if="selectedMilestone" class="detail-content">
         <div class="detail-cover">
           <img
-            :src="selectedMilestone.cover || defaultCover"
+            :src="getFullImageUrl(selectedMilestone.cover) || defaultCover"
             :alt="selectedMilestone.title"
             @error="handleImageError"
           />
@@ -150,8 +150,8 @@
           <div class="media-grid">
             <template v-if="selectedMilestone.media && selectedMilestone.media.length > 0">
               <div v-for="(media, index) in selectedMilestone.media" :key="index" class="media-item">
-                <img v-if="media.type === 'image'" :src="media.url" :alt="media.caption || `媒体${index + 1}`" />
-                <video v-else-if="media.type === 'video'" :src="media.url" controls></video>
+                <img v-if="media.type === 'image'" :src="getFullImageUrl(media.url)" :alt="media.caption || `媒体${index + 1}`" />
+                <video v-else-if="media.type === 'video'" :src="getFullImageUrl(media.url)" controls></video>
               </div>
             </template>
             <div v-else class="media-empty">
@@ -196,6 +196,7 @@ import {
 import { milestoneApi } from '@/api'
 import { marked } from 'marked'
 import DOMPurify from 'dompurify'
+import { getFullImageUrl } from '@/utils/image-url'
 
 // 类型定义
 interface MediaItem {

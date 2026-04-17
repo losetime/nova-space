@@ -18,7 +18,7 @@
         <div class="company-logo-wrapper">
           <img
             v-if="company.logoUrl"
-            :src="company.logoUrl"
+            :src="getFullImageUrl(company.logoUrl)"
             :alt="company.name"
             class="company-logo"
           />
@@ -200,6 +200,7 @@ import {
   ExportOutlined,
 } from '@ant-design/icons-vue'
 import { companyApi, type CompanyDetail } from '@/api'
+import { getFullImageUrl } from '@/utils/image-url'
 
 interface Props {
   companyName: string

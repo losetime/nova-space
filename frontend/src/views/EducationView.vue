@@ -174,6 +174,7 @@ import {
 import { message } from "ant-design-vue";
 import { educationApi, type Article, type Quiz, type QuizResult, type QuizStats } from "@/api";
 import { useUserStore } from "@/stores/user";
+import { getFullImageUrl } from "@/utils/image-url";
 
 const userStore = useUserStore();
 const isLoggedIn = computed(() => userStore.isLoggedIn);
@@ -184,7 +185,7 @@ const DEFAULT_COVER =
 
 // 获取封面 URL
 const getCoverUrl = (cover?: string) => {
-  return cover || DEFAULT_COVER;
+  return getFullImageUrl(cover) || DEFAULT_COVER;
 };
 
 const activeCategory = ref("all");

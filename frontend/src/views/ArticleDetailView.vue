@@ -40,7 +40,7 @@
 
       <!-- 封面图 -->
       <div v-if="article.cover" class="article-cover">
-        <img :src="article.cover" :alt="article.title" />
+        <img :src="getFullImageUrl(article.cover)" :alt="article.title" />
       </div>
 
       <!-- 文章正文 -->
@@ -104,6 +104,7 @@ import {
 } from '@ant-design/icons-vue'
 import { educationApi } from '@/api'
 import { useUserStore } from '@/stores/user'
+import { getFullImageUrl } from '@/utils/image-url'
 
 // 配置 marked
 marked.setOptions({
@@ -450,7 +451,14 @@ onMounted(() => {
   margin: 32px 0;
 }
 
-.article-body :deep(table) {
+.article-body :deep(img) {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    margin: 16px 0;
+  }
+
+  .article-body :deep(table) {
   width: 100%;
   border-collapse: collapse;
   margin: 16px 0;

@@ -339,6 +339,13 @@ onMounted(() => {
     margin-bottom: 10px;
   }
 
+  :deep(img) {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    margin: 16px 0;
+  }
+
   :deep(code) {
     background: rgba(255, 255, 255, 0.1);
     padding: 2px 6px;
