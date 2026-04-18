@@ -26,7 +26,9 @@ export class SubscriptionController {
 
   @Get('status')
   async getMembershipStatus(@Request() req: RequestWithUser) {
-    const status = await this.subscriptionService.getMembershipStatus(req.user.id);
+    const status = await this.subscriptionService.getMembershipStatus(
+      req.user.id,
+    );
     return { code: 0, data: status };
   }
 

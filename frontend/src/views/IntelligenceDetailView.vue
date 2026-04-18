@@ -16,11 +16,9 @@
           </div>
           <h1>{{ detail.title }}</h1>
           <div class="detail-meta">
-            <span><ClockCircleOutlined /> {{ formatDate(detail.publishedAt) }}</span>
+            <span><ClockCircleOutlined /> {{ formatDate(detail.createdAt) }}</span>
             <span><UserOutlined /> {{ detail.source }}</span>
             <span><EyeOutlined /> {{ formatViews(detail.views) }}</span>
-            <span><HeartOutlined /> {{ detail.likes }}</span>
-            <span><StarOutlined /> {{ detail.collects }}</span>
           </div>
         </div>
 
@@ -100,7 +98,6 @@ import {
   ClockCircleOutlined,
   UserOutlined,
   EyeOutlined,
-  HeartOutlined,
   StarOutlined,
   StarFilled,
   BulbOutlined,
@@ -109,10 +106,12 @@ import {
   ShareAltOutlined,
 } from '@ant-design/icons-vue'
 import { intelligenceApi, type Intelligence } from '@/api'
+import { useUserStore } from '@/stores/user'
 import { marked } from 'marked'
 
 const route = useRoute()
 const router = useRouter()
+const userStore = useUserStore()
 
 const loading = ref(false)
 const detail = ref<Intelligence | null>(null)
@@ -129,16 +128,12 @@ const getCategoryLabel = (category: string) => {
   return categoryLabels[category] || category
 }
 
-const formatDate = (dateStr: string) => {
+const formatDate = (dateStr: string | Date | null | undefined) => {
   if (!dateStr) return ''
   const date = new Date(dateStr)
-  return date.toLocaleDateString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
+  if (isNaN(date.getTime())) return ''
+  const pad = (n: number) => n.toString().padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`
 }
 
 const formatViews = (views: number) => {
@@ -165,6 +160,14 @@ const fetchDetail = async () => {
     const res = await intelligenceApi.getDetail(id)
     if (res.data.code === 0) {
       detail.value = res.data.data
+
+      // 单独检查收藏状态（如果已登录）
+      if (userStore.isLoggedIn) {
+        try {
+          const collectRes = await intelligenceApi.isCollected(id)
+          detail.value.isCollected = collectRes.data.data.isCollected
+        } catch { /* silent fail */ }
+      }
     }
   } catch (error) {
     console.error('获取情报详情失败:', error)

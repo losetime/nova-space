@@ -1,12 +1,13 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
-import { authApi, userApi, type User } from '@/api'
+import { authApi, userApi, membershipApi, type User, type UserPermissions, type FeaturePermission } from '@/api'
 
 export const useUserStore = defineStore('user', () => {
   // 状态
   const user = ref<User | null>(null)
   const token = ref<string | null>(localStorage.getItem('accessToken'))
   const loading = ref(false)
+  const permissions = ref<UserPermissions | null>(null)
 
   // 计算属性
   const isLoggedIn = computed(() => !!token.value && !!user.value)
@@ -69,6 +70,7 @@ export const useUserStore = defineStore('user', () => {
     localStorage.removeItem('refreshToken')
     token.value = null
     user.value = null
+    permissions.value = null
   }
 
   // 获取用户信息
@@ -79,12 +81,40 @@ export const useUserStore = defineStore('user', () => {
     try {
       const response = await userApi.getMe()
       user.value = response.data.data
+      // 获取用户权限
+      await fetchPermissions()
     } catch {
       // Token 无效，清除登录状态
       logout()
     } finally {
       loading.value = false
     }
+  }
+
+  // 获取用户功能权限
+  async function fetchPermissions() {
+    if (!token.value) return
+
+    try {
+      const response = await membershipApi.getPermissions()
+      permissions.value = response.data.data
+    } catch {
+      // 忽略错误，permissions 保持 null
+    }
+  }
+
+  // 检查是否有某个功能权限
+  function hasFeature(code: string): boolean {
+    if (!permissions.value) return false
+    const feature = permissions.value.features.find((f: FeaturePermission) => f.code === code)
+    return feature?.hasAccess ?? false
+  }
+
+  // 获取功能权限的值
+  function getFeatureValue(code: string): string | undefined {
+    if (!permissions.value) return undefined
+    const feature = permissions.value.features.find((f: FeaturePermission) => f.code === code)
+    return feature?.value
   }
 
   // 更新用户信息
@@ -121,6 +151,7 @@ export const useUserStore = defineStore('user', () => {
     user,
     token,
     loading,
+    permissions,
     // 计算属性
     isLoggedIn,
     isAdmin,
@@ -130,7 +161,10 @@ export const useUserStore = defineStore('user', () => {
     register,
     logout,
     fetchUser,
+    fetchPermissions,
     updateUser,
     changePassword,
+    hasFeature,
+    getFeatureValue,
   }
 })

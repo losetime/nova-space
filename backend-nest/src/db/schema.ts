@@ -387,7 +387,7 @@ export const educationQuizzes = pgTable('education_quizzes', {
   correctIndex: integer('correct_index').notNull(),
   explanation: text('explanation'),
   category: quizCategory('category').notNull().default('basic'),
-  points: integer('points').notNull().default(10),
+  points: integer('points').notNull().default(2),
   createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { mode: 'date' }).notNull().defaultNow(),
 });
@@ -444,7 +444,6 @@ export const intelligences = pgTable('intelligences', {
   tags: text('tags'),
   analysis: text('analysis'),
   trend: text('trend'),
-  publishedAt: timestamp('published_at', { mode: 'date' }),
   createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { mode: 'date' }).notNull().defaultNow(),
 });
@@ -525,6 +524,8 @@ export const membershipPlans = pgTable('membership_plans', {
 export const benefits = pgTable('benefits', {
   id: varchar('id', { length: 36 }).primaryKey(),
   name: varchar('name', { length: 100 }).notNull(),
+  code: varchar('code', { length: 50 }).unique(),
+  category: varchar('category', { length: 50 }).default('general'),
   description: varchar('description', { length: 255 }),
   valueType: varchar('value_type', { length: 20 }).default('number'),
   unit: varchar('unit', { length: 50 }),
@@ -545,14 +546,21 @@ export const memberLevels = pgTable('member_levels', {
   updatedAt: timestamp('updated_at', { mode: 'date' }).notNull().defaultNow(),
 });
 
-export const levelBenefits = pgTable('level_benefits', {
-  id: varchar('id', { length: 36 }).primaryKey(),
-  levelId: varchar('level_id', { length: 36 }).notNull(),
-  benefitId: varchar('benefit_id', { length: 36 }).notNull(),
-  value: varchar('value', { length: 255 }).notNull(),
-  createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
-  updatedAt: timestamp('updated_at', { mode: 'date' }).notNull().defaultNow(),
-}, (table) => [uniqueIndex('level_benefits_unique_idx').on(table.levelId, table.benefitId)]);
+export const levelBenefits = pgTable(
+  'level_benefits',
+  {
+    id: varchar('id', { length: 36 }).primaryKey(),
+    levelId: varchar('level_id', { length: 36 }).notNull(),
+    benefitId: varchar('benefit_id', { length: 36 }).notNull(),
+    value: varchar('value', { length: 255 }).notNull(),
+    displayText: varchar('display_text', { length: 255 }),
+    createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { mode: 'date' }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex('level_benefits_unique_idx').on(table.levelId, table.benefitId),
+  ],
+);
 
 // ============ Relations ============
 

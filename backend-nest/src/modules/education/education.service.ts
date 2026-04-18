@@ -10,11 +10,7 @@ import { SubmitAnswerDto } from './dto/submit-answer.dto';
 export class EducationService {
   constructor(@Inject(DRIZZLE) private db: DrizzleClient) {}
 
-  async getArticles(
-    category?: string,
-    page = 1,
-    limit = 12,
-  ): Promise<{ list: schema.Article[]; total: number }> {
+  async getArticles(category?: string, page = 1, limit = 12) {
     const offset = (page - 1) * limit;
 
     const conditions = [eq(schema.educationArticles.isPublished, true)];
@@ -35,10 +31,21 @@ export class EducationService {
       .from(schema.educationArticles)
       .where(and(...conditions));
 
-    return { list, total: count };
+    return {
+      list: list.map((item) => ({
+        ...item,
+        tags: item.tags
+          ? item.tags
+              .split(',')
+              .map((t) => t.trim())
+              .filter(Boolean)
+          : [],
+      })),
+      total: count,
+    };
   }
 
-  async getArticleById(id: number): Promise<schema.Article | null> {
+  async getArticleById(id: number) {
     const [article] = await this.db
       .select()
       .from(schema.educationArticles)
@@ -50,7 +57,17 @@ export class EducationService {
         .set({ views: article.views + 1 })
         .where(eq(schema.educationArticles.id, id));
     }
-    return article || null;
+    return article
+      ? {
+          ...article,
+          tags: article.tags
+            ? article.tags
+                .split(',')
+                .map((t) => t.trim())
+                .filter(Boolean)
+            : [],
+        }
+      : null;
   }
 
   async createArticle(dto: CreateArticleDto): Promise<schema.Article> {

@@ -275,6 +275,9 @@ const submitAnswer = async () => {
     });
     quizResult.value = res.data.data;
     showResult.value = true;
+    // 提交成功后刷新答题统计
+    const statsRes = await educationApi.getQuizStats();
+    quizStats.value = statsRes.data.data;
   } catch (error: unknown) {
     const err = error as { response?: { data?: { message?: string } } }
     message.error(err.response?.data?.message || "提交失败");

@@ -20,6 +20,7 @@ import { PushModule } from './modules/push/push.module';
 import { MilestoneModule } from './modules/milestone/milestone.module';
 import { CompanyModule } from './modules/company/company.module';
 import { MembershipSchedulerModule } from './modules/membership-scheduler/membership-scheduler.module';
+import { MembershipModule } from './modules/membership/membership.module';
 import { DrizzleModule } from './db/drizzle.module';
 import appConfig from './config/app.config';
 
@@ -45,6 +46,7 @@ import appConfig from './config/app.config';
     MilestoneModule,
     CompanyModule,
     MembershipSchedulerModule,
+    MembershipModule,
   ],
   controllers: [AppController],
   providers: [

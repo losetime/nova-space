@@ -51,7 +51,7 @@ export class IntelligenceService {
       .select()
       .from(schema.intelligences)
       .where(whereClause)
-      .orderBy(desc(schema.intelligences.publishedAt))
+      .orderBy(desc(schema.intelligences.createdAt))
       .limit(pageSize)
       .offset(offset);
 
@@ -63,10 +63,15 @@ export class IntelligenceService {
     return {
       list: list.map((item) => ({
         ...item,
-        tags: item.tags ? JSON.parse(item.tags) : [],
+        tags: item.tags
+          ? item.tags
+              .split(',')
+              .map((t) => t.trim())
+              .filter(Boolean)
+          : [],
         isLocked: userLevel === 'basic' && item.level !== 'free',
       })),
-      total: count,
+      total: Number(count),
       page,
       pageSize,
     };
@@ -103,7 +108,12 @@ export class IntelligenceService {
 
     return {
       ...intelligence,
-      tags: intelligence.tags ? JSON.parse(intelligence.tags) : [],
+      tags: intelligence.tags
+        ? intelligence.tags
+            .split(',')
+            .map((t) => t.trim())
+            .filter(Boolean)
+        : [],
       isCollected,
     };
   }
@@ -197,7 +207,12 @@ export class IntelligenceService {
       cover: c.cover,
       category: c.category,
       level: c.level,
-      tags: c.tags ? JSON.parse(c.tags) : [],
+      tags: c.tags
+        ? c.tags
+            .split(',')
+            .map((t) => t.trim())
+            .filter(Boolean)
+        : [],
       collectedAt: c.createdAt,
     }));
   }
@@ -208,5 +223,18 @@ export class IntelligenceService {
       .values(dto)
       .returning();
     return intelligence;
+  }
+
+  async isCollected(userId: string, intelligenceId: number): Promise<boolean> {
+    const [collect] = await this.db
+      .select()
+      .from(schema.intelligenceCollects)
+      .where(
+        and(
+          eq(schema.intelligenceCollects.userId, userId),
+          eq(schema.intelligenceCollects.intelligenceId, intelligenceId),
+        ),
+      );
+    return !!collect;
   }
 }

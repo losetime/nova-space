@@ -200,9 +200,10 @@ export class NotificationService {
     source: string,
   ): Promise<schema.Notification> {
     const title = action === 'earned' ? '积分获得' : '积分消费';
-    const content = action === 'earned'
-      ? `您获得了 ${points} 积分（来源：${source}）`
-      : `您消费了 ${points} 积分用于：${source}`;
+    const content =
+      action === 'earned'
+        ? `您获得了 ${points} 积分（来源：${source}）`
+        : `您消费了 ${points} 积分用于：${source}`;
     return this.create({
       userId,
       type: 'membership',
@@ -215,14 +216,19 @@ export class NotificationService {
     action: MembershipAction,
     data: MembershipNotificationData,
   ): { title: string; content: string } {
-    const messages: Record<MembershipAction, { title: string; contentFn: () => string }> = {
+    const messages: Record<
+      MembershipAction,
+      { title: string; contentFn: () => string }
+    > = {
       activated: {
         title: '会员开通成功',
-        contentFn: () => `您已成功开通${data.planName || '会员'}，有效期至 ${this.formatDate(data.endDate)}`,
+        contentFn: () =>
+          `您已成功开通${data.planName || '会员'}，有效期至 ${this.formatDate(data.endDate)}`,
       },
       expiring_soon: {
         title: '会员即将到期',
-        contentFn: () => `您的会员将在 ${data.daysLeft} 天后到期，请及时续费以保留权益`,
+        contentFn: () =>
+          `您的会员将在 ${data.daysLeft} 天后到期，请及时续费以保留权益`,
       },
       expired: {
         title: '会员已过期',
@@ -230,7 +236,8 @@ export class NotificationService {
       },
       renewed: {
         title: '续费成功',
-        contentFn: () => `您的会员已续费成功，新有效期至 ${this.formatDate(data.endDate)}`,
+        contentFn: () =>
+          `您的会员已续费成功，新有效期至 ${this.formatDate(data.endDate)}`,
       },
       renew_failed: {
         title: '续费失败',
@@ -238,11 +245,13 @@ export class NotificationService {
       },
       points_exchange: {
         title: '积分兑换成功',
-        contentFn: () => `您已使用 ${data.points} 积分兑换${data.planName || '会员'}，有效期至 ${this.formatDate(data.endDate)}`,
+        contentFn: () =>
+          `您已使用 ${data.points} 积分兑换${data.planName || '会员'}，有效期至 ${this.formatDate(data.endDate)}`,
       },
       admin_adjusted: {
         title: '会员权益变更',
-        contentFn: () => `您的会员权益已由管理员调整，当前等级：${data.newLevel || '高级会员'}`,
+        contentFn: () =>
+          `您的会员权益已由管理员调整，当前等级：${data.newLevel || '高级会员'}`,
       },
       level_changed: {
         title: '会员等级变更',
@@ -258,7 +267,11 @@ export class NotificationService {
   private formatDate(date?: Date | string): string {
     if (!date) return '未知';
     const d = typeof date === 'string' ? new Date(date) : date;
-    return d.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' });
+    return d.toLocaleDateString('zh-CN', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
   }
 }
 

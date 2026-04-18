@@ -39,7 +39,7 @@
               <h3>{{ item.title }}</h3>
               <p>{{ item.summary }}</p>
               <div class="article-meta">
-                <span><ClockCircleOutlined /> {{ formatDate(item.publishedAt) }}</span>
+                <span><ClockCircleOutlined /> {{ formatDate(item.createdAt) }}</span>
                 <span><UserOutlined /> {{ item.source }}</span>
                 <span><EyeOutlined /> {{ formatViews(item.views) }}</span>
               </div>
@@ -127,13 +127,8 @@ const getCategoryLabel = (category: string) => {
 const formatDate = (dateStr: string) => {
   if (!dateStr) return ''
   const date = new Date(dateStr)
-  return date.toLocaleDateString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
+  const pad = (n: number) => n.toString().padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`
 }
 
 const formatViews = (views: number) => {

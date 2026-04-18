@@ -311,24 +311,24 @@
             </div>
             <div
               class="tool-btn"
-              :class="{ active: activeRightPanel === 'orbit' }"
-              @click="toggleRightPanel('orbit')"
+              :class="{ active: activeRightPanel === 'orbit', disabled: !canUseAdvancedFeature }"
+              @click="handleAdvancedFeatureClick('orbit', 'satellite_orbit')"
             >
               <RocketOutlined class="tool-icon" />
               <span class="tool-text">轨道预测</span>
             </div>
             <div
               class="tool-btn"
-              :class="{ active: activeRightPanel === 'transit' }"
-              @click="toggleRightPanel('transit')"
+              :class="{ active: activeRightPanel === 'transit', disabled: !canUseAdvancedFeature }"
+              @click="handleAdvancedFeatureClick('transit', 'satellite_passes')"
             >
               <EyeOutlined class="tool-icon" />
               <span class="tool-text">过境预测</span>
             </div>
             <div
               class="tool-btn"
-              :class="{ active: activeRightPanel === 'sunlight' }"
-              @click="toggleRightPanel('sunlight')"
+              :class="{ active: activeRightPanel === 'sunlight', disabled: !canUseAdvancedFeature }"
+              @click="handleAdvancedFeatureClick('sunlight', 'satellite_sunlight')"
             >
               <BulbOutlined class="tool-icon" />
               <span class="tool-text">日照分析</span>
@@ -443,6 +443,32 @@ const colorScheme = ref<ColorSchemeType>('orbit')
 
 // 收藏的卫星 ID 集合
 const favoritedIds = ref<Set<string>>(new Set())
+
+// 高级功能权限检查
+const canUseAdvancedFeature = computed(() => {
+  // 未登录用户不能使用高级功能
+  if (!userStore.isLoggedIn) return false
+  // 有任意一个高级功能权限即可使用
+  return userStore.hasFeature('satellite_orbit') ||
+    userStore.hasFeature('satellite_sunlight') ||
+    userStore.hasFeature('satellite_passes')
+})
+
+// 处理高级功能按钮点击
+function handleAdvancedFeatureClick(panel: string, featureCode: string) {
+  if (!userStore.isLoggedIn) {
+    // 提示用户登录
+    window.message?.warning('请先登录后再使用此功能')
+    return
+  }
+  if (!userStore.hasFeature(featureCode)) {
+    // 提示用户权限不足
+    window.message?.warning('您的会员等级无法使用此功能，请升级会员')
+    return
+  }
+  // 正常切换面板
+  toggleRightPanel(panel)
+}
 
 // 可折叠筛选区域状态
 const expandedSections = ref({
@@ -1469,6 +1495,16 @@ const toggleFullscreen = () => {
     background: linear-gradient(135deg, rgba(0, 212, 255, 0.2) 0%, rgba(0, 212, 255, 0.1) 100%);
     color: #00d4ff;
     box-shadow: 0 0 20px rgba(0, 212, 255, 0.2);
+  }
+
+  &.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+
+    &:hover {
+      background: transparent;
+      color: rgba(255, 255, 255, 0.4);
+    }
   }
 
   &.icon-only {

@@ -41,11 +41,18 @@ export class SubscriptionService {
         benefitDescription: schema.benefits.description,
         benefitValueType: schema.benefits.valueType,
         benefitUnit: schema.benefits.unit,
-        value: schema.levelBenefits.value,
+        benefitValue: schema.levelBenefits.value,
+        benefitDisplayText: schema.levelBenefits.displayText,
       })
       .from(schema.levelBenefits)
-      .innerJoin(schema.benefits, eq(schema.levelBenefits.benefitId, schema.benefits.id))
-      .innerJoin(schema.memberLevels, eq(schema.levelBenefits.levelId, schema.memberLevels.id));
+      .innerJoin(
+        schema.benefits,
+        eq(schema.levelBenefits.benefitId, schema.benefits.id),
+      )
+      .innerJoin(
+        schema.memberLevels,
+        eq(schema.levelBenefits.levelId, schema.memberLevels.id),
+      );
 
     const benefitsByLevel: Record<string, any[]> = {};
     for (const lb of levelBenefitsData) {
@@ -58,8 +65,17 @@ export class SubscriptionService {
         description: lb.benefitDescription,
         valueType: lb.benefitValueType,
         unit: lb.benefitUnit,
-        value: lb.value,
+        value: lb.benefitValue,
+        displayText: lb.benefitDisplayText,
       });
+    }
+
+    const plansByLevel: Record<string, any[]> = {};
+    for (const plan of plans) {
+      if (!plansByLevel[plan.level]) {
+        plansByLevel[plan.level] = [];
+      }
+      plansByLevel[plan.level].push(plan);
     }
 
     const levelInfoByCode: Record<string, any> = {};
@@ -72,13 +88,13 @@ export class SubscriptionService {
       };
     }
 
-    return {
-      plans: plans.map((plan) => ({
-        ...plan,
-        levelInfo: levelInfoByCode[plan.level] || null,
-        benefits: benefitsByLevel[plan.level] || [],
-      })),
-    };
+    return levels.map((level) => ({
+      level: level.code,
+      levelName: level.name,
+      icon: level.icon,
+      benefits: benefitsByLevel[level.code] || [],
+      plans: plansByLevel[level.code] || [],
+    }));
   }
 
   async getMembershipStatus(userId: string) {
@@ -106,22 +122,31 @@ export class SubscriptionService {
         valueType: schema.benefits.valueType,
         unit: schema.benefits.unit,
         value: schema.levelBenefits.value,
+        displayText: schema.levelBenefits.displayText,
       })
       .from(schema.levelBenefits)
-      .innerJoin(schema.benefits, eq(schema.levelBenefits.benefitId, schema.benefits.id))
-      .innerJoin(schema.memberLevels, eq(schema.levelBenefits.levelId, schema.memberLevels.id))
+      .innerJoin(
+        schema.benefits,
+        eq(schema.levelBenefits.benefitId, schema.benefits.id),
+      )
+      .innerJoin(
+        schema.memberLevels,
+        eq(schema.levelBenefits.levelId, schema.memberLevels.id),
+      )
       .where(eq(schema.memberLevels.code, user.level));
 
     return {
       level: user.level,
       points: user.points,
       totalPoints: user.totalPoints,
-      levelInfo: levelInfo ? {
-        id: levelInfo.id,
-        code: levelInfo.code,
-        name: levelInfo.name,
-        icon: levelInfo.icon,
-      } : null,
+      levelInfo: levelInfo
+        ? {
+            id: levelInfo.id,
+            code: levelInfo.code,
+            name: levelInfo.name,
+            icon: levelInfo.icon,
+          }
+        : null,
       subscription: subscription
         ? {
             id: subscription.id,
@@ -200,11 +225,15 @@ export class SubscriptionService {
       .set({ level: newLevel })
       .where(eq(schema.users.id, userId));
 
-    await this.notificationService.sendMembershipNotification(userId, 'activated', {
-      planName: createDto.plan,
-      endDate: subscription.endDate,
-      subscriptionId: subscription.id,
-    });
+    await this.notificationService.sendMembershipNotification(
+      userId,
+      'activated',
+      {
+        planName: createDto.plan,
+        endDate: subscription.endDate,
+        subscriptionId: subscription.id,
+      },
+    );
 
     return subscription;
   }
@@ -340,10 +369,14 @@ export class SubscriptionService {
         .where(eq(schema.subscriptions.id, currentSubscription.id))
         .returning();
 
-      await this.notificationService.sendMembershipNotification(userId, 'renewed', {
-        endDate: newEndDate,
-        subscriptionId: updated.id,
-      });
+      await this.notificationService.sendMembershipNotification(
+        userId,
+        'renewed',
+        {
+          endDate: newEndDate,
+          subscriptionId: updated.id,
+        },
+      );
 
       return updated;
     }

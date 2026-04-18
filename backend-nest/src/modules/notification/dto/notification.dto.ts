@@ -1,6 +1,10 @@
 import { IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
 
-export type NotificationType = 'intelligence' | 'system' | 'achievement' | 'membership';
+export type NotificationType =
+  | 'intelligence'
+  | 'system'
+  | 'achievement'
+  | 'membership';
 
 export class CreateNotificationDto {
   @IsUUID()

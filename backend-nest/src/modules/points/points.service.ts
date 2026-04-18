@@ -64,7 +64,12 @@ export class PointsService {
       .insert(schema.subscriptions)
       .values({
         userId,
-        plan: plan.planCode as 'monthly' | 'quarterly' | 'yearly' | 'lifetime' | 'custom',
+        plan: plan.planCode as
+          | 'monthly'
+          | 'quarterly'
+          | 'yearly'
+          | 'lifetime'
+          | 'custom',
         status: 'active',
         price: '0',
         startDate,
@@ -95,12 +100,16 @@ export class PointsService {
       })
       .where(eq(schema.users.id, userId));
 
-    await this.notificationService.sendMembershipNotification(userId, 'points_exchange', {
-      planName: plan.name,
-      endDate: subscription.endDate,
-      points: plan.pointsPrice,
-      subscriptionId: subscription.id,
-    });
+    await this.notificationService.sendMembershipNotification(
+      userId,
+      'points_exchange',
+      {
+        planName: plan.name,
+        endDate: subscription.endDate,
+        points: plan.pointsPrice,
+        subscriptionId: subscription.id,
+      },
+    );
 
     await this.notificationService.sendPointsNotification(
       userId,

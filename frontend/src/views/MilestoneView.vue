@@ -145,21 +145,6 @@
           v-html="renderMarkdown(selectedMilestone.content)"
         ></div>
 
-        <div class="detail-media">
-          <h4>相关媒体</h4>
-          <div class="media-grid">
-            <template v-if="selectedMilestone.media && selectedMilestone.media.length > 0">
-              <div v-for="(media, index) in selectedMilestone.media" :key="index" class="media-item">
-                <img v-if="media.type === 'image'" :src="getFullImageUrl(media.url)" :alt="media.caption || `媒体${index + 1}`" />
-                <video v-else-if="media.type === 'video'" :src="getFullImageUrl(media.url)" controls></video>
-              </div>
-            </template>
-            <div v-else class="media-empty">
-              <PictureOutlined class="empty-media-icon" />
-              <span>暂无媒体资源</span>
-            </div>
-          </div>
-        </div>
 
         <div class="detail-related">
           <h4>关联卫星</h4>
@@ -191,7 +176,6 @@ import {
   EnvironmentOutlined,
   UserOutlined,
   InboxOutlined,
-  PictureOutlined,
 } from '@ant-design/icons-vue'
 import { milestoneApi } from '@/api'
 import { marked } from 'marked'
@@ -228,7 +212,7 @@ interface TimelineDecade {
 }
 
 // 默认封面图
-const defaultCover = `data:image/svg+xml,${encodeURIComponent('<svg width="400" height="200" xmlns="http://www.w3.org/2000/svg"><rect width="100%" height="100%" fill="#1a1a2e"/><text x="50%" y="50%" fill="#666" font-size="16" text-anchor="middle" dy=".3em">暂无封面图片</text></svg>')}`
+const defaultCover = 'https://images.unsplash.com/photo-1614728263952-84ea256f9679?w=800&q=80'
 
 // 分类选项配置
 const categoryOptions = [
@@ -706,6 +690,10 @@ onMounted(() => {
   border-radius: 12px;
   overflow: hidden;
   background: #1a1a2e;
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
   img {
     width: 100%;
@@ -750,7 +738,6 @@ onMounted(() => {
 
 .detail-description,
 .detail-content-markdown,
-.detail-media,
 .detail-related {
   h4 {
     font-size: 15px;
@@ -788,7 +775,7 @@ onMounted(() => {
   }
 }
 
-.detail-media {
+.detail-related {
   .media-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));

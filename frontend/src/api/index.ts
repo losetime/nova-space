@@ -165,7 +165,7 @@ export const pointsApi = {
 
 // 订阅 API
 export const subscriptionApi = {
-  getPlans: () => api.get<ApiResponse<{ plans: MembershipPlan[] }>>('/subscriptions/plans'),
+  getPlans: () => api.get<ApiResponse<MemberLevelData[]>>('/subscriptions/plans'),
 
   getStatus: () => api.get<ApiResponse<MembershipStatus>>('/subscriptions/status'),
 
@@ -216,6 +216,16 @@ export interface Benefit {
   valueType: string
   unit: string | null
   value: string
+  displayText?: string
+}
+
+// 会员版本（含权益和套餐）
+export interface MemberLevelData {
+  level: string
+  levelName: string
+  icon: string | null
+  benefits: Benefit[]
+  plans: MembershipPlan[]
 }
 
 // 会员状态
@@ -339,7 +349,7 @@ export interface Intelligence {
   tags: string[]
   analysis?: string
   trend?: string
-  publishedAt: string
+  createdAt: string
   isLocked?: boolean
   isCollected?: boolean
 }
@@ -671,6 +681,9 @@ export const intelligenceApi = {
   // 收藏/取消收藏
   toggleCollect: (id: number) => api.post<ApiResponse<{ collected: boolean }>>(`/intelligence/${id}/collect`),
 
+  // 检查收藏状态
+  isCollected: (id: number) => api.get<ApiResponse<{ isCollected: boolean }>>(`/intelligence/${id}/collected`),
+
   // 获取用户收藏列表
   getUserCollects: () => api.get<ApiResponse<Intelligence[]>>('/intelligence/user/collects'),
 }
@@ -915,6 +928,27 @@ export interface CompanyDetail {
 export const companyApi = {
   // 获取公司详情
   getDetail: (name: string) => api.get<ApiResponse<CompanyDetail>>(`/companies/${encodeURIComponent(name)}`),
+}
+
+// 功能权限
+export interface FeaturePermission {
+  code: string
+  name: string
+  hasAccess: boolean
+  value?: string
+  displayText?: string
+}
+
+export interface UserPermissions {
+  level: string
+  levelName: string
+  features: FeaturePermission[]
+}
+
+// 会员 API
+export const membershipApi = {
+  // 获取用户功能权限
+  getPermissions: () => api.get<ApiResponse<UserPermissions>>('/membership/permissions'),
 }
 
 export default api

@@ -52,13 +52,13 @@
               </div>
               <template #overlay>
                 <a-menu class="user-menu" @click="handleMenuClick">
-                  <a-menu-item key="membership">
-                    <CrownOutlined />
-                    会员中心
-                  </a-menu-item>
                   <a-menu-item key="profile">
                     <UserOutlined />
                     个人中心
+                  </a-menu-item>
+                  <a-menu-item key="membership">
+                    <CrownOutlined />
+                    会员中心
                   </a-menu-item>
                   <a-menu-item key="push-subscription">
                     <BellOutlined />

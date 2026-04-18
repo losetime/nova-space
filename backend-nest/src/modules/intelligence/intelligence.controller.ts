@@ -38,6 +38,16 @@ export class IntelligenceController {
     return this.intelligenceService.findOne(id, userId);
   }
 
+  @Get(':id/collected')
+  @UseGuards(JwtAuthGuard)
+  async isCollected(@Request() req: RequestWithUser, @Param('id') id: number) {
+    const isCollected = await this.intelligenceService.isCollected(
+      req.user.id,
+      id,
+    );
+    return { isCollected };
+  }
+
   @Post(':id/collect')
   @UseGuards(JwtAuthGuard)
   async collect(@Param('id') id: number, @Request() req: RequestWithUser) {
