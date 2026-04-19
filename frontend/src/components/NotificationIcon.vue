@@ -46,6 +46,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
+import { emitter } from '@/utils/emitter'
 import api from '@/api'
 
 interface Notification {
@@ -101,6 +102,8 @@ const fetchNotifications = async () => {
   try {
     const res = await api.get('/notifications')
     notifications.value = res.data.data?.list || []
+    const unreadRes = await api.get('/notifications/unread-count')
+    unreadCount.value = unreadRes.data.data?.count || 0
   } catch (error) {
     console.error('获取通知失败:', error)
   } finally {
@@ -117,10 +120,12 @@ const fetchUnreadCount = async () => {
   }
 }
 
-const togglePanel = () => {
-  showPanel.value = !showPanel.value
+const togglePanel = async () => {
   if (showPanel.value) {
-    fetchNotifications()
+    showPanel.value = false
+  } else {
+    showPanel.value = true
+    await fetchNotifications()
   }
 }
 
@@ -134,17 +139,7 @@ const handleClick = async (notification: Notification) => {
       console.error('标记已读失败:', error)
     }
   }
-  
-  if (notification.relatedId) {
-    if (notification.type === 'intelligence') {
-      window.location.href = `/intelligence/${notification.relatedId}`
-    } else if (notification.type === 'membership') {
-      window.location.href = `/membership`
-    }
-  } else if (notification.type === 'membership') {
-    window.location.href = `/membership`
-  }
-  
+
   showPanel.value = false
 }
 
@@ -168,10 +163,12 @@ const handleClickOutside = (e: MouseEvent) => {
 onMounted(() => {
   fetchUnreadCount()
   document.addEventListener('click', handleClickOutside)
+  emitter.on('notification:refresh', fetchNotifications)
 })
 
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
+  emitter.off('notification:refresh', fetchNotifications)
 })
 </script>
 
@@ -205,8 +202,8 @@ onUnmounted(() => {
 
 .notification-panel {
   position: fixed;
-  top: 60px;
-  right: 20px;
+  top: 70px;
+  right: 102px;
   width: 360px;
   max-height: 480px;
   background: #18181b;

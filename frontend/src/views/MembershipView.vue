@@ -11,22 +11,32 @@
       </header>
 
       <section v-if="status" class="status-card">
-        <h2 class="status-title">当前权益</h2>
-        <div class="status-header">
-          <div class="status-left">
-            <span class="level-tag" :class="status.level">{{ getLevelText(status.level) }}</span>
-            <span v-if="status.subscription" class="sub-info">
-              {{ getPlanText(status.subscription.plan) }} · {{ formatDate(status.subscription.endDate) }}
-            </span>
+        <div class="status-card-header">
+          <span class="level-icon">{{ status.level === 'professional' ? '👑' : '💎' }}</span>
+          <span class="level-name" :class="status.level">{{ getLevelText(status.level) }}</span>
+        </div>
+        <div class="status-divider"></div>
+        <div class="status-info">
+          <div class="info-item">
+            <span class="info-label">套餐</span>
+            <span class="info-colon">：</span>
+            <span class="info-value">{{ status.subscription ? getPlanText(status.subscription.plan) : '未开通' }}</span>
           </div>
-          <div class="status-right">
-            <span class="points-num">{{ status.points ?? 0 }}</span>
-            <span class="points-label">积分</span>
+          <div class="info-item">
+            <span class="info-label">到期</span>
+            <span class="info-colon">：</span>
+            <span class="info-value">{{ status.subscription ? formatDate(status.subscription.endDate) : '--' }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">积分</span>
+            <span class="info-colon">：</span>
+            <span class="info-value points">{{ status.points ?? 0 }}</span>
           </div>
         </div>
+        <div class="status-divider"></div>
         <div v-if="status.benefits?.length" class="benefits-list">
           <span v-for="benefit in status.benefits" :key="benefit.id" class="benefit-tag">
-            {{ benefit.name }}: {{ benefit.displayText || benefit.value }} {{ benefit.unit || '' }}
+            {{ benefit.name }}：{{ benefit.displayText || benefit.value }}
           </span>
         </div>
       </section>
@@ -98,31 +108,31 @@
 
     <a-modal v-model:open="showBuyDialog" :closable="false" :footer="null" :width="380" centered>
       <div class="modal-box">
-        <h3 class="modal-title">选择套餐</h3>
-        <p class="modal-subtitle">{{ selectedLevel?.levelName }}</p>
+        <h3 class="modal-title">选择支付方式</h3>
+        <p class="modal-subtitle">{{ selectedLevel?.levelName }} · {{ selectedPlan?.name }} ¥{{ selectedPlan?.price }}</p>
 
-        <div class="plans-select">
+        <div class="payment-select">
           <div
-            v-for="plan in selectedLevel?.plans"
-            :key="plan.id"
-            class="plan-option"
-            :class="{ selected: selectedPlan?.id === plan.id, recommended: plan.planCode === 'yearly' }"
-            @click="selectedPlan = plan"
+            class="payment-option"
+            :class="{ selected: selectedPayment === 'wechat' }"
+            @click="selectedPayment = 'wechat'"
           >
-            <div class="option-left">
-              <span class="option-name">{{ plan.name }}</span>
-              <span class="option-duration">({{ plan.durationMonths === 1200 ? '永久' : `${plan.durationMonths}个月` }})</span>
-            </div>
-            <div class="option-right">
-              <span class="option-price">¥{{ plan.price }}</span>
-              <span v-if="plan.planCode === 'yearly'" class="option-tag">推荐</span>
-            </div>
+            <div class="payment-icon wechat">💚</div>
+            <span class="payment-name">微信支付</span>
+          </div>
+          <div
+            class="payment-option"
+            :class="{ selected: selectedPayment === 'alipay' }"
+            @click="selectedPayment = 'alipay'"
+          >
+            <div class="payment-icon alipay">💙</div>
+            <span class="payment-name">支付宝</span>
           </div>
         </div>
 
         <div class="modal-actions">
           <button class="btn-cancel" @click="showBuyDialog = false">取消</button>
-          <button class="btn-confirm" @click="confirmBuy">确认购买</button>
+          <button class="btn-confirm" @click="confirmBuy">确认支付</button>
         </div>
       </div>
     </a-modal>
@@ -132,12 +142,14 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { message } from 'ant-design-vue'
+import { emitter } from '@/utils/emitter'
 import { subscriptionApi, type MemberLevelData, type MembershipPlan, type MembershipStatus, type Benefit } from '@/api'
 
 const loading = ref(true)
 const showBuyDialog = ref(false)
 const selectedLevel = ref<MemberLevelData | null>(null)
 const selectedPlan = ref<MembershipPlan | null>(null)
+const selectedPayment = ref<string>('wechat')
 
 const status = ref<MembershipStatus | null>(null)
 const memberLevels = ref<MemberLevelData[]>([])
@@ -197,10 +209,13 @@ function handleBuy(level: MemberLevelData, plan: MembershipPlan) {
 
 function confirmBuy() {
   if (!selectedPlan.value) return
+  const paymentName = selectedPayment.value === 'wechat' ? '微信支付' : '支付宝'
   showBuyDialog.value = false
-  message.success(`已选择 ${selectedLevel.value?.levelName} ${selectedPlan.value.name}，支付功能即将上线`)
+  message.success(`已选择 ${selectedLevel.value?.levelName} ${selectedPlan.value.name}（${paymentName}），支付功能即将上线`)
+  emitter.emit('notification:refresh')
   selectedPlan.value = null
   selectedLevel.value = null
+  selectedPayment.value = 'wechat'
 }
 
 onMounted(() => fetchData())
@@ -276,26 +291,70 @@ $color-points: #ffd700;
   margin-bottom: 40px;
 }
 
-.status-title {
-  font-size: 16px;
-  font-weight: 500;
-  color: $text-dark;
-  margin: 0 0 16px;
-}
-
-.status-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-bottom: 16px;
-  border-bottom: 1px solid $border;
-  margin-bottom: 16px;
-}
-
-.status-left {
+.status-card-header {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
+  margin-bottom: 12px;
+
+  .level-icon {
+    font-size: 24px;
+  }
+
+  .level-name {
+    font-size: 20px;
+    font-weight: 600;
+    color: $text-dark;
+
+    &.basic {
+      color: $color-basic;
+    }
+
+    &.advanced {
+      color: $color-advanced;
+    }
+
+    &.professional {
+      color: $color-professional;
+    }
+  }
+}
+
+.status-divider {
+  height: 1px;
+  background: $border;
+  margin: 12px 0;
+}
+
+.status-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+
+  .info-label {
+    font-size: 14px;
+    color: $text-light;
+  }
+
+  .info-colon {
+    color: $text-gray;
+    font-size: 14px;
+  }
+
+  .info-value {
+    font-size: 14px;
+    font-weight: 500;
+    color: $text-dark;
+
+    &.points {
+      color: $color-points;
+    }
+  }
 }
 
 .level-tag {
@@ -555,6 +614,44 @@ $color-points: #ffd700;
   flex-direction: column;
   gap: 12px;
   margin-bottom: 20px;
+}
+
+.payment-select {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.payment-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  border: 1px solid $border;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    border-color: rgba(255, 255, 255, 0.15);
+  }
+
+  &.selected {
+    border-color: $color-advanced;
+    background: rgba(0, 212, 255, 0.08);
+  }
+
+  .payment-icon {
+    font-size: 24px;
+  }
+
+  .payment-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: $text-dark;
+  }
 }
 
 .plan-option {

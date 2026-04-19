@@ -172,6 +172,7 @@ import {
   CloseCircleOutlined,
 } from "@ant-design/icons-vue";
 import { message } from "ant-design-vue";
+import { emitter } from "@/utils/emitter";
 import { educationApi, type Article, type Quiz, type QuizResult, type QuizStats } from "@/api";
 import { useUserStore } from "@/stores/user";
 import { getFullImageUrl } from "@/utils/image-url";
@@ -275,6 +276,9 @@ const submitAnswer = async () => {
     });
     quizResult.value = res.data.data;
     showResult.value = true;
+    if (quizResult.value.isCorrect) {
+      emitter.emit('notification:refresh')
+    }
     // 提交成功后刷新答题统计
     const statsRes = await educationApi.getQuizStats();
     quizStats.value = statsRes.data.data;

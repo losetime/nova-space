@@ -8,8 +8,10 @@ import {
   Query,
   UseGuards,
   Request,
+  Inject,
 } from '@nestjs/common';
 import { UserService } from './user.service';
+import { PointsService } from '../points/points.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -19,7 +21,10 @@ import type { RequestWithUser } from '../../common/interfaces';
 
 @Controller('users')
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userService: UserService,
+    @Inject(PointsService) private readonly pointsService: PointsService,
+  ) {}
 
   // 获取当前用户信息
   @Get('me')
@@ -29,8 +34,9 @@ export class UserController {
     if (!user) {
       return { code: 404, message: '用户不存在' };
     }
+    const todayCheckedIn = await this.pointsService.isCheckedInToday(req.user.id);
     const { password, ...result } = user;
-    return { code: 0, data: result };
+    return { code: 0, data: { ...result, todayCheckedIn } };
   }
 
   // 更新当前用户信息

@@ -37,7 +37,7 @@
 
     <!-- 基本信息 -->
     <div class="section" v-if="metadata">
-      <div class="section-header" @click="expandedSections.basic = !expandedSections.basic">
+      <div class="section-header" :class="{ disabled: expandedSections.basic && !canViewBasic }" @click="toggleSection('basic')">
         <div class="header-left">
           <InfoCircleOutlined class="section-icon" />
           <span>基本信息</span>
@@ -104,7 +104,7 @@
 
     <!-- 技术规格 -->
     <div class="section" v-if="metadata">
-      <div class="section-header" @click="expandedSections.technical = !expandedSections.technical">
+      <div class="section-header" :class="{ disabled: !canViewTechnical }" @click="toggleSection('technical')">
         <div class="header-left">
           <ToolOutlined class="section-icon" />
           <span>技术规格</span>
@@ -203,7 +203,7 @@
 
     <!-- 轨道参数 -->
     <div class="section" v-if="satellite?.position">
-      <div class="section-header" @click="expandedSections.orbit = !expandedSections.orbit">
+      <div class="section-header" :class="{ disabled: !canViewOrbit }" @click="toggleSection('orbit')">
         <div class="header-left">
           <CompassOutlined class="section-icon" />
           <span>轨道参数</span>
@@ -365,7 +365,7 @@
 
     <!-- 发射信息 -->
     <div class="section" v-if="metadata">
-      <div class="section-header" @click="expandedSections.launch = !expandedSections.launch">
+      <div class="section-header" :class="{ disabled: !canViewLaunch }" @click="toggleSection('launch')">
         <div class="header-left">
           <RocketOutlined class="section-icon" />
           <span>发射信息</span>
@@ -438,7 +438,7 @@
 
     <!-- 任务与运营 -->
     <div class="section" v-if="metadata">
-      <div class="section-header" @click="expandedSections.mission = !expandedSections.mission">
+      <div class="section-header" :class="{ disabled: !canViewMission }" @click="toggleSection('mission')">
         <div class="header-left">
           <TeamOutlined class="section-icon" />
           <span>任务与运营</span>
@@ -511,8 +511,8 @@
     </div>
 
     <!-- 运行状态 -->
-    <div class="section">
-      <div class="section-header" @click="expandedSections.status = !expandedSections.status">
+    <div class="section" v-if="metadata || satellite?.position">
+      <div class="section-header" :class="{ disabled: !canViewStatus }" @click="toggleSection('status')">
         <div class="header-left">
           <DashboardOutlined class="section-icon" />
           <span>运行状态</span>
@@ -570,7 +570,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from "vue";
+import { ref, watch, computed } from "vue";
 import { message } from "ant-design-vue";
 import CompanyDetailModal from "./CompanyDetailModal.vue";
 import {
@@ -695,9 +695,33 @@ const userStore = useUserStore();
 const isFavorited = ref(false);
 const followLoading = ref(false);
 
+// 权限检查
+const canViewBasic = computed(() => userStore.hasFeature('satellite_basic'))
+const canViewTechnical = computed(() => userStore.hasFeature('satellite_technical'))
+const canViewLaunch = computed(() => userStore.hasFeature('satellite_launch'))
+const canViewMission = computed(() => userStore.hasFeature('satellite_mission'))
+const canViewStatus = computed(() => userStore.hasFeature('satellite_status'))
+const canViewOrbit = computed(() => userStore.hasFeature('satellite_orbit_params'))
+
 // 公司详情弹窗状态
 const companyDetailVisible = ref(false);
 const selectedCompanyName = ref("");
+
+// 切换区块展开状态
+function toggleSection(section: keyof typeof expandedSections.value) {
+  const hasPermission = {
+    basic: true,
+    technical: canViewTechnical.value,
+    orbit: canViewOrbit.value,
+    launch: canViewLaunch.value,
+    mission: canViewMission.value,
+    status: canViewStatus.value,
+  }[section]
+
+  if (!hasPermission) return
+
+  expandedSections.value[section] = !expandedSections.value[section]
+}
 
 // 打开公司详情弹窗
 function openCompanyDetail(companyName: string) {
@@ -1155,7 +1179,12 @@ const getRcsClass = (rcs: string | undefined): string => {
   cursor: pointer;
   transition: all 0.2s ease;
 
-  &:hover {
+  &.disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  &:hover:not(.disabled) {
     background: rgba(0, 212, 255, 0.08);
     border-color: rgba(0, 212, 255, 0.15);
   }

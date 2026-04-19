@@ -22,10 +22,10 @@ export class PointsService {
 
   private readonly pointsConfig = {
     register: 100,
-    daily_login: 10,
+    daily_login: 2,
     share: 5,
-    invite: 50,
-    task_complete: 20,
+    invite: 10,
+    task_complete: 2,
   };
 
   async exchangeMembership(userId: string, planCode: string) {
@@ -248,10 +248,41 @@ export class PointsService {
       return null;
     }
 
-    return this.addPoints(userId, {
+    const record = await this.addPoints(userId, {
       points: this.pointsConfig['daily_login'],
       action: 'daily_login',
     });
+
+    await this.notificationService.sendPointsNotification(
+      userId,
+      'earned',
+      record.points,
+      '每日签到',
+    );
+
+    return record;
+  }
+
+  async isCheckedInToday(userId: string): Promise<boolean> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const [existingRecord] = await this.db
+      .select()
+      .from(schema.pointsRecords)
+      .where(
+        and(
+          eq(schema.pointsRecords.userId, userId),
+          eq(schema.pointsRecords.action, 'daily_login'),
+          gte(schema.pointsRecords.createdAt, today),
+          lt(schema.pointsRecords.createdAt, tomorrow),
+        ),
+      );
+
+    return !!existingRecord;
   }
 
   async adminGrant(dto: AdminGrantPointsDto): Promise<schema.PointsRecord> {

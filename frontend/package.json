@@ -26,6 +26,7 @@
     "flag-icons": "^7.5.0",
     "lodash-es": "^4.17.21",
     "marked": "^17.0.5",
+    "mitt": "^3.0.1",
     "pinia": "^3.0.4",
     "satellite.js": "^7.0.0",
     "vite-plugin-cesium": "^1.2.23",

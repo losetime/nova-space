@@ -57,10 +57,30 @@
               <span class="info-value total">📊 {{ userStore.user?.totalPoints || 0 }}</span>
             </div>
           </div>
-          <a-button type="primary" class="membership-btn" @click="router.push('/membership')">
-            <CrownOutlined />
-            会员中心
-          </a-button>
+          <div class="membership-actions">
+            <a-button 
+              class="checkin-btn" 
+              :class="{ checked: hasCheckedIn }"
+              :disabled="checkinLoading || hasCheckedIn"
+              @click="handleCheckin"
+            >
+              <template v-if="checkinLoading">
+                <LoadingOutlined class="spin" />
+              </template>
+              <template v-else-if="hasCheckedIn">
+                <CheckOutlined />
+                已签到
+              </template>
+              <template v-else>
+                <ThunderboltOutlined />
+                签到
+              </template>
+            </a-button>
+            <a-button type="primary" class="membership-btn" @click="router.push('/membership')">
+              <CrownOutlined />
+              会员中心
+            </a-button>
+          </div>
         </div>
       </div>
 
@@ -237,6 +257,7 @@ import { useRouter } from "vue-router";
 import { message } from "ant-design-vue";
 import {
   UserOutlined,
+  HeartOutlined,
   BookOutlined,
   LoadingOutlined,
   SaveOutlined,
@@ -245,9 +266,12 @@ import {
   GlobalOutlined,
   RocketOutlined,
   CrownOutlined,
+  CheckOutlined,
+  ThunderboltOutlined,
 } from "@ant-design/icons-vue";
+import { emitter } from "@/utils/emitter";
 import { useUserStore } from "@/stores/user";
-import { intelligenceApi, satelliteApi, type Intelligence, type SatelliteFavorite } from "@/api";
+import { intelligenceApi, satelliteApi, pointsApi, type Intelligence, type SatelliteFavorite } from "@/api";
 
 // Intelligence 类型扩展
 declare module "@/api" {
@@ -282,6 +306,36 @@ const passwordForm = reactive({
   confirmPassword: "",
 });
 const passwordLoading = ref(false);
+
+// 签到
+const checkinLoading = ref(false);
+const hasCheckedIn = ref(false);
+
+// 签到
+async function handleCheckin() {
+  checkinLoading.value = true;
+  try {
+    const res = await pointsApi.dailyCheckin();
+    if (res.data.code === 0) {
+      hasCheckedIn.value = true;
+      message.success(res.data.message || "签到成功");
+      emitter.emit('notification:refresh')
+      await userStore.fetchUser();
+    } else {
+      hasCheckedIn.value = true;
+      message.warning(res.data.message || "今日已签到");
+    }
+  } catch (error: any) {
+    if (error.response?.status === 400) {
+      hasCheckedIn.value = true;
+      message.warning("今日已签到");
+    } else {
+      message.error("签到失败");
+    }
+  } finally {
+    checkinLoading.value = false;
+  }
+}
 
 // 获取收藏列表
 async function fetchCollects() {
@@ -411,6 +465,7 @@ onMounted(async () => {
     await userStore.fetchUser();
   }
   editForm.nickname = userStore.user?.nickname || "";
+  hasCheckedIn.value = userStore.user?.todayCheckedIn || false;
   await Promise.all([fetchCollects(), fetchSatellites()]);
 });
 </script>
@@ -670,6 +725,50 @@ $text-muted: rgba(255, 255, 255, 0.4);
 
   &:hover {
     opacity: 0.9;
+  }
+}
+
+.checkin-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #00d4ff 0%, #0080ff 100%);
+  border: none;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover:not(:disabled) {
+    opacity: 0.9;
+    transform: translateY(-1px);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+  }
+
+  &.checked {
+    background: linear-gradient(135deg, #52c41a 0%, #389e0d 100%);
+  }
+
+  .spin {
+    animation: spin 1s linear infinite;
+  }
+}
+
+.membership-actions {
+  display: flex;
+  gap: 12px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
   }
 }
 

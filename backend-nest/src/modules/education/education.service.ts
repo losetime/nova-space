@@ -5,10 +5,14 @@ import * as schema from '../../db/schema';
 import { eq, desc, and, gte, sql } from 'drizzle-orm';
 import { CreateArticleDto } from './dto/create-article.dto';
 import { SubmitAnswerDto } from './dto/submit-answer.dto';
+import { NotificationService } from '../notification/notification.service';
 
 @Injectable()
 export class EducationService {
-  constructor(@Inject(DRIZZLE) private db: DrizzleClient) {}
+  constructor(
+    @Inject(DRIZZLE) private db: DrizzleClient,
+    @Inject(NotificationService) private notificationService: NotificationService,
+  ) {}
 
   async getArticles(category?: string, page = 1, limit = 12) {
     const offset = (page - 1) * limit;
@@ -142,6 +146,15 @@ export class EducationService {
       isCorrect,
       pointsEarned,
     });
+
+    if (isCorrect && pointsEarned > 0) {
+      await this.notificationService.sendPointsNotification(
+        userId,
+        'earned',
+        pointsEarned,
+        '答题挑战',
+      );
+    }
 
     return {
       isCorrect,

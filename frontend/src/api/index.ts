@@ -19,6 +19,8 @@ export interface User {
   role: string
   level: string
   points: number
+  totalPoints?: number
+  todayCheckedIn?: boolean
   createdAt: string
   updatedAt: string
 }
