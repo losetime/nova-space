@@ -183,11 +183,11 @@ const handleMenuClick = ({ key }: { key: string }) => {
 
 function getLevelText(level?: string) {
   const levelMap: Record<string, string> = {
-    basic: '普通',
-    advanced: '高级',
-    professional: '专业'
+    basic: '普通会员',
+    advanced: '高级会员',
+    professional: '专业会员'
   }
-  return levelMap[level || 'basic'] || '普通'
+  return levelMap[level || 'basic'] || '普通会员'
 }
 </script>
 
@@ -381,14 +381,9 @@ function getLevelText(level?: string) {
         border-radius: 4px;
         width: fit-content;
 
-        &.advanced {
-          background: linear-gradient(135deg, #667eea, #764ba2);
-          color: #fff;
-        }
-
-        &.professional {
-          background: linear-gradient(135deg, #f093fb, #f5576c);
-          color: #fff;
+        &.advanced, &.professional {
+          background: linear-gradient(135deg, #f6d365, #fda085);
+          color: #333;
         }
       }
     }
