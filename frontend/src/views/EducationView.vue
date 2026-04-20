@@ -51,7 +51,12 @@
           @click="openArticle(item)"
         >
           <div class="card-cover">
-            <img :src="getCoverUrl(item.cover)" :alt="item.title" @error="handleImageError" />
+            <img
+              :src="getCoverUrl(item.cover)"
+              :alt="item.title"
+              :style="getImageStyle(item.cover, item.category)"
+              @error="handleImageError"
+            />
             <div class="card-type">{{ item.type === "video" ? "视频" : "图文" }}</div>
           </div>
           <div class="card-body">
@@ -158,7 +163,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted, computed, shallowRef } from "vue";
 import {
   RocketOutlined,
   ExperimentOutlined,
@@ -176,6 +181,7 @@ import { emitter } from "@/utils/emitter";
 import { educationApi, type Article, type Quiz, type QuizResult, type QuizStats } from "@/api";
 import { useUserStore } from "@/stores/user";
 import { getFullImageUrl } from "@/utils/image-url";
+import { useFaceDetection } from "@/hooks/useFaceDetection";
 
 const userStore = useUserStore();
 const isLoggedIn = computed(() => userStore.isLoggedIn);
@@ -187,6 +193,28 @@ const DEFAULT_COVER =
 // 获取封面 URL
 const getCoverUrl = (cover?: string) => {
   return getFullImageUrl(cover) || DEFAULT_COVER;
+};
+
+// 人脸检测
+const { detectFace } = useFaceDetection();
+const facePositions = shallowRef(new Map<string, { x: number; y: number }>());
+
+const getImageStyle = (cover?: string, category?: string) => {
+  const url = getFullImageUrl(cover);
+  if (!url) return {};
+
+  const cached = facePositions.value.get(url);
+  if (cached) {
+    return { objectPosition: `${cached.x}% ${cached.y}%` };
+  }
+
+  detectFace(url, category).then((pos) => {
+    const newMap = new Map(facePositions.value);
+    newMap.set(url, pos);
+    facePositions.value = newMap;
+  });
+
+  return {};
 };
 
 const activeCategory = ref("all");
@@ -277,13 +305,13 @@ const submitAnswer = async () => {
     quizResult.value = res.data.data;
     showResult.value = true;
     if (quizResult.value.isCorrect) {
-      emitter.emit('notification:refresh')
+      emitter.emit("notification:refresh");
     }
     // 提交成功后刷新答题统计
     const statsRes = await educationApi.getQuizStats();
     quizStats.value = statsRes.data.data;
   } catch (error: unknown) {
-    const err = error as { response?: { data?: { message?: string } } }
+    const err = error as { response?: { data?: { message?: string } } };
     message.error(err.response?.data?.message || "提交失败");
   } finally {
     submitting.value = false;
@@ -423,13 +451,14 @@ onMounted(() => {
 
   .card-cover {
     position: relative;
-    height: 200px;
+    height: 250px;
     overflow: hidden;
 
     img {
       width: 100%;
       height: 100%;
       object-fit: cover;
+      object-position: center;
     }
 
     .card-type {

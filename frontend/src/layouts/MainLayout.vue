@@ -47,6 +47,9 @@
                   <span class="user-name">{{
                     userStore.user?.nickname || userStore.user?.username
                   }}</span>
+                  <span v-if="userStore.user?.level && userStore.user.level !== 'basic'" class="user-level" :class="userStore.user.level">
+                    {{ getLevelText(userStore.user.level) }}
+                  </span>
                 </div>
                 <DownOutlined class="user-arrow" />
               </div>
@@ -177,6 +180,15 @@ const handleMenuClick = ({ key }: { key: string }) => {
       break;
   }
 };
+
+function getLevelText(level?: string) {
+  const levelMap: Record<string, string> = {
+    basic: '普通',
+    advanced: '高级',
+    professional: '专业'
+  }
+  return levelMap[level || 'basic'] || '普通'
+}
 </script>
 
 <style scoped lang="scss">
@@ -361,6 +373,23 @@ const handleMenuClick = ({ key }: { key: string }) => {
         font-size: 13px;
         font-weight: 600;
         color: #fff;
+      }
+
+      .user-level {
+        font-size: 11px;
+        padding: 2px 6px;
+        border-radius: 4px;
+        width: fit-content;
+
+        &.advanced {
+          background: linear-gradient(135deg, #667eea, #764ba2);
+          color: #fff;
+        }
+
+        &.professional {
+          background: linear-gradient(135deg, #f093fb, #f5576c);
+          color: #fff;
+        }
       }
     }
 

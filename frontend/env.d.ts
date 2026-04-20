@@ -13,3 +13,22 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv
 }
+
+// tracking.js 挂载在 window.tracking 上
+interface Window {
+  tracking?: {
+    ObjectTracker: new (types: string[]) => ObjectTrackerInstance
+    track: (img: HTMLImageElement, tracker: ObjectTrackerInstance) => void
+  }
+}
+
+interface ObjectTrackerInstance {
+  on(event: 'track', handler: (e: { data: FaceData[] }) => void): void
+}
+
+interface FaceData {
+  x: number
+  y: number
+  width: number
+  height: number
+}
