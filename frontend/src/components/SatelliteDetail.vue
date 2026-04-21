@@ -37,11 +37,7 @@
 
     <!-- 基本信息 -->
     <div class="section" v-if="metadata">
-      <div
-        class="section-header"
-        :class="{ disabled: expandedSections.basic && !canViewBasic }"
-        @click="toggleSection('basic')"
-      >
+      <div class="section-header" @click="toggleSection('basic')">
         <div class="header-left">
           <InfoCircleOutlined class="section-icon" />
           <span>基本信息</span>
@@ -720,7 +716,6 @@ const isFavorited = ref(false);
 const followLoading = ref(false);
 
 // 权限检查
-const canViewBasic = computed(() => userStore.hasFeature("satellite_basic"));
 const canViewTechnical = computed(() => userStore.hasFeature("satellite_technical"));
 const canViewLaunch = computed(() => userStore.hasFeature("satellite_launch"));
 const canViewMission = computed(() => userStore.hasFeature("satellite_mission"));
@@ -1198,6 +1193,7 @@ const getRcsClass = (rcs: string | undefined): string => {
   &.disabled {
     cursor: not-allowed;
     opacity: 0.5;
+    pointer-events: none;
   }
 
   &:hover:not(.disabled) {
@@ -1306,6 +1302,12 @@ const getRcsClass = (rcs: string | undefined): string => {
         color: #c084fc;
         background: rgba(168, 85, 247, 0.2);
         border-color: #a855f7;
+      }
+
+      &.disabled {
+        cursor: not-allowed;
+        opacity: 0.5;
+        pointer-events: none;
       }
     }
   }
