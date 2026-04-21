@@ -49,7 +49,7 @@ export class EsaDiscosService {
       noradId: entity.noradId,
       name: entity.name,
       objectId: entity.objectId,
-      altNames: entity.altNames ? entity.altNames.split(',') : undefined,
+      altName: entity.altName ?? undefined,
       objectType: entity.objectType,
       status: entity.status,
       countryCode: entity.countryCode,

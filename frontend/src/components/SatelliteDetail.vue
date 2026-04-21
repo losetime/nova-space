@@ -83,7 +83,7 @@
             </div>
             <div class="info-item">
               <span class="info-label">别名</span>
-              <span class="info-value alt-names">{{ formatAltNames(metadata.altNames) }}</span>
+              <span class="info-value alt-names">{{ metadata.altName || "--" }}</span>
             </div>
             <div class="info-item">
               <span class="info-label">标准星等</span>
@@ -626,7 +626,7 @@ interface SatelliteMetadata {
   noradId: string;
   name?: string;
   objectId?: string;
-  altNames?: string[];
+  altName?: string;
   objectType?: string;
   status?: string;
   countryCode?: string;
@@ -989,14 +989,6 @@ const formatDateTime = (datetime: string): string => {
     hour: "2-digit",
     minute: "2-digit",
   });
-};
-
-const formatAltNames = (altNames: string[] | string | undefined): string => {
-  if (!altNames) return "--";
-  if (Array.isArray(altNames)) {
-    return altNames.length > 0 ? altNames.join(", ") : "--";
-  }
-  return altNames || "--";
 };
 
 const getOrbitType = (alt: number): string => {

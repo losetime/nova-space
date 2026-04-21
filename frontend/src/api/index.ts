@@ -315,6 +315,10 @@ export const educationApi = {
   isCollected: (id: string | number) =>
     api.get<ApiResponse<{ isCollected: boolean }>>(`/education/articles/${id}/collected`),
 
+  // 获取用户收藏的文章列表
+  getUserCollects: () =>
+    api.get<ApiResponse<Article[]>>('/education/articles/user/collects'),
+
   // 点赞/取消点赞文章
   toggleLike: (id: string | number) =>
     api.post<ApiResponse<{ isLiked: boolean; likes: number }>>(`/education/articles/${id}/like`),
@@ -501,7 +505,7 @@ export interface SatelliteDetail {
     noradId: string
     name?: string
     objectId?: string
-    altNames?: string[]
+    altName?: string
     objectType?: string
     status?: string
     countryCode?: string
@@ -646,7 +650,7 @@ export interface SatelliteFavorite {
   metadata?: {
     name?: string
     objectId?: string
-    altNames?: string[]
+    altName?: string
     objectType?: string
     status?: string
     countryCode?: string

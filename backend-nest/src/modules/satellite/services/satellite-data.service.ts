@@ -118,7 +118,7 @@ export class SatelliteDataService implements OnModuleInit {
       noradId: entity.noradId,
       name: entity.name ?? undefined,
       objectId: entity.objectId ?? undefined,
-      altNames: entity.altNames ? entity.altNames.split(',') : undefined,
+      altName: entity.altName ?? undefined,
       objectType: entity.objectType ?? undefined,
       status: entity.status ?? undefined,
       countryCode: entity.countryCode ?? undefined,

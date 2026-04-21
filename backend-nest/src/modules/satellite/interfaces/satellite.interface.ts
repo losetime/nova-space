@@ -15,7 +15,7 @@ export interface SatelliteMetadata {
   noradId: string;
   name?: string | null;
   objectId?: string | null;
-  altNames?: string[] | null;
+  altName?: string | null;
   objectType?: string | null;
   status?: string | null;
   countryCode?: string | null;
