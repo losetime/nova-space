@@ -30,6 +30,13 @@ export const useUserStore = defineStore('user', () => {
       token.value = accessToken
       user.value = userData
 
+      try {
+        const response = await membershipApi.getPermissions()
+        permissions.value = response.data.data
+      } catch (e) {
+        console.error('Failed to fetch permissions after login:', e)
+      }
+
       console.log('After login:', { token: token.value, user: user.value, isLoggedIn: isLoggedIn.value })
 
       return { success: true }
@@ -54,6 +61,13 @@ export const useUserStore = defineStore('user', () => {
       localStorage.setItem('accessToken', accessToken)
       token.value = accessToken
       user.value = userData
+
+      try {
+        const response = await membershipApi.getPermissions()
+        permissions.value = response.data.data
+      } catch (e) {
+        console.error('Failed to fetch permissions after register:', e)
+      }
 
       return { success: true }
     } catch (error: unknown) {
