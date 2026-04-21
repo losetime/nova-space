@@ -72,7 +72,11 @@
                   国家/地区
                   <span class="selected-tag">
                     <template v-if="selectedCountry">
-                      <FlagIcon :code="selectedCountry" :country-name="getCountryName(selectedCountry)" class="tag-flag" />
+                      <FlagIcon
+                        :code="selectedCountry"
+                        :country-name="getCountryName(selectedCountry)"
+                        class="tag-flag"
+                      />
                     </template>
                     {{ getCountryLabel(selectedCountry) }}
                   </span>
@@ -104,8 +108,14 @@
                     :class="{ active: selectedCountry === country.code }"
                     @click="selectedCountry = country.code"
                   >
-                    <FlagIcon :code="country.code" :country-name="getCountryName(country.code)" class="country-flag" />
-                    <span class="country-name">{{ getCountryName(country.code) }}({{ country.code }})</span>
+                    <FlagIcon
+                      :code="country.code"
+                      :country-name="getCountryName(country.code)"
+                      class="country-flag"
+                    />
+                    <span class="country-name"
+                      >{{ getCountryName(country.code) }}({{ country.code }})</span
+                    >
                     <span class="country-count">{{ country.count }}</span>
                   </div>
                   <div v-if="filteredCountries.length === 0 && countrySearch" class="no-result">
@@ -213,9 +223,7 @@
                   <div v-if="filteredMissions.length === 0 && missionSearch" class="no-result">
                     未找到匹配的任务
                   </div>
-                  <div v-else-if="missions.length === 0" class="no-result">
-                    暂无任务数据
-                  </div>
+                  <div v-else-if="missions.length === 0" class="no-result">暂无任务数据</div>
                 </div>
               </transition>
             </div>
@@ -401,7 +409,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, computed } from 'vue'
+import { ref, watch, onMounted, computed } from "vue";
 import {
   GlobalOutlined,
   ThunderboltOutlined,
@@ -417,57 +425,59 @@ import {
   StarFilled,
   StarOutlined,
   BulbOutlined,
-} from '@ant-design/icons-vue'
-import SatelliteList from '@/components/SatelliteList.vue'
-import SatelliteDetail from '@/components/SatelliteDetail.vue'
-import OrbitPrediction from '@/components/OrbitPrediction.vue'
-import PassPrediction from '@/components/PassPrediction.vue'
-import SunlightAnalysis from '@/components/SunlightAnalysis.vue'
-import FlagIcon from '@/components/FlagIcon.vue'
-import { useCesium, type ColorSchemeType } from '@/hooks/useCesium'
-import { useLocalSatellites } from '@/hooks/useLocalSatellites'
-import { usePanel } from '@/hooks/usePanel'
-import { useSatellite } from '@/hooks/useSatellite'
-import { satelliteApi } from '@/api'
-import { useUserStore } from '@/stores/user'
+} from "@ant-design/icons-vue";
+import SatelliteList from "@/components/SatelliteList.vue";
+import SatelliteDetail from "@/components/SatelliteDetail.vue";
+import OrbitPrediction from "@/components/OrbitPrediction.vue";
+import PassPrediction from "@/components/PassPrediction.vue";
+import SunlightAnalysis from "@/components/SunlightAnalysis.vue";
+import FlagIcon from "@/components/FlagIcon.vue";
+import { useCesium, type ColorSchemeType } from "@/hooks/useCesium";
+import { useLocalSatellites } from "@/hooks/useLocalSatellites";
+import { usePanel } from "@/hooks/usePanel";
+import { useSatellite } from "@/hooks/useSatellite";
+import { satelliteApi } from "@/api";
+import { useUserStore } from "@/stores/user";
 
-const filterType = ref('all')
-const selectedCountry = ref('')
-const selectedMission = ref('')
-const favoriteFilter = ref<'all' | 'favorited' | 'unfavorited'>('all')
-const loading = ref(true)
-const userStore = useUserStore()
+const filterType = ref("all");
+const selectedCountry = ref("");
+const selectedMission = ref("");
+const favoriteFilter = ref<"all" | "favorited" | "unfavorited">("all");
+const loading = ref(true);
+const userStore = useUserStore();
 
 // 颜色分类
-const colorScheme = ref<ColorSchemeType>('orbit')
+const colorScheme = ref<ColorSchemeType>("orbit");
 
 // 收藏的卫星 ID 集合
-const favoritedIds = ref<Set<string>>(new Set())
+const favoritedIds = ref<Set<string>>(new Set());
 
 // 高级功能权限检查
 const canUseAdvancedFeature = computed(() => {
   // 未登录用户不能使用高级功能
-  if (!userStore.isLoggedIn) return false
+  if (!userStore.isLoggedIn) return false;
   // 有任意一个高级功能权限即可使用
-  return userStore.hasFeature('satellite_orbit') ||
-    userStore.hasFeature('satellite_sunlight') ||
-    userStore.hasFeature('satellite_passes')
-})
+  return (
+    userStore.hasFeature("satellite_orbit") ||
+    userStore.hasFeature("satellite_sunlight") ||
+    userStore.hasFeature("satellite_passes")
+  );
+});
 
 // 处理高级功能按钮点击
 function handleAdvancedFeatureClick(panel: string, featureCode: string) {
   if (!userStore.isLoggedIn) {
     // 提示用户登录
-    window.message?.warning('请先登录后再使用此功能')
-    return
+    window.message?.warning("请先登录后再使用此功能");
+    return;
   }
   if (!userStore.hasFeature(featureCode)) {
     // 提示用户权限不足
-    window.message?.warning('您的会员等级无法使用此功能，请升级会员')
-    return
+    window.message?.warning("您的会员等级无法使用此功能，请升级会员");
+    return;
   }
   // 正常切换面板
-  toggleRightPanel(panel)
+  toggleRightPanel(panel);
 }
 
 // 可折叠筛选区域状态
@@ -476,577 +486,660 @@ const expandedSections = ref({
   orbit: false,
   mission: false,
   favorite: false,
-  color: false
-})
+  color: false,
+});
 
 // 国家列表
-const countries = ref<{ code: string; count: number }[]>([])
-const countrySearch = ref('')
+const countries = ref<{ code: string; count: number }[]>([]);
+const countrySearch = ref("");
 
 // 任务列表
-const missions = ref<{ name: string; count: number }[]>([])
-const missionSearch = ref('')
+const missions = ref<{ name: string; count: number }[]>([]);
+const missionSearch = ref("");
 
 // 过滤后的国家列表
 const filteredCountries = computed(() => {
-  if (!countrySearch.value) return countries.value
-  const search = countrySearch.value.toLowerCase()
-  return countries.value.filter(c => {
-    const codeMatch = c.code.toLowerCase().includes(search)
-    const nameMatch = getCountryName(c.code).includes(countrySearch.value)
-    return codeMatch || nameMatch
-  })
-})
+  if (!countrySearch.value) return countries.value;
+  const search = countrySearch.value.toLowerCase();
+  return countries.value.filter((c) => {
+    const codeMatch = c.code.toLowerCase().includes(search);
+    const nameMatch = getCountryName(c.code).includes(countrySearch.value);
+    return codeMatch || nameMatch;
+  });
+});
 
 // 过滤后的任务列表
 const filteredMissions = computed(() => {
-  if (!missionSearch.value) return missions.value
-  const search = missionSearch.value.toLowerCase()
-  return missions.value.filter(m => m.name.toLowerCase().includes(search))
-})
+  if (!missionSearch.value) return missions.value;
+  const search = missionSearch.value.toLowerCase();
+  return missions.value.filter((m) => m.name.toLowerCase().includes(search));
+});
 
 // 国家代码到中文名称的映射 (CelesTrak 格式)
 const COUNTRY_NAMES: Record<string, string> = {
   // 标准代码
-  US: '美国', UK: '英国', FR: '法国', CA: '加拿大', IT: '意大利',
-  NZ: '新西兰', MA: '摩洛哥', IM: '马恩岛', AC: '阿森松岛', AB: '安提瓜和巴布达',
+  US: "美国",
+  UK: "英国",
+  FR: "法国",
+  CA: "加拿大",
+  IT: "意大利",
+  NZ: "新西兰",
+  MA: "摩洛哥",
+  IM: "马恩岛",
+  AC: "阿森松岛",
+  AB: "安提瓜和巴布达",
   // CelesTrak 特殊格式
-  CIS: '俄罗斯', PRC: '中国', CN: '中国', TWN: '中国台湾',
-  JPN: '日本', IND: '印度', BRAZ: '巴西', ARGN: '阿根廷',
-  MEX: '墨西哥', SAUD: '沙特阿拉伯', INDO: '印度尼西亚', TURK: '土耳其',
-  NETH: '荷兰', THAI: '泰国', SAFR: '南非', UKR: '乌克兰',
-  SING: '新加坡', POL: '波兰', SWED: '瑞典', NOR: '挪威',
-  BEL: '比利时', MALA: '马来西亚', PAKI: '巴基斯坦', RP: '菲律宾',
-  VENZ: '委内瑞拉', SWTZ: '瑞士', DEN: '丹麦', EGYP: '埃及',
-  FIN: '芬兰', GREC: '希腊', IRAN: '伊朗', IRAQ: '伊拉克',
-  KAZ: '哈萨克斯坦', KWT: '科威特', NIG: '尼日利亚',
-  POR: '葡萄牙', SKOR: '韩国', UAE: '阿联酋', ISRA: '以色列',
-  SPN: '西班牙', GER: '德国', CZE: '捷克', EST: '爱沙尼亚',
-  HUN: '匈牙利', LTU: '立陶宛', BGR: '保加利亚', ROM: '罗马尼亚',
-  SVN: '斯洛文尼亚', SVK: '斯洛伐克', HRV: '克罗地亚', AZER: '阿塞拜疆',
-  MDA: '摩尔多瓦', MNG: '蒙古', NKOR: '朝鲜', LAOS: '老挝',
-  BGD: '孟加拉国', LKA: '斯里兰卡', MMR: '缅甸', NPL: '尼泊尔',
-  PER: '秘鲁', COL: '哥伦比亚', CHLE: '智利', BOL: '玻利维亚',
-  PRY: '巴拉圭', URY: '乌拉圭', ECU: '厄瓜多尔', CRI: '哥斯达黎加',
-  DJI: '吉布提', RWA: '卢旺达', UGA: '乌干达', GHA: '加纳',
-  ZWE: '津巴布韦', BWA: '博茨瓦纳', MUS: '毛里求斯', AGO: '安哥拉',
-  SDN: '苏丹', TUN: '突尼斯', ALG: '阿尔及利亚', QAT: '卡塔尔',
-  BHR: '巴林', JOR: '约旦', PRI: '波多黎各', SLB: '所罗门群岛',
-  MCO: '摩纳哥', KEN: '肯尼亚', VTNM: '越南',
-  CHBZ: '瑞士', BELA: '白俄罗斯', ASRA: '奥地利', FGER: '法国/德国',
-  FRIT: '法国/意大利', CZCH: '捷克', USBZ: '美国/巴西',
+  CIS: "俄罗斯",
+  PRC: "中国",
+  CN: "中国",
+  TWN: "中国台湾",
+  JPN: "日本",
+  IND: "印度",
+  BRAZ: "巴西",
+  ARGN: "阿根廷",
+  MEX: "墨西哥",
+  SAUD: "沙特阿拉伯",
+  INDO: "印度尼西亚",
+  TURK: "土耳其",
+  NETH: "荷兰",
+  THAI: "泰国",
+  SAFR: "南非",
+  UKR: "乌克兰",
+  SING: "新加坡",
+  POL: "波兰",
+  SWED: "瑞典",
+  NOR: "挪威",
+  BEL: "比利时",
+  MALA: "马来西亚",
+  PAKI: "巴基斯坦",
+  RP: "菲律宾",
+  VENZ: "委内瑞拉",
+  SWTZ: "瑞士",
+  DEN: "丹麦",
+  EGYP: "埃及",
+  FIN: "芬兰",
+  GREC: "希腊",
+  IRAN: "伊朗",
+  IRAQ: "伊拉克",
+  KAZ: "哈萨克斯坦",
+  KWT: "科威特",
+  NIG: "尼日利亚",
+  POR: "葡萄牙",
+  SKOR: "韩国",
+  UAE: "阿联酋",
+  ISRA: "以色列",
+  SPN: "西班牙",
+  GER: "德国",
+  CZE: "捷克",
+  EST: "爱沙尼亚",
+  HUN: "匈牙利",
+  LTU: "立陶宛",
+  BGR: "保加利亚",
+  ROM: "罗马尼亚",
+  SVN: "斯洛文尼亚",
+  SVK: "斯洛伐克",
+  HRV: "克罗地亚",
+  AZER: "阿塞拜疆",
+  MDA: "摩尔多瓦",
+  MNG: "蒙古",
+  NKOR: "朝鲜",
+  LAOS: "老挝",
+  BGD: "孟加拉国",
+  LKA: "斯里兰卡",
+  MMR: "缅甸",
+  NPL: "尼泊尔",
+  PER: "秘鲁",
+  COL: "哥伦比亚",
+  CHLE: "智利",
+  BOL: "玻利维亚",
+  PRY: "巴拉圭",
+  URY: "乌拉圭",
+  ECU: "厄瓜多尔",
+  CRI: "哥斯达黎加",
+  DJI: "吉布提",
+  RWA: "卢旺达",
+  UGA: "乌干达",
+  GHA: "加纳",
+  ZWE: "津巴布韦",
+  BWA: "博茨瓦纳",
+  MUS: "毛里求斯",
+  AGO: "安哥拉",
+  SDN: "苏丹",
+  TUN: "突尼斯",
+  ALG: "阿尔及利亚",
+  QAT: "卡塔尔",
+  BHR: "巴林",
+  JOR: "约旦",
+  PRI: "波多黎各",
+  SLB: "所罗门群岛",
+  MCO: "摩纳哥",
+  KEN: "肯尼亚",
+  VTNM: "越南",
+  CHBZ: "瑞士",
+  BELA: "白俄罗斯",
+  ASRA: "奥地利",
+  FGER: "法国/德国",
+  FRIT: "法国/意大利",
+  CZCH: "捷克",
+  USBZ: "美国/巴西",
   // 组织
-  ESA: '欧洲航天局', ESRO: '欧洲空间研究组织', EUTE: '欧洲通信卫星组织',
-  EUME: '欧洲气象卫星组织', NATO: '北约', ITSO: '国际通信卫星组织',
-  SES: 'SES公司', O3B: 'O3b网络', ORB: '轨道科学公司',
-  GLOB: '全球星', STCT: '空间通信', RASC: '俄罗斯航天局',
-  SEAL: '海射公司', TBD: '待定', ABS: 'ABS公司',
-}
+  ESA: "欧洲航天局",
+  ESRO: "欧洲空间研究组织",
+  EUTE: "欧洲通信卫星组织",
+  EUME: "欧洲气象卫星组织",
+  NATO: "北约",
+  ITSO: "国际通信卫星组织",
+  SES: "SES公司",
+  O3B: "O3b网络",
+  ORB: "轨道科学公司",
+  GLOB: "全球星",
+  STCT: "空间通信",
+  RASC: "俄罗斯航天局",
+  SEAL: "海射公司",
+  TBD: "待定",
+  ABS: "ABS公司",
+};
 
 // 任务分类映射（与后端一致）
 const MISSION_CATEGORIES: Record<string, string> = {
   // 通信类
-  'Civil Communications': '通信',
-  'Defense Communications': '通信',
-  'Commercial Communications': '通信',
-  'Communications': '通信',
-  'Telecommunications': '通信',
-  'Broadcasting': '通信',
-  'Mobile Communications': '通信',
-  'Fixed Satellite Services': '通信',
+  "Civil Communications": "通信",
+  "Defense Communications": "通信",
+  "Commercial Communications": "通信",
+  Communications: "通信",
+  Telecommunications: "通信",
+  Broadcasting: "通信",
+  "Mobile Communications": "通信",
+  "Fixed Satellite Services": "通信",
 
   // 导航类
-  'Civil Navigation': '导航',
-  'Defense Navigation': '导航',
-  'Commercial Navigation': '导航',
-  'Navigation': '导航',
-  'Positioning': '导航',
-  'GNSS': '导航',
-  'GPS': '导航',
-  'GLONASS': '导航',
-  'Galileo': '导航',
-  'BeiDou': '导航',
+  "Civil Navigation": "导航",
+  "Defense Navigation": "导航",
+  "Commercial Navigation": "导航",
+  Navigation: "导航",
+  Positioning: "导航",
+  GNSS: "导航",
+  GPS: "导航",
+  GLONASS: "导航",
+  Galileo: "导航",
+  BeiDou: "导航",
 
   // 遥感/对地观测类
-  'Civil Imaging': '遥感',
-  'Civil Earth Observation': '遥感',
-  'Civil Remote Sensing': '遥感',
-  'Defense Imaging': '遥感',
-  'Defense Earth Observation': '遥感',
-  'Defense Reconnaissance': '遥感',
-  'Commercial Imaging': '遥感',
-  'Commercial Remote Sensing': '遥感',
-  'Earth Observation': '遥感',
-  'Remote Sensing': '遥感',
-  'Imaging': '遥感',
-  'Reconnaissance': '遥感',
-  'Surveillance': '遥感',
-  'Mapping': '遥感',
-  'Cartography': '遥感',
-  'Terrain Mapping': '遥感',
-  'Oceanography': '遥感',
-  'Marine Observation': '遥感',
-  'Land Observation': '遥感',
+  "Civil Imaging": "遥感",
+  "Civil Earth Observation": "遥感",
+  "Civil Remote Sensing": "遥感",
+  "Defense Imaging": "遥感",
+  "Defense Earth Observation": "遥感",
+  "Defense Reconnaissance": "遥感",
+  "Commercial Imaging": "遥感",
+  "Commercial Remote Sensing": "遥感",
+  "Earth Observation": "遥感",
+  "Remote Sensing": "遥感",
+  Imaging: "遥感",
+  Reconnaissance: "遥感",
+  Surveillance: "遥感",
+  Mapping: "遥感",
+  Cartography: "遥感",
+  "Terrain Mapping": "遥感",
+  Oceanography: "遥感",
+  "Marine Observation": "遥感",
+  "Land Observation": "遥感",
 
   // 气象类
-  'Civil Weather': '气象',
-  'Defense Weather': '气象',
-  'Commercial Weather': '气象',
-  'Weather': '气象',
-  'Meteorological': '气象',
-  'Meteorology': '气象',
-  'Climate': '气象',
-  'Climate Research': '气象',
-  'Environmental Monitoring': '气象',
+  "Civil Weather": "气象",
+  "Defense Weather": "气象",
+  "Commercial Weather": "气象",
+  Weather: "气象",
+  Meteorological: "气象",
+  Meteorology: "气象",
+  Climate: "气象",
+  "Climate Research": "气象",
+  "Environmental Monitoring": "气象",
 
   // 科学研究类
-  'Civil Science': '科学',
-  'Civil Technology': '科学',
-  'Defense Science': '科学',
-  'Scientific Research': '科学',
-  'Space Science': '科学',
-  'Earth Science': '科学',
-  'Astronomy': '科学',
-  'Astrophysics': '科学',
-  'Geodetic': '科学',
-  'Geodesy': '科学',
-  'Geophysical': '科学',
-  'Geophysics': '科学',
-  'Biological': '科学',
-  'Biology': '科学',
-  'Materials': '科学',
-  'Materials Science': '科学',
-  'Physics': '科学',
-  'Solar Physics': '科学',
-  'Space Physics': '科学',
-  'Plasma Physics': '科学',
-  'Cosmic Ray': '科学',
-  'Particle Physics': '科学',
+  "Civil Science": "科学",
+  "Civil Technology": "科学",
+  "Defense Science": "科学",
+  "Scientific Research": "科学",
+  "Space Science": "科学",
+  "Earth Science": "科学",
+  Astronomy: "科学",
+  Astrophysics: "科学",
+  Geodetic: "科学",
+  Geodesy: "科学",
+  Geophysical: "科学",
+  Geophysics: "科学",
+  Biological: "科学",
+  Biology: "科学",
+  Materials: "科学",
+  "Materials Science": "科学",
+  Physics: "科学",
+  "Solar Physics": "科学",
+  "Space Physics": "科学",
+  "Plasma Physics": "科学",
+  "Cosmic Ray": "科学",
+  "Particle Physics": "科学",
 
   // 技术试验类
-  'Technology Demonstration': '技术试验',
-  'Civil Experimental': '技术试验',
-  'Defense Technology': '技术试验',
-  'Experimental': '技术试验',
-  'Test': '技术试验',
-  'Technology Development': '技术试验',
-  'Technology': '技术试验',
-  'Demonstration': '技术试验',
-  'Prototype': '技术试验',
-  'Engineering': '技术试验',
+  "Technology Demonstration": "技术试验",
+  "Civil Experimental": "技术试验",
+  "Defense Technology": "技术试验",
+  Experimental: "技术试验",
+  Test: "技术试验",
+  "Technology Development": "技术试验",
+  Technology: "技术试验",
+  Demonstration: "技术试验",
+  Prototype: "技术试验",
+  Engineering: "技术试验",
 
   // 国防军事类
-  'Defense Sigint': '国防',
-  'Defense Early Warning': '国防',
-  'Defense': '国防',
-  'Military': '国防',
-  'Missile Warning': '国防',
-  'Nuclear Detection': '国防',
-  'Electronic Intelligence': '国防',
-  'Signals Intelligence': '国防',
-  'ELINT': '国防',
-  'SIGINT': '国防',
+  "Defense Sigint": "国防",
+  "Defense Early Warning": "国防",
+  Defense: "国防",
+  Military: "国防",
+  "Missile Warning": "国防",
+  "Nuclear Detection": "国防",
+  "Electronic Intelligence": "国防",
+  "Signals Intelligence": "国防",
+  ELINT: "国防",
+  SIGINT: "国防",
 
   // 载人航天类
-  'Space Station': '载人航天',
-  'Manned': '载人航天',
-  'Crewed': '载人航天',
-  'Cargo': '载人航天',
-  'Supply': '载人航天',
-  'Human Spaceflight': '载人航天',
-  'Space Tourism': '载人航天',
+  "Space Station": "载人航天",
+  Manned: "载人航天",
+  Crewed: "载人航天",
+  Cargo: "载人航天",
+  Supply: "载人航天",
+  "Human Spaceflight": "载人航天",
+  "Space Tourism": "载人航天",
 
   // 数据中继类
-  'Data Relay': '数据中继',
-  'Tracking and Data Relay': '数据中继',
-  'TDRS': '数据中继',
-  'Satellite Inter-satellite Link': '数据中继',
+  "Data Relay": "数据中继",
+  "Tracking and Data Relay": "数据中继",
+  TDRS: "数据中继",
+  "Satellite Inter-satellite Link": "数据中继",
 
   // 其他
-  'Civil Education': '教育',
-  'Education': '教育',
-  'Academic': '教育',
-  'Amateur': '业余无线电',
-  'Amateur Radio': '业余无线电',
-  'Rescue': '搜救',
-  'Search and Rescue': '搜救',
-  'SAR': '搜救',
-  'Training': '训练',
-  ' Calibration': '校准',
-  'Tracking': '跟踪',
-  'Space Debris': '碎片',
-  'Debris': '碎片',
-}
+  "Civil Education": "教育",
+  Education: "教育",
+  Academic: "教育",
+  Amateur: "业余无线电",
+  "Amateur Radio": "业余无线电",
+  Rescue: "搜救",
+  "Search and Rescue": "搜救",
+  SAR: "搜救",
+  Training: "训练",
+  " Calibration": "校准",
+  Tracking: "跟踪",
+  "Space Debris": "碎片",
+  Debris: "碎片",
+};
 
 // 任务分类函数
 const categorizeMission = (mission: string | undefined): string => {
-  if (!mission) return '其他'
-  return MISSION_CATEGORIES[mission] || '其他'
-}
+  if (!mission) return "其他";
+  return MISSION_CATEGORIES[mission] || "其他";
+};
 
 // 获取国家中文名称
 const getCountryName = (code: string): string => {
-  return COUNTRY_NAMES[code] || code
-}
+  return COUNTRY_NAMES[code] || code;
+};
 
 // 轨道类型标签（与列表格式一致）
 const getOrbitTypeLabel = (type: string): string => {
   const labels: Record<string, string> = {
-    all: '全部',
-    leo: '低轨(LEO)',
-    meo: '中轨(MEO)',
-    geo: '地球同步(GEO)',
-    heo: '大椭圆轨道(HEO)'
-  }
-  return labels[type] || ''
-}
+    all: "全部",
+    leo: "低轨(LEO)",
+    meo: "中轨(MEO)",
+    geo: "地球同步(GEO)",
+    heo: "大椭圆轨道(HEO)",
+  };
+  return labels[type] || "";
+};
 
 // 收藏筛选标签
 const getFavoriteLabel = (type: string): string => {
   const labels: Record<string, string> = {
-    all: '全部',
-    favorited: '已收藏',
-    unfavorited: '未收藏'
-  }
-  return labels[type] || ''
-}
+    all: "全部",
+    favorited: "已收藏",
+    unfavorited: "未收藏",
+  };
+  return labels[type] || "";
+};
 
 // 颜色分类标签
 const getColorSchemeLabel = (scheme: ColorSchemeType): string => {
   const labels: Record<ColorSchemeType, string> = {
-    orbit: '轨道分类',
-    mission: '任务分类',
-    country: '国家分类',
-    objectType: '类型分类'
-  }
-  return labels[scheme] || '轨道分类'
-}
+    orbit: "轨道分类",
+    mission: "任务分类",
+    country: "国家分类",
+    objectType: "类型分类",
+  };
+  return labels[scheme] || "轨道分类";
+};
 
 // 获取国家选择标签文本（不含国旗）
 const getCountryLabel = (code: string): string => {
-  if (!code) return '全部'
-  const country = countries.value.find(c => c.code === code)
-  const count = country ? country.count : 0
-  return `${getCountryName(code)}(${code}) ${count}`
-}
+  if (!code) return "全部";
+  const country = countries.value.find((c) => c.code === code);
+  const count = country ? country.count : 0;
+  return `${getCountryName(code)}(${code}) ${count}`;
+};
 
 // 获取任务选择标签文本
 const getMissionLabel = (mission: string): string => {
-  if (!mission) return '全部'
-  const missionItem = missions.value.find(m => m.name === mission)
-  const count = missionItem ? missionItem.count : 0
-  return `${mission} ${count}`
-}
+  if (!mission) return "全部";
+  const missionItem = missions.value.find((m) => m.name === mission);
+  const count = missionItem ? missionItem.count : 0;
+  return `${mission} ${count}`;
+};
 
 // 切换筛选区域展开/折叠（同时关闭其他区域）
-const toggleFilterSection = (section: 'orbit' | 'country' | 'mission' | 'favorite' | 'color') => {
+const toggleFilterSection = (section: "orbit" | "country" | "mission" | "favorite" | "color") => {
   // 如果当前区域是折叠状态，则展开它并关闭其他区域
   if (!expandedSections.value[section]) {
-    expandedSections.value.orbit = section === 'orbit'
-    expandedSections.value.country = section === 'country'
-    expandedSections.value.mission = section === 'mission'
-    expandedSections.value.favorite = section === 'favorite'
-    expandedSections.value.color = section === 'color'
+    expandedSections.value.orbit = section === "orbit";
+    expandedSections.value.country = section === "country";
+    expandedSections.value.mission = section === "mission";
+    expandedSections.value.favorite = section === "favorite";
+    expandedSections.value.color = section === "color";
   } else {
     // 如果当前区域是展开状态，则折叠它
-    expandedSections.value[section] = false
+    expandedSections.value[section] = false;
   }
-}
+};
 
 // 初始化 hooks
-const cesium = useCesium()
-const localSatellites = useLocalSatellites()
+const cesium = useCesium();
+const localSatellites = useLocalSatellites();
 const {
   activeLeftPanel,
   activeRightPanel,
   toggleLeftPanel,
   toggleRightPanel,
-  showSatelliteDetail
-} = usePanel()
+  showSatelliteDetail,
+} = usePanel();
 
 // 解构本地卫星数据
-const { satellites, satelliteCount, lastUpdate } = localSatellites
+const { satellites, satelliteCount, lastUpdate } = localSatellites;
 
 // 格式化最后更新时间
 const formattedLastUpdate = computed(() => {
-  if (!lastUpdate.value) return '--'
-  
-  const updateTime = new Date(lastUpdate.value)
-  const hours = updateTime.getHours().toString().padStart(2, '0')
-  const minutes = updateTime.getMinutes().toString().padStart(2, '0')
-  const seconds = updateTime.getSeconds().toString().padStart(2, '0')
-  return `${hours}:${minutes}:${seconds}`
-})
+  if (!lastUpdate.value) return "--";
+
+  const updateTime = new Date(lastUpdate.value);
+  const hours = updateTime.getHours().toString().padStart(2, "0");
+  const minutes = updateTime.getMinutes().toString().padStart(2, "0");
+  const seconds = updateTime.getSeconds().toString().padStart(2, "0");
+  return `${hours}:${minutes}:${seconds}`;
+});
 
 // 筛选后的卫星列表
 const filteredSatellites = computed(() => {
-  let result = satellites.value
+  let result = satellites.value;
 
-// 按轨道类型筛选（alt 单位是米）
-    if (filterType.value !== 'all') {
-      result = result.filter(sat => {
-        const alt = sat.position.alt
-        if (filterType.value === 'leo') return alt < 2000000      // < 2000 km
-        if (filterType.value === 'meo') return alt >= 2000000 && alt < 35000000  // 2000-35000 km
-        if (filterType.value === 'geo') return alt >= 35000000 && alt < 45000000  // 35000-45000 km
-        if (filterType.value === 'heo') return alt >= 45000000    // >= 45000 km
-        return true
-      })
-    }
+  // 按轨道类型筛选（alt 单位是米）
+  if (filterType.value !== "all") {
+    result = result.filter((sat) => {
+      const alt = sat.position.alt;
+      if (filterType.value === "leo") return alt < 2000000; // < 2000 km
+      if (filterType.value === "meo") return alt >= 2000000 && alt < 35000000; // 2000-35000 km
+      if (filterType.value === "geo") return alt >= 35000000 && alt < 45000000; // 35000-45000 km
+      if (filterType.value === "heo") return alt >= 45000000; // >= 45000 km
+      return true;
+    });
+  }
 
   // 按国家筛选（直接使用卫星数据中的字段）
   if (selectedCountry.value) {
-    result = result.filter(sat => sat.countryCode === selectedCountry.value)
+    result = result.filter((sat) => sat.countryCode === selectedCountry.value);
   }
 
   // 按任务筛选（使用分类后的值进行比较）
   if (selectedMission.value) {
-    result = result.filter(sat => categorizeMission(sat.mission) === selectedMission.value)
+    result = result.filter((sat) => categorizeMission(sat.mission) === selectedMission.value);
   }
 
   // 按收藏筛选
-  if (favoriteFilter.value === 'favorited') {
-    result = result.filter(sat => favoritedIds.value.has(sat.noradId))
-  } else if (favoriteFilter.value === 'unfavorited') {
-    result = result.filter(sat => !favoritedIds.value.has(sat.noradId))
+  if (favoriteFilter.value === "favorited") {
+    result = result.filter((sat) => favoritedIds.value.has(sat.noradId));
+  } else if (favoriteFilter.value === "unfavorited") {
+    result = result.filter((sat) => !favoritedIds.value.has(sat.noradId));
   }
 
-  return result
-})
+  return result;
+});
 
 // 卫星选择逻辑
-const { selectedSatellite, selectedMetadata, handleSelectSatellite: baseHandleSelectSatellite } = useSatellite(cesium, localSatellites)
+const {
+  selectedSatellite,
+  selectedMetadata,
+  handleSelectSatellite: baseHandleSelectSatellite,
+} = useSatellite(cesium, localSatellites);
 
 // 子组件引用
-const orbitPredictionRef = ref<InstanceType<typeof OrbitPrediction> | null>(null)
-const passPredictionRef = ref<InstanceType<typeof PassPrediction> | null>(null)
-const sunlightAnalysisRef = ref<InstanceType<typeof SunlightAnalysis> | null>(null)
+const orbitPredictionRef = ref<InstanceType<typeof OrbitPrediction> | null>(null);
+const passPredictionRef = ref<InstanceType<typeof PassPrediction> | null>(null);
+const sunlightAnalysisRef = ref<InstanceType<typeof SunlightAnalysis> | null>(null);
 
 // 获取右侧面板标题
 const getRightPanelTitle = () => {
   switch (activeRightPanel.value) {
-    case 'detail':
-      return '卫星详情'
-    case 'orbit':
-      return '轨道预测'
-    case 'transit':
-      return '过境预测'
-    case 'sunlight':
-      return '日照分析'
+    case "detail":
+      return "卫星详情";
+    case "orbit":
+      return "轨道预测";
+    case "transit":
+      return "过境预测";
+    case "sunlight":
+      return "日照分析";
     default:
-      return ''
+      return "";
   }
-}
+};
 
 // 获取右侧面板图标
 const getRightPanelIcon = () => {
   switch (activeRightPanel.value) {
-    case 'detail':
-      return InfoCircleOutlined
-    case 'orbit':
-      return RocketOutlined
-    case 'transit':
-      return EyeOutlined
-    case 'sunlight':
-      return BulbOutlined
+    case "detail":
+      return InfoCircleOutlined;
+    case "orbit":
+      return RocketOutlined;
+    case "transit":
+      return EyeOutlined;
+    case "sunlight":
+      return BulbOutlined;
     default:
-      return InfoCircleOutlined
+      return InfoCircleOutlined;
   }
-}
+};
 
 // 选择卫星后显示详情
 const handleSelectSatellite = (satellite: typeof selectedSatellite.value) => {
-  if (!satellite) return
+  if (!satellite) return;
 
   // 清除之前预测的轨道和过境轨迹
   if (cesium) {
-    cesium.clearAllPredictedOrbits()
-    cesium.clearPassTrajectory()
-    cesium.stopPassAnimation()
-    cesium.clearAllSunlightOrbits()
+    cesium.clearAllPredictedOrbits();
+    cesium.clearPassTrajectory();
+    cesium.stopPassAnimation();
+    cesium.clearAllSunlightOrbits();
   }
   // 重置预测组件状态
-  orbitPredictionRef.value?.reset()
-  passPredictionRef.value?.reset()
-  sunlightAnalysisRef.value?.reset()
+  orbitPredictionRef.value?.reset();
+  passPredictionRef.value?.reset();
+  sunlightAnalysisRef.value?.reset();
 
-  baseHandleSelectSatellite(satellite)
-  showSatelliteDetail()
-}
+  baseHandleSelectSatellite(satellite);
+  showSatelliteDetail();
+};
 
 // 处理 Cesium 点击卫星事件
 const handleSatelliteClick = (noradId: string, _name: string) => {
   // 从卫星列表中找到对应的卫星
-  const satellite = satellites.value.find(s => s.noradId === noradId)
+  const satellite = satellites.value.find((s) => s.noradId === noradId);
   if (satellite) {
     // 如果卫星列表面板未打开，才打开它
-    if (activeLeftPanel.value !== 'satellite-list') {
-      toggleLeftPanel('satellite-list')
+    if (activeLeftPanel.value !== "satellite-list") {
+      toggleLeftPanel("satellite-list");
     }
     // 选中卫星并显示详情
-    handleSelectSatellite(satellite)
+    handleSelectSatellite(satellite);
   }
-}
+};
 
 // 显示预测轨道
 const handleShowPredictedOrbit = (points: Array<{ lat: number; lng: number; alt: number }>) => {
   if (cesium && selectedSatellite.value) {
-    cesium.showPredictedOrbit(selectedSatellite.value.noradId, points)
+    cesium.showPredictedOrbit(selectedSatellite.value.noradId, points);
   }
-}
+};
 
 // 飞到指定位置
 const handleFlyToPosition = (position: { lat: number; lng: number; alt: number }) => {
   if (cesium) {
-    cesium.flyToPosition(position)
+    cesium.flyToPosition(position);
   }
-}
+};
 
 // 清除预测轨道
 const handleClearOrbit = (noradId: string) => {
   if (cesium && noradId) {
-    cesium.clearPredictedOrbit(noradId)
+    cesium.clearPredictedOrbit(noradId);
   }
-}
+};
 
 // 显示日照分析轨道
-const handleShowSunlightOrbit = (segments: Array<{
-  startTime: string
-  endTime: string
-  status: 'sunlight' | 'eclipse'
-  points: Array<{ lat: number; lng: number; alt: number }>
-}>) => {
-  if (!cesium || !selectedSatellite.value) return
+const handleShowSunlightOrbit = (
+  segments: Array<{
+    startTime: string;
+    endTime: string;
+    status: "sunlight" | "eclipse";
+    points: Array<{ lat: number; lng: number; alt: number }>;
+  }>,
+) => {
+  if (!cesium || !selectedSatellite.value) return;
 
   // 清除之前的日照轨道
-  cesium.clearSunlightOrbit(selectedSatellite.value.noradId)
+  cesium.clearSunlightOrbit(selectedSatellite.value.noradId);
 
   // 显示新的日照轨道
-  cesium.showSunlightOrbit(selectedSatellite.value.noradId, segments)
-}
+  cesium.showSunlightOrbit(selectedSatellite.value.noradId, segments);
+};
 
 // 清除日照分析轨道
 const handleClearSunlightOrbit = (noradId: string) => {
   if (cesium && noradId) {
-    cesium.clearSunlightOrbit(noradId)
+    cesium.clearSunlightOrbit(noradId);
   }
-}
+};
 
 // 显示过境轨迹
 const handleShowPassTrajectory = async (data: {
-  noradId: string
-  startTime: string
-  endTime: string
-  observer: { lat: number; lng: number; alt: number }
+  noradId: string;
+  startTime: string;
+  endTime: string;
+  observer: { lat: number; lng: number; alt: number };
 }) => {
-  if (!cesium) return
+  if (!cesium) return;
 
   try {
     // 停止任何正在播放的动画
-    cesium.stopPassAnimation()
+    cesium.stopPassAnimation();
 
     // 清除之前的过境轨迹
-    cesium.clearPassTrajectory()
+    cesium.clearPassTrajectory();
 
     // 计算过境时段的轨道数据
-    const startTime = new Date(data.startTime)
-    const endTime = new Date(data.endTime)
-    const durationMinutes = Math.ceil((endTime.getTime() - startTime.getTime()) / 60000)
+    const startTime = new Date(data.startTime);
+    const endTime = new Date(data.endTime);
+    const durationMinutes = Math.ceil((endTime.getTime() - startTime.getTime()) / 60000);
 
     const res = await satelliteApi.getOrbit(data.noradId, {
       startTime: data.startTime,
       duration: durationMinutes,
       steps: Math.min(durationMinutes * 2, 200), // 每分钟2个点，最多200点
-    })
+    });
 
     if (res.data.code === 0 && res.data.data?.orbitPoints) {
-      cesium.showPassTrajectory(
-        data.noradId,
-        res.data.data.orbitPoints,
-        data.observer,
-        {
-          startTime: data.startTime,
-          endTime: data.endTime,
-        }
-      )
+      cesium.showPassTrajectory(data.noradId, res.data.data.orbitPoints, data.observer, {
+        startTime: data.startTime,
+        endTime: data.endTime,
+      });
     }
   } catch (error) {
-    console.error('获取过境轨迹失败:', error)
+    console.error("获取过境轨迹失败:", error);
   }
-}
+};
 
 // 播放过境动画
 const handlePlayPassAnimation = async (data: {
-  noradId: string
-  startTime: string
-  endTime: string
-  observer: { lat: number; lng: number; alt: number }
+  noradId: string;
+  startTime: string;
+  endTime: string;
+  observer: { lat: number; lng: number; alt: number };
 }) => {
-  if (!cesium) return
+  if (!cesium) return;
 
   try {
     // 停止之前的动画
-    cesium.stopPassAnimation()
+    cesium.stopPassAnimation();
 
     // 清除之前的轨迹
-    cesium.clearPassTrajectory()
+    cesium.clearPassTrajectory();
 
     // 计算过境时段的轨道数据
-    const startTime = new Date(data.startTime)
-    const endTime = new Date(data.endTime)
-    const durationMinutes = Math.ceil((endTime.getTime() - startTime.getTime()) / 60000)
+    const startTime = new Date(data.startTime);
+    const endTime = new Date(data.endTime);
+    const durationMinutes = Math.ceil((endTime.getTime() - startTime.getTime()) / 60000);
 
     const res = await satelliteApi.getOrbit(data.noradId, {
       startTime: data.startTime,
       duration: durationMinutes,
       steps: Math.min(durationMinutes * 2, 200),
-    })
+    });
 
     if (res.data.code === 0 && res.data.data?.orbitPoints) {
       // 显示过境轨迹
-      cesium.showPassTrajectory(
-        data.noradId,
-        res.data.data.orbitPoints,
-        data.observer,
-        {
-          startTime: data.startTime,
-          endTime: data.endTime,
-        }
-      )
+      cesium.showPassTrajectory(data.noradId, res.data.data.orbitPoints, data.observer, {
+        startTime: data.startTime,
+        endTime: data.endTime,
+      });
 
       // 播放动画
       cesium.playPassAnimation(data.noradId, res.data.data.orbitPoints, {
         speed: 60, // 60倍速播放
-      })
+      });
     }
   } catch (error) {
-    console.error('播放过境动画失败:', error)
+    console.error("播放过境动画失败:", error);
   }
-}
+};
 
 // 监听筛选后的卫星数据变化，更新 Cesium（移除 deep watch，只监听数组引用变化）
 watch(filteredSatellites, (newSatellites) => {
   if (newSatellites && newSatellites.length > 0) {
     // 使用批量更新替代逐个更新，大幅提升性能
-    cesium.updateSatellites(newSatellites)
+    cesium.updateSatellites(newSatellites);
   } else {
     // 当筛选结果为空时，清除所有卫星
-    cesium.clearAllSatellites?.()
+    cesium.clearAllSatellites?.();
   }
-})
+});
 
 // 监听颜色分类变化
 watch(colorScheme, (newScheme) => {
-  cesium.setColorScheme?.(newScheme)
-})
+  cesium.setColorScheme?.(newScheme);
+});
 
 // 获取用户收藏的卫星
 async function fetchFavorites() {
-  if (!userStore.isLoggedIn) return
+  if (!userStore.isLoggedIn) return;
   try {
-    const res = await satelliteApi.getFavorites()
+    const res = await satelliteApi.getFavorites();
     if (res.data.code === 0 && res.data.data) {
-      favoritedIds.value = new Set(res.data.data.map((fav: { noradId: string }) => fav.noradId))
+      favoritedIds.value = new Set(res.data.data.map((fav: { noradId: string }) => fav.noradId));
     }
   } catch {
     // 忽略错误
@@ -1056,69 +1149,69 @@ async function fetchFavorites() {
 // 处理收藏状态变化
 function handleFavoriteChange(noradId: string, favorited: boolean) {
   if (favorited) {
-    favoritedIds.value.add(noradId)
+    favoritedIds.value.add(noradId);
   } else {
-    favoritedIds.value.delete(noradId)
+    favoritedIds.value.delete(noradId);
   }
   // 触发响应式更新
-  favoritedIds.value = new Set(favoritedIds.value)
+  favoritedIds.value = new Set(favoritedIds.value);
 }
 
 // 监听卫星数据加载状态，当就绪时关闭 loading
 watch(
   () => localSatellites.state.value.status,
   (status) => {
-    if (status === 'ready' || status === 'error') {
-      loading.value = false
+    if (status === "ready" || status === "error") {
+      loading.value = false;
     }
-  }
-)
+  },
+);
 
 // 延迟初始化 - 先渲染页面，再加载数据
 onMounted(async () => {
   // 使用 requestAnimationFrame 确保 DOM 已渲染
   requestAnimationFrame(() => {
     // 初始化 Cesium
-    cesium.initCesium()
+    cesium.initCesium();
 
     // 设置卫星点击回调
-    cesium.setOnSatelliteClick(handleSatelliteClick)
+    cesium.setOnSatelliteClick(handleSatelliteClick);
 
     // 加载 TLE 数据并初始化本地计算
-    localSatellites.loadTLEData()
-  })
+    localSatellites.loadTLEData();
+  });
 
   // 加载国家列表
   try {
-    const res = await satelliteApi.getCountries()
+    const res = await satelliteApi.getCountries();
     if (res.data.code === 0) {
-      countries.value = res.data.data || []
+      countries.value = res.data.data || [];
     }
   } catch (err) {
-    console.error('加载国家列表失败:', err)
+    console.error("加载国家列表失败:", err);
   }
 
   // 加载任务列表
   try {
-    const missionRes = await satelliteApi.getMissions()
+    const missionRes = await satelliteApi.getMissions();
     if (missionRes.data.code === 0) {
-      missions.value = missionRes.data.data || []
+      missions.value = missionRes.data.data || [];
     }
   } catch (err) {
-    console.error('加载任务列表失败:', err)
+    console.error("加载任务列表失败:", err);
   }
 
   // 加载收藏列表
-  await fetchFavorites()
-})
+  await fetchFavorites();
+});
 
 const toggleFullscreen = () => {
   if (!document.fullscreenElement) {
-    document.documentElement.requestFullscreen()
+    document.documentElement.requestFullscreen();
   } else {
-    document.exitFullscreen()
+    document.exitFullscreen();
   }
-}
+};
 </script>
 
 <style scoped lang="scss">
@@ -1159,7 +1252,9 @@ const toggleFullscreen = () => {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .loading-text {
@@ -1188,15 +1283,17 @@ const toggleFullscreen = () => {
   backdrop-filter: blur(20px);
   border: 1px solid rgba(0, 212, 255, 0.12);
   border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4),
-              inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
   transition: all 0.3s ease;
 
   &:hover {
     transform: translateY(-2px);
     border-color: rgba(0, 212, 255, 0.25);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5),
-                0 0 30px rgba(0, 212, 255, 0.1);
+    box-shadow:
+      0 12px 40px rgba(0, 0, 0, 0.5),
+      0 0 30px rgba(0, 212, 255, 0.1);
   }
 
   .stat-icon {
@@ -1220,7 +1317,11 @@ const toggleFullscreen = () => {
       color: #ff4d4d;
 
       &.connected {
-        background: linear-gradient(135deg, rgba(0, 255, 136, 0.15) 0%, rgba(0, 255, 136, 0.05) 100%);
+        background: linear-gradient(
+          135deg,
+          rgba(0, 255, 136, 0.15) 0%,
+          rgba(0, 255, 136, 0.05) 100%
+        );
         color: #00ff88;
         box-shadow: 0 0 20px rgba(0, 255, 136, 0.2);
         animation: pulse-glow 2s ease-in-out infinite;
@@ -1228,7 +1329,11 @@ const toggleFullscreen = () => {
     }
 
     &.time {
-      background: linear-gradient(135deg, rgba(123, 44, 191, 0.15) 0%, rgba(123, 44, 191, 0.05) 100%);
+      background: linear-gradient(
+        135deg,
+        rgba(123, 44, 191, 0.15) 0%,
+        rgba(123, 44, 191, 0.05) 100%
+      );
       color: #7b2cbf;
     }
 
@@ -1260,7 +1365,8 @@ const toggleFullscreen = () => {
 }
 
 @keyframes pulse-glow {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow: 0 0 20px rgba(0, 255, 136, 0.2);
   }
   50% {
@@ -1325,7 +1431,8 @@ const toggleFullscreen = () => {
 }
 
 // 侧边栏通用样式 - 绝对定位
-.sidebar, .detail-sidebar {
+.sidebar,
+.detail-sidebar {
   position: absolute;
   top: 0;
   bottom: 0;
@@ -1649,12 +1756,24 @@ const toggleFullscreen = () => {
       font-size: 15px;
       color: rgba(0, 212, 255, 0.6);
 
-      &.leo { color: #00ff88; }
-      &.meo { color: #00d4ff; }
-      &.geo { color: #b366e8; }
-      &.heo { color: #ffaa00; }
-      &.favorited { color: #ffc107; }
-      &.unfavorited { color: rgba(255, 255, 255, 0.4); }
+      &.leo {
+        color: #00ff88;
+      }
+      &.meo {
+        color: #00d4ff;
+      }
+      &.geo {
+        color: #b366e8;
+      }
+      &.heo {
+        color: #ffaa00;
+      }
+      &.favorited {
+        color: #ffc107;
+      }
+      &.unfavorited {
+        color: rgba(255, 255, 255, 0.4);
+      }
     }
 
     .country-flag {

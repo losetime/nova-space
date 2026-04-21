@@ -87,23 +87,23 @@
       <!-- 内容区域 -->
       <div class="profile-content">
         <a-tabs v-model:activeKey="activeTab" class="profile-tabs">
-          <!-- 我的收藏 -->
-          <a-tab-pane key="collects" tab="我的收藏">
+          <!-- 情报收藏 -->
+          <a-tab-pane key="intelligence-collects" tab="情报收藏">
             <div class="collects-section">
-              <a-spin :spinning="collectLoading">
-                <div v-if="collectList.length === 0 && !collectLoading" class="empty-collects">
+              <a-spin :spinning="intelligenceCollectLoading">
+                <div v-if="intelligenceCollectList.length === 0 && !intelligenceCollectLoading" class="empty-collects">
                   <BookOutlined class="empty-icon" />
-                  <p>暂无收藏内容</p>
+                  <p>暂无情报收藏</p>
                   <a-button type="primary" @click="router.push('/intelligence')">
                     去收藏情报
                   </a-button>
                 </div>
                 <div v-else class="collect-list">
                   <div
-                    v-for="item in collectList"
-                    :key="item.id"
+                    v-for="item in intelligenceCollectList"
+                    :key="'intel-' + item.id"
                     class="collect-item"
-                    @click="goToDetail(item.id)"
+                    @click="goToIntelligenceDetail(item.id)"
                   >
                     <div class="collect-tag" :class="item.category">
                       {{ getCategoryLabel(item.category) }}
@@ -121,20 +121,54 @@
             </div>
           </a-tab-pane>
 
-          <!-- 关注的卫星 -->
-          <a-tab-pane key="satellites" tab="关注的卫星">
+          <!-- 科普收藏 -->
+          <a-tab-pane key="education-collects" tab="科普收藏">
+            <div class="collects-section">
+              <a-spin :spinning="educationCollectLoading">
+                <div v-if="educationCollectList.length === 0 && !educationCollectLoading" class="empty-collects">
+                  <BookOutlined class="empty-icon" />
+                  <p>暂无科普收藏</p>
+                  <a-button type="primary" @click="router.push('/education')">
+                    去收藏科普
+                  </a-button>
+                </div>
+                <div v-else class="collect-list">
+                  <div
+                    v-for="item in educationCollectList"
+                    :key="'edu-' + item.id"
+                    class="collect-item"
+                    @click="goToEducationDetail(item.id)"
+                  >
+                    <div class="collect-tag" :class="item.category">
+                      {{ getEducationCategoryLabel(item.category) }}
+                    </div>
+                    <div class="collect-content">
+                      <h4>{{ item.title }}</h4>
+                      <p>{{ item.summary }}</p>
+                    </div>
+                    <div class="collect-meta">
+                      <span>{{ formatCollectDate(item.collectedAt) }}</span>
+                    </div>
+                  </div>
+                </div>
+              </a-spin>
+            </div>
+          </a-tab-pane>
+
+          <!-- 卫星收藏 -->
+          <a-tab-pane key="satellites" tab="卫星收藏">
             <div class="satellites-section">
-              <a-spin :spinning="satelliteLoading">
-                <div v-if="satelliteList.length === 0 && !satelliteLoading" class="empty-satellites">
+              <a-spin :spinning="satelliteCollectLoading">
+                <div v-if="satelliteCollectList.length === 0 && !satelliteCollectLoading" class="empty-satellites">
                   <GlobalOutlined class="empty-icon" />
-                  <p>暂无关注的卫星</p>
+                  <p>暂无卫星收藏</p>
                   <a-button type="primary" @click="router.push('/satellite')">
-                    去关注卫星
+                    去收藏卫星
                   </a-button>
                 </div>
                 <div v-else class="satellite-list">
                   <div
-                    v-for="item in satelliteList"
+                    v-for="item in satelliteCollectList"
                     :key="item.noradId"
                     class="satellite-item"
                     @click="router.push('/satellite')"
@@ -257,7 +291,6 @@ import { useRouter } from "vue-router";
 import { message } from "ant-design-vue";
 import {
   UserOutlined,
-  HeartOutlined,
   BookOutlined,
   LoadingOutlined,
   SaveOutlined,
@@ -271,11 +304,14 @@ import {
 } from "@ant-design/icons-vue";
 import { emitter } from "@/utils/emitter";
 import { useUserStore } from "@/stores/user";
-import { intelligenceApi, satelliteApi, pointsApi, type Intelligence, type SatelliteFavorite } from "@/api";
+import { intelligenceApi, satelliteApi, pointsApi, educationApi, type Intelligence, type SatelliteFavorite, type Article } from "@/api";
 
-// Intelligence 类型扩展
+// 类型扩展
 declare module "@/api" {
   interface Intelligence {
+    collectedAt?: string;
+  }
+  interface Article {
     collectedAt?: string;
   }
 }
@@ -283,15 +319,19 @@ declare module "@/api" {
 const router = useRouter();
 const userStore = useUserStore();
 
-const activeTab = ref("collects");
+const activeTab = ref("intelligence-collects");
 
 // 我的收藏
-const collectList = ref<Intelligence[]>([]);
-const collectLoading = ref(false);
+const intelligenceCollectList = ref<Intelligence[]>([]);
+const intelligenceCollectLoading = ref(false);
+
+// 科普收藏
+const educationCollectList = ref<Article[]>([]);
+const educationCollectLoading = ref(false);
 
 // 关注的卫星
-const satelliteList = ref<SatelliteFavorite[]>([]);
-const satelliteLoading = ref(false);
+const satelliteCollectList = ref<SatelliteFavorite[]>([]);
+const satelliteCollectLoading = ref(false);
 
 // 编辑资料
 const editForm = reactive({
@@ -338,15 +378,28 @@ async function handleCheckin() {
 }
 
 // 获取收藏列表
-async function fetchCollects() {
-  collectLoading.value = true;
+async function fetchIntelligenceCollects() {
+  intelligenceCollectLoading.value = true;
   try {
     const response = await intelligenceApi.getUserCollects();
-    collectList.value = response.data.data || [];
+    intelligenceCollectList.value = response.data.data || [];
   } catch {
     // 忽略错误
   } finally {
-    collectLoading.value = false;
+    intelligenceCollectLoading.value = false;
+  }
+}
+
+// 获取科普收藏列表
+async function fetchEducationCollects() {
+  educationCollectLoading.value = true;
+  try {
+    const response = await educationApi.getUserCollects();
+    educationCollectList.value = response.data.data || [];
+  } catch {
+    // 忽略错误
+  } finally {
+    educationCollectLoading.value = false;
   }
 }
 
@@ -362,6 +415,17 @@ function getCategoryLabel(category: string) {
   return labels[category] || category;
 }
 
+// 科普分类标签
+function getEducationCategoryLabel(category: string) {
+  const labels: Record<string, string> = {
+    basic: "基础入门",
+    advanced: "专业进阶",
+    mission: "经典任务",
+    people: "人物/机构",
+  };
+  return labels[category] || category;
+}
+
 // 格式化日期
 function formatCollectDate(dateStr?: string) {
   if (!dateStr) return "";
@@ -373,20 +437,25 @@ function formatCollectDate(dateStr?: string) {
 }
 
 // 跳转详情
-function goToDetail(id: number) {
+function goToIntelligenceDetail(id: number) {
   router.push(`/intelligence/${id}`);
 }
 
+// 跳转科普详情
+function goToEducationDetail(id: number) {
+  router.push(`/education/${id}`);
+}
+
 // 获取关注的卫星列表
-async function fetchSatellites() {
-  satelliteLoading.value = true;
+async function fetchSatelliteCollects() {
+  satelliteCollectLoading.value = true;
   try {
     const response = await satelliteApi.getFavorites();
-    satelliteList.value = response.data.data || [];
+    satelliteCollectList.value = response.data.data || [];
   } catch {
     // 忽略错误
   } finally {
-    satelliteLoading.value = false;
+    satelliteCollectLoading.value = false;
   }
 }
 
@@ -466,7 +535,7 @@ onMounted(async () => {
   }
   editForm.nickname = userStore.user?.nickname || "";
   hasCheckedIn.value = userStore.user?.todayCheckedIn || false;
-  await Promise.all([fetchCollects(), fetchSatellites()]);
+  await Promise.all([fetchIntelligenceCollects(), fetchSatelliteCollects(), fetchEducationCollects()]);
 });
 </script>
 
@@ -802,6 +871,20 @@ $text-muted: rgba(255, 255, 255, 0.4);
 // 收藏列表
 .collects-section {
   min-height: 200px;
+  padding-top: 16px;
+}
+
+.collects-subsection {
+  margin-bottom: 24px;
+}
+
+.subsection-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: $text-secondary;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(0, 212, 255, 0.2);
 }
 
 .empty-collects {

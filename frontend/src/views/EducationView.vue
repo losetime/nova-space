@@ -54,7 +54,6 @@
             <img
               :src="getCoverUrl(item.cover)"
               :alt="item.title"
-              :style="getImageStyle(item.cover, item.category)"
               @error="handleImageError"
             />
             <div class="card-type">{{ item.type === "video" ? "视频" : "图文" }}</div>
@@ -181,7 +180,6 @@ import { emitter } from "@/utils/emitter";
 import { educationApi, type Article, type Quiz, type QuizResult, type QuizStats } from "@/api";
 import { useUserStore } from "@/stores/user";
 import { getFullImageUrl } from "@/utils/image-url";
-import { useFaceDetection } from "@/hooks/useFaceDetection";
 
 const userStore = useUserStore();
 const isLoggedIn = computed(() => userStore.isLoggedIn);
@@ -193,28 +191,6 @@ const DEFAULT_COVER =
 // 获取封面 URL
 const getCoverUrl = (cover?: string) => {
   return getFullImageUrl(cover) || DEFAULT_COVER;
-};
-
-// 人脸检测
-const { detectFace } = useFaceDetection();
-const facePositions = shallowRef(new Map<string, { x: number; y: number }>());
-
-const getImageStyle = (cover?: string, category?: string) => {
-  const url = getFullImageUrl(cover);
-  if (!url) return {};
-
-  const cached = facePositions.value.get(url);
-  if (cached) {
-    return { objectPosition: `${cached.x}% ${cached.y}%` };
-  }
-
-  detectFace(url, category).then((pos) => {
-    const newMap = new Map(facePositions.value);
-    newMap.set(url, pos);
-    facePositions.value = newMap;
-  });
-
-  return {};
 };
 
 const activeCategory = ref("all");
@@ -458,7 +434,7 @@ onMounted(() => {
       width: 100%;
       height: 100%;
       object-fit: cover;
-      object-position: center;
+      object-position: 50% 4%;
     }
 
     .card-type {

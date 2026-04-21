@@ -247,7 +247,7 @@ export class EducationService {
     userId: string,
     page = 1,
     limit = 10,
-  ): Promise<{ data: any[]; total: number }> {
+  ): Promise<any[]> {
     const offset = (page - 1) * limit;
 
     const collects = await this.db
@@ -273,13 +273,8 @@ export class EducationService {
       .limit(limit)
       .offset(offset);
 
-    const [{ count }] = await this.db
-      .select({ count: sql<number>`count(*)` })
-      .from(schema.educationArticleCollects)
-      .where(eq(schema.educationArticleCollects.userId, userId));
-
     const data = collects.map((collect) => ({
-      id: collect.id,
+      id: collect.articleId,
       articleId: collect.articleId,
       title: collect.title,
       summary: collect.summary,
@@ -288,7 +283,7 @@ export class EducationService {
       collectedAt: collect.createdAt,
     }));
 
-    return { data, total: count };
+    return data;
   }
 
   async toggleLike(

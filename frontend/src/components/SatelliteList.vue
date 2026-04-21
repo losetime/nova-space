@@ -7,7 +7,7 @@
         <input
           v-model="searchQuery"
           type="text"
-          placeholder="搜索卫星名称或 ID..."
+          placeholder="搜索卫星名称或 ID"
           class="search-input"
         />
         <transition name="fade">
@@ -72,73 +72,74 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
-import { useVirtualList } from '@vueuse/core'
-import { SearchOutlined, CloseCircleOutlined, GlobalOutlined, ArrowUpOutlined } from '@ant-design/icons-vue'
-import type { Satellite } from '@/hooks/useLocalSatellites'
+import { computed, ref, watch } from "vue";
+import { useVirtualList } from "@vueuse/core";
+import {
+  SearchOutlined,
+  CloseCircleOutlined,
+  GlobalOutlined,
+  ArrowUpOutlined,
+} from "@ant-design/icons-vue";
+import type { Satellite } from "@/hooks/useLocalSatellites";
 
 interface Props {
-  satellites: Satellite[]
-  selectedSatellite: Satellite | null
-  filterType?: string
-  filterCountry?: string
+  satellites: Satellite[];
+  selectedSatellite: Satellite | null;
+  filterType?: string;
+  filterCountry?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  filterType: 'all',
-  filterCountry: ''
-})
+  filterType: "all",
+  filterCountry: "",
+});
 defineEmits<{
-  'select-satellite': [satellite: Satellite]
-}>()
+  "select-satellite": [satellite: Satellite];
+}>();
 
-const searchQuery = ref('')
+const searchQuery = ref("");
 
 const filteredSatellites = computed(() => {
-  let result = props.satellites
+  let result = props.satellites;
 
   // 按搜索关键词过滤
   if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase()
-    result = result.filter(sat =>
-      sat.name.toLowerCase().includes(query) ||
-      sat.noradId.toLowerCase().includes(query)
-    )
+    const query = searchQuery.value.toLowerCase();
+    result = result.filter(
+      (sat) => sat.name.toLowerCase().includes(query) || sat.noradId.toLowerCase().includes(query),
+    );
   }
 
-  return result
-})
+  return result;
+});
 
 // 虚拟滚动配置
-const ITEM_HEIGHT = 72 // 列表项高度（包含 margin）
-const { list, containerProps, wrapperProps, scrollTo } = useVirtualList(
-  filteredSatellites,
-  {
-    itemHeight: ITEM_HEIGHT,
-    overscan: 10, // 预渲染可见区域外的项目数
-  }
-)
+const ITEM_HEIGHT = 72; // 列表项高度（包含 margin）
+const { list, containerProps, wrapperProps, scrollTo } = useVirtualList(filteredSatellites, {
+  itemHeight: ITEM_HEIGHT,
+  overscan: 10, // 预渲染可见区域外的项目数
+});
 
 // 搜索时滚动到顶部
 watch(searchQuery, () => {
-  scrollTo(0)
-})
+  scrollTo(0);
+});
 
 const getOrbitType = (alt: number): string => {
-  if (alt < 2000000) return 'LEO'           // < 2000 km
-  if (alt < 35000000) return 'MEO'          // < 35000 km
-  return 'GEO'
-}
+  if (alt < 2000000) return "LEO"; // < 2000 km
+  if (alt < 35000000) return "MEO"; // < 35000 km
+  return "GEO";
+};
 
 const getOrbitClass = (alt: number): string => {
-  if (alt < 2000000) return 'leo'
-  if (alt < 35000000) return 'meo'
-  return 'geo'
-}
+  if (alt < 2000000) return "leo";
+  if (alt < 35000000) return "meo";
+  return "geo";
+};
 
 const formatAlt = (alt: number): string => {
-  return (alt / 1000).toFixed(0)            // 转换为公里
-}
+  return (alt / 1000).toFixed(0); // 转换为公里
+};
 </script>
 
 <style scoped lang="scss">
@@ -191,8 +192,9 @@ const formatAlt = (alt: number): string => {
     &:focus {
       border-color: #00d4ff;
       background: rgba(0, 212, 255, 0.08);
-      box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1),
-                  0 0 20px rgba(0, 212, 255, 0.1);
+      box-shadow:
+        0 0 0 3px rgba(0, 212, 255, 0.1),
+        0 0 20px rgba(0, 212, 255, 0.1);
 
       & + .search-icon,
       & ~ .search-icon {
@@ -362,12 +364,17 @@ const formatAlt = (alt: number): string => {
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     transform: scale(1);
     opacity: 1;
   }
@@ -492,8 +499,13 @@ const formatAlt = (alt: number): string => {
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-8px); }
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
 }
 
 // fade 过渡

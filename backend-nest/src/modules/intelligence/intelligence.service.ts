@@ -201,6 +201,7 @@ export class IntelligenceService {
       .orderBy(desc(schema.intelligenceCollects.createdAt));
 
     return collects.map((c) => ({
+      id: c.intelligenceId,
       title: c.title,
       summary: c.summary,
       content: c.content,
