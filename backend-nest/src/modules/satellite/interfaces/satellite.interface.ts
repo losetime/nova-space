@@ -57,6 +57,7 @@ export interface SatelliteMetadata {
   diameter?: number | null;
   dryMass?: number | null;
   constellationName?: string | null;
+  color?: string | null;
   equipment?: string | null;
   adcs?: string | null;
   payload?: string | null;
