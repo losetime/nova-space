@@ -73,7 +73,7 @@
             </div>
             <div class="info-item">
               <span class="info-label">在轨状态</span>
-              <span :class="['info-value', 'status-badge', getStatusClass(metadata.status)]">
+              <span class="info-value">
                 {{ getStatusLabel(metadata.status) }}
               </span>
             </div>
@@ -182,9 +182,7 @@
             </div>
             <div class="info-item">
               <span class="info-label">雷达截面</span>
-              <span :class="['info-value', 'rcs-badge', getRcsClass(metadata.rcs)]">{{
-                metadata.rcs || "--"
-              }}</span>
+              <span class="info-value">{{ metadata.rcs || "--" }}</span>
             </div>
             <div class="info-item">
               <span class="info-label">配置</span>
@@ -940,18 +938,15 @@ const OBJECT_TYPES: Record<string, { label: string; class: string }> = {
 };
 
 // 状态映射
-const STATUS_LABELS: Record<string, { label: string; class: string }> = {
-  "+": { label: "在轨运行", class: "active" },
-  D: { label: "已衰减", class: "decayed" },
-  P: { label: "部分衰减", class: "partial" },
-  "N/A": { label: "不适用", class: "na" },
-};
-
-// RCS 映射
-const RCS_CLASSES: Record<string, string> = {
-  LARGE: "large",
-  MEDIUM: "medium",
-  SMALL: "small",
+const STATUS_LABELS: Record<string, string> = {
+  "+": "在轨运行",
+  "-": "未运行",
+  D: "已衰减",
+  P: "部分衰减",
+  B: "备份",
+  S: "储备",
+  X: "试验",
+  "N/A": "不适用",
 };
 
 // 格式化函数
@@ -1020,17 +1015,7 @@ const getObjectTypeClass = (type: string | undefined): string => {
 
 const getStatusLabel = (status: string | undefined): string => {
   if (!status) return "--";
-  return STATUS_LABELS[status]?.label || status;
-};
-
-const getStatusClass = (status: string | undefined): string => {
-  if (!status) return "";
-  return STATUS_LABELS[status]?.class || "";
-};
-
-const getRcsClass = (rcs: string | undefined): string => {
-  if (!rcs) return "";
-  return RCS_CLASSES[rcs] || "";
+  return STATUS_LABELS[status] || status;
 };
 </script>
 
@@ -1369,29 +1354,6 @@ const getRcsClass = (rcs: string | undefined): string => {
   &.na {
     background: rgba(255, 255, 255, 0.1);
     color: rgba(255, 255, 255, 0.5);
-  }
-}
-
-// RCS 标签
-.rcs-badge {
-  padding: 3px 10px;
-  border-radius: 12px;
-  font-size: 11px;
-  font-weight: 600;
-
-  &.large {
-    background: rgba(255, 107, 107, 0.15);
-    color: #ff6b6b;
-  }
-
-  &.medium {
-    background: rgba(255, 193, 7, 0.15);
-    color: #ffc107;
-  }
-
-  &.small {
-    background: rgba(0, 212, 255, 0.15);
-    color: #00d4ff;
   }
 }
 

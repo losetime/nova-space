@@ -11,7 +11,8 @@ import { NotificationService } from '../notification/notification.service';
 export class EducationService {
   constructor(
     @Inject(DRIZZLE) private db: DrizzleClient,
-    @Inject(NotificationService) private notificationService: NotificationService,
+    @Inject(NotificationService)
+    private notificationService: NotificationService,
   ) {}
 
   async getArticles(category?: string, page = 1, limit = 12) {
@@ -243,11 +244,7 @@ export class EducationService {
     return !!collect;
   }
 
-  async getUserCollects(
-    userId: string,
-    page = 1,
-    limit = 10,
-  ): Promise<any[]> {
+  async getUserCollects(userId: string, page = 1, limit = 10): Promise<any[]> {
     const offset = (page - 1) * limit;
 
     const collects = await this.db

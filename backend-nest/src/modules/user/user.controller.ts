@@ -34,7 +34,9 @@ export class UserController {
     if (!user) {
       return { code: 404, message: '用户不存在' };
     }
-    const todayCheckedIn = await this.pointsService.isCheckedInToday(req.user.id);
+    const todayCheckedIn = await this.pointsService.isCheckedInToday(
+      req.user.id,
+    );
     const { password, ...result } = user;
     return { code: 0, data: { ...result, todayCheckedIn } };
   }
