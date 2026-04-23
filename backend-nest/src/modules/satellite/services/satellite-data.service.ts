@@ -38,10 +38,31 @@ export class SatelliteDataService implements OnModuleInit {
   }
 
   private async loadFromDatabase(): Promise<void> {
+    const metadataEntities = await this.db
+      .select()
+      .from(schema.satelliteMetadata);
+
+    const completenessScores = new Map<string, number>();
+    metadataEntities.forEach((entity: any) => {
+      const score = Object.values(entity).filter(
+        (v) => v !== null && v !== undefined,
+      ).length;
+      completenessScores.set(entity.noradId, score);
+    });
+
     const tleEntities = await this.db
       .select()
-      .from(schema.satelliteTle)
-      .orderBy(desc(schema.satelliteTle.updatedAt));
+      .from(schema.satelliteTle);
+
+    tleEntities.sort((a, b) => {
+      const scoreA = completenessScores.get(a.noradId) ?? 0;
+      const scoreB = completenessScores.get(b.noradId) ?? 0;
+      if (scoreB !== scoreA) return scoreB - scoreA;
+      const timeA = a.updatedAt?.getTime() ?? 0;
+      const timeB = b.updatedAt?.getTime() ?? 0;
+      return timeB - timeA;
+    });
+
     this.cachedTLEs = tleEntities.map((entity: any) => ({
       name: entity.name,
       noradId: entity.noradId,
@@ -55,9 +76,6 @@ export class SatelliteDataService implements OnModuleInit {
       meanMotion: entity.meanMotion ?? undefined,
     }));
 
-    const metadataEntities = await this.db
-      .select()
-      .from(schema.satelliteMetadata);
     this.cachedMetadata.clear();
     metadataEntities.forEach((entity: any) => {
       this.cachedMetadata.set(entity.noradId, {
@@ -161,7 +179,6 @@ export class SatelliteDataService implements OnModuleInit {
       payload: entity.payload ?? undefined,
       constellationName: entity.constellationName ?? undefined,
       lifetime: entity.lifetime ?? undefined,
-      platform: entity.platform ?? undefined,
       predDecayDate: entity.predDecayDate ?? undefined,
       flightNo: entity.flightNo ?? undefined,
       cosparLaunchNo: entity.cosparLaunchNo ?? undefined,

@@ -96,70 +96,7 @@ export class OrbitCalculatorService implements OnModuleInit {
   }
 
   /**
-   * 计算所有卫星的当前位置
-   */
-  calculateAllSatellitesPosition(): SatellitePosition[] {
-    const now = new Date();
-    const positionData: SatellitePosition[] = [];
-    const metadata = this.satelliteDataService.getCachedMetadata();
-
-    this.satellites.forEach((sat, noradId) => {
-      try {
-        const position = this.calculateSatellitePosition(sat, now);
-        if (position) {
-          // 附加筛选字段
-          const meta = metadata.get(noradId);
-          if (meta) {
-            position.countryCode = meta.countryCode;
-            position.mission = meta.mission;
-            position.operator = meta.operator;
-          }
-          positionData.push(position);
-        }
-      } catch (_error) {
-        // 静默处理单个卫星计算错误
-      }
-    });
-
-    return positionData;
-  }
-
-  /**
-   * 计算单个卫星的当前位置
-   */
-  private calculateSatellitePosition(
-    sat: SatelliteData,
-    time: Date,
-  ): SatellitePosition | null {
-    try {
-      const gmst = satellite.gstime(time);
-      const eci = satellite.propagate(sat.satrec, time);
-
-      if (eci && eci.position && eci.velocity) {
-        const gdPos = satellite.eciToGeodetic(eci.position, gmst);
-        const latitude = satellite.radiansToDegrees(gdPos.latitude);
-        const longitude = satellite.radiansToDegrees(gdPos.longitude);
-        const altitude = gdPos.height * 1000; // 米（Cesium 需要米作为高度单位）
-
-        return {
-          noradId: sat.noradId,
-          name: sat.name,
-          position: {
-            lat: latitude,
-            lng: longitude,
-            alt: altitude,
-          },
-          timestamp: time.toISOString(),
-        };
-      }
-    } catch (error) {
-      return null;
-    }
-
-    return null;
-  }
-
-  /**
+   * 计算单个卫星的轨道（增强版）
    * 计算单个卫星的轨道（增强版）
    * @param noradId 卫星 NORAD ID
    * @param steps 轨道点数（默认50）

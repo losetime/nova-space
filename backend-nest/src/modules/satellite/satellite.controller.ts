@@ -11,7 +11,7 @@ import {
 import { OrbitCalculatorService } from './services/orbit-calculator.service';
 import { SatelliteDataService } from './services/satellite-data.service';
 import { SatelliteFavoriteService } from './services/satellite-favorite.service';
-import { EsaDiscosService } from './services/esa-discos.service';
+import { SatelliteMetadataService } from './services/satellite-metadata.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import type { ObserverPosition } from './interfaces/satellite.interface';
 
@@ -28,27 +28,8 @@ export class SatelliteController {
     private readonly orbitCalculator: OrbitCalculatorService,
     private readonly satelliteDataService: SatelliteDataService,
     private readonly favoriteService: SatelliteFavoriteService,
-    private readonly esaDiscosService: EsaDiscosService,
+    private readonly satelliteMetadataService: SatelliteMetadataService,
   ) {}
-
-  /**
-   * 获取所有卫星的当前位置
-   * GET /api/satellites
-   */
-  @Get()
-  getAllSatellites() {
-    this.logger.log('获取所有卫星位置');
-    const satellites = this.orbitCalculator.calculateAllSatellitesPosition();
-    return {
-      code: 0,
-      data: {
-        satellites,
-        count: satellites.length,
-        total: this.orbitCalculator.getSatelliteCount(),
-      },
-      message: 'success',
-    };
-  }
 
   /**
    * 搜索卫星
@@ -273,15 +254,11 @@ export class SatelliteController {
       };
     }
 
-    // 2. 获取当前位置
-    const positions = this.orbitCalculator.calculateAllSatellitesPosition();
-    const position = positions.find((p) => p.noradId === noradId);
-
-    // 3. 获取完整元数据（触发 ESA DISCOS 懒加载）
+    // 2. 获取完整元数据
     const metadata =
-      await this.esaDiscosService.enrichSatelliteMetadata(noradId);
+      await this.satelliteMetadataService.enrichSatelliteMetadata(noradId);
 
-    // 4. 计算轨道预测（默认一个轨道周期）
+    // 3. 计算轨道预测（默认一个轨道周期）
     const orbit = this.orbitCalculator.calculateSatelliteOrbit(
       noradId,
       100, // 轨道点数
@@ -294,7 +271,6 @@ export class SatelliteController {
       data: {
         noradId,
         name: sat.name,
-        position: position || null,
         metadata,
         orbit: {
           noradId,
@@ -319,7 +295,7 @@ export class SatelliteController {
 
     // 尝试从 ESA DISCOS 获取扩展信息
     const enrichedMetadata =
-      await this.esaDiscosService.enrichSatelliteMetadata(noradId);
+      await this.satelliteMetadataService.enrichSatelliteMetadata(noradId);
 
     if (!enrichedMetadata) {
       return {
@@ -684,33 +660,6 @@ export class SatelliteController {
       code: 0,
       data: prediction,
       message: 'success',
-    };
-  }
-
-  /**
-   * 获取单个卫星的当前位置
-   * GET /api/satellites/:noradId
-   */
-  @Get(':noradId')
-  getSatellite(@Param('noradId') noradId: string) {
-    this.logger.log(`获取卫星 ${noradId} 的位置`);
-
-    const sat = this.orbitCalculator.getSatelliteInfo(noradId);
-    if (!sat) {
-      return {
-        code: -1,
-        data: null,
-        message: '卫星不存在',
-      };
-    }
-
-    const positions = this.orbitCalculator.calculateAllSatellitesPosition();
-    const position = positions.find((p) => p.noradId === noradId);
-
-    return {
-      code: 0,
-      data: position || null,
-      message: position ? 'success' : '无法计算卫星位置',
     };
   }
 

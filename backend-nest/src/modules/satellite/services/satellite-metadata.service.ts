@@ -1,5 +1,4 @@
 import { Injectable, Logger, Inject } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { DRIZZLE } from '../../../db/drizzle.module';
 import type { DrizzleClient } from '../../../db';
 import * as schema from '../../../db/schema';
@@ -7,21 +6,10 @@ import { eq } from 'drizzle-orm';
 import type { SatelliteMetadata } from '../interfaces/satellite.interface';
 
 @Injectable()
-export class EsaDiscosService {
-  private readonly logger = new Logger(EsaDiscosService.name);
-  private readonly apiToken: string | undefined;
-  private readonly baseUrl = 'https://discosweb.esoc.esa.int/api';
+export class SatelliteMetadataService {
+  private readonly logger = new Logger(SatelliteMetadataService.name);
 
-  constructor(
-    private readonly configService: ConfigService,
-    @Inject(DRIZZLE) private db: DrizzleClient,
-  ) {
-    this.apiToken = this.configService.get<string>('app.esaDiscos.apiToken');
-  }
-
-  isConfigured(): boolean {
-    return !!this.apiToken;
-  }
+  constructor(@Inject(DRIZZLE) private db: DrizzleClient) {}
 
   async enrichSatelliteMetadata(
     noradId: string,
@@ -84,7 +72,6 @@ export class EsaDiscosService {
       lifetime: entity.lifetime,
       equipment: entity.equipment ?? undefined,
       payload: entity.payload ?? undefined,
-      platform: entity.platform,
       predDecayDate: entity.predDecayDate?.toISOString().split('T')[0] ?? null,
       flightNo: entity.flightNo,
       cosparLaunchNo: entity.cosparLaunchNo,

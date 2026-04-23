@@ -31,15 +31,25 @@
       </div>
 
       <!-- 预测按钮 -->
-      <a-button
-        type="primary"
-        class="predict-btn"
-        :loading="loading"
-        @click="handlePredict"
-      >
-        <template #icon><CalculatorOutlined /></template>
-        开始预测
-      </a-button>
+      <div class="predict-btn-wrapper">
+        <a-button
+          type="primary"
+          class="predict-btn"
+          :loading="loading"
+          @click="handlePredict"
+        >
+          <template #icon><CalculatorOutlined /></template>
+          开始预测
+        </a-button>
+        <a-button
+          class="clear-btn"
+          dashed
+          @click="handleClearOrbit"
+        >
+          <template #icon><DeleteOutlined /></template>
+          清除轨道
+        </a-button>
+      </div>
 
       <!-- 预测结果 -->
       <div v-if="prediction" class="prediction-result">
@@ -161,6 +171,7 @@ import { ref, computed } from 'vue'
 import dayjs, { type Dayjs } from 'dayjs'
 import {
   CalculatorOutlined,
+  DeleteOutlined,
   DownOutlined,
   EnvironmentOutlined,
 } from '@ant-design/icons-vue'
@@ -218,6 +229,14 @@ const disabledDate = (current: Dayjs) => {
 const formatTime = (time: string | undefined) => {
   if (!time) return '--'
   return dayjs(time).format('MM-DD HH:mm')
+}
+
+// 清除轨道
+const handleClearOrbit = () => {
+  if (props.satellite) {
+    emit('clearOrbit', props.satellite.noradId)
+    prediction.value = null
+  }
 }
 
 // 开始预测
@@ -348,16 +367,28 @@ $text-muted: rgba(255, 255, 255, 0.4);
   }
 }
 
-.predict-btn {
-  width: 100%;
-  height: 40px;
-  background: linear-gradient(135deg, $primary 0%, $accent 100%);
-  border: none;
-  border-radius: 8px;
-  font-weight: 600;
+.predict-btn-wrapper {
+  display: flex;
+  gap: 8px;
 
-  &:hover {
-    opacity: 0.9;
+  .predict-btn {
+    flex: 1;
+    width: 100%;
+    height: 40px;
+    background: linear-gradient(135deg, $primary 0%, $accent 100%);
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+
+    &:hover {
+      opacity: 0.9;
+    }
+  }
+
+  .clear-btn {
+    height: 40px;
+    border-radius: 8px;
+    font-weight: 500;
   }
 }
 

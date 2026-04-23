@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import type { Satellite } from './useLocalSatellites'
 import { satelliteApi, type SatelliteDetail } from '@/api'
 
@@ -11,55 +11,40 @@ interface CesiumHelper {
 
 export function useSatellite(
   cesium: CesiumHelper | null,
-  _localSatellites: unknown
+  localSatellites: { satellites: { value: Satellite[] } }
 ) {
-  const selectedSatellite = ref<Satellite | null>(null)
+  const selectedNoradId = ref<string | null>(null)
   const selectedMetadata = ref<SatelliteDetail['metadata']>(null)
   const rightPanelVisible = ref(true)
   const orbitLoading = ref(false)
 
+  const selectedSatellite = computed<Satellite | null>(() => {
+    if (!selectedNoradId.value) return null
+    return localSatellites.satellites.value.find(s => s.noradId === selectedNoradId.value) || null
+  })
+
   const handleSelectSatellite = async (satellite: Satellite) => {
-    selectedSatellite.value = satellite
+    selectedNoradId.value = satellite.noradId
     selectedMetadata.value = null
 
-    // 取消之前的选中，然后选中当前卫星
     if (cesium) {
       cesium.showSatelliteLabel(satellite.noradId, satellite.name)
       cesium.clearAllOrbits()
       cesium.flyToSatellite(satellite)
     }
 
-    // 显示右侧面板
     rightPanelVisible.value = true
-
-    // 请求详细数据（位置 + 元数据 + 轨道）
     await fetchSatelliteDetail(satellite.noradId)
   }
 
-  // 获取卫星详细数据
   const fetchSatelliteDetail = async (noradId: string | number) => {
     orbitLoading.value = true
     try {
       const response = await satelliteApi.getDetail(noradId)
-      const { position, metadata, orbit } = response.data.data
+      const { metadata, orbit } = response.data.data
 
-      // 更新元数据
       selectedMetadata.value = metadata
 
-      // 更新卫星位置（使用最新计算的位置）
-      // 后端返回的 position 结构: { noradId, name, position: { lat, lng, alt }, timestamp }
-      if (position && selectedSatellite.value) {
-        selectedSatellite.value = {
-          ...selectedSatellite.value,
-          position: {
-            lat: position.position.lat,
-            lng: position.position.lng,
-            alt: position.position.alt,
-          }
-        }
-      }
-
-      // 绘制轨道
       if (orbit?.orbitPoints && orbit.orbitPoints.length > 0 && cesium) {
         cesium.updateOrbit(noradId, orbit.orbitPoints)
       }

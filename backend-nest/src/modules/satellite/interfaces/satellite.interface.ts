@@ -39,7 +39,6 @@ export interface SatelliteMetadata {
   contractor?: string | null;
   launchMass?: number | null;
   lifetime?: string | null;
-  platform?: string | null;
   cosparId?: string | null;
   objectClass?: string | null;
   shape?: string | null;

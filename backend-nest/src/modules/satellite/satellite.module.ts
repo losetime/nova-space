@@ -3,7 +3,7 @@ import { SatelliteController } from './satellite.controller';
 import { SatelliteDataService } from './services/satellite-data.service';
 import { OrbitCalculatorService } from './services/orbit-calculator.service';
 import { SatelliteFavoriteService } from './services/satellite-favorite.service';
-import { EsaDiscosService } from './services/esa-discos.service';
+import { SatelliteMetadataService } from './services/satellite-metadata.service';
 
 @Module({
   controllers: [SatelliteController],
@@ -11,13 +11,13 @@ import { EsaDiscosService } from './services/esa-discos.service';
     SatelliteDataService,
     OrbitCalculatorService,
     SatelliteFavoriteService,
-    EsaDiscosService,
+    SatelliteMetadataService,
   ],
   exports: [
     OrbitCalculatorService,
     SatelliteDataService,
     SatelliteFavoriteService,
-    EsaDiscosService,
+    SatelliteMetadataService,
   ],
 })
 export class SatelliteModule {}

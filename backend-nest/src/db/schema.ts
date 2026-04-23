@@ -337,7 +337,6 @@ export const satelliteMetadata = pgTable(
     payload: text('payload'),
     constellationName: text('constellation_name'),
     lifetime: text('lifetime'),
-    platform: varchar('platform', { length: 100 }),
     color: text('color'),
     materialComposition: text('material_composition'),
     majorEvents: text('major_events'),

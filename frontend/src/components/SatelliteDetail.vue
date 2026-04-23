@@ -139,7 +139,7 @@
               <span class="info-value">{{ metadata.dimensions || "--" }}</span>
             </div>
             <div class="info-item">
-              <span class="info-label">最大跨度</span>
+              <span class="info-label">翼展</span>
               <span class="info-value">{{ metadata.span ? `${metadata.span} m` : "--" }}</span>
             </div>
             <div class="info-item">
@@ -153,15 +153,12 @@
               }}</span>
             </div>
             <div class="info-item">
-              <span class="info-label">卫星总线</span>
+              <span class="info-label">平台</span>
               <span class="info-value">{{ metadata.bus || "--" }}</span>
             </div>
-            <div class="info-item">
-              <span class="info-label">卫星平台</span>
-              <span class="info-value">{{ metadata.platform || "--" }}</span>
-            </div>
+            <!-- -->
             <div class="info-item full-width">
-              <span class="info-label">有效载荷</span>
+              <span class="info-label">载荷</span>
               <span class="info-value text-left">{{ metadata.payload || "--" }}</span>
             </div>
             <div class="info-item full-width">
@@ -244,7 +241,7 @@
               <div class="param-content">
                 <label>轨道高度</label>
                 <span class="param-value"
-                  >{{ formatNumber(satellite.position.alt / 1000, 0) }} km</span
+                  >{{ formatNumber(satellite.position.alt / 1000, 2) }} km</span
                 >
               </div>
             </div>
@@ -403,10 +400,10 @@
                 metadata.launchSite ? getLaunchSiteName(metadata.launchSite) : "--"
               }}</span>
             </div>
-            <div class="info-item">
+            <!-- <div class="info-item">
               <span class="info-label">发射场</span>
               <span class="info-value">{{ metadata.launchSiteName || "--" }}</span>
-            </div>
+            </div> -->
             <div class="info-item">
               <span class="info-label">发射工位</span>
               <span class="info-value">{{ metadata.launch_pad || "--" }}</span>
@@ -415,10 +412,10 @@
               <span class="info-label">运载工具</span>
               <span class="info-value">{{ metadata.launchVehicle || "--" }}</span>
             </div>
-            <div class="info-item">
+            <!-- <div class="info-item">
               <span class="info-label">发射序号</span>
               <span class="info-value">{{ metadata.flightNo || "--" }}</span>
-            </div>
+            </div> -->
             <div class="info-item">
               <span class="info-label">COSPAR发射编号</span>
               <span class="info-value">{{ metadata.cosparLaunchNo || "--" }}</span>
@@ -614,6 +611,7 @@ import type { Satellite } from "@/hooks/useLocalSatellites";
 import FlagIcon from "@/components/FlagIcon.vue";
 import { satelliteApi } from "@/api";
 import { useUserStore } from "@/stores/user";
+import { COUNTRY_NAMES, LAUNCH_SITES, OBJECT_TYPES, STATUS_LABELS } from "@/constants/satellite";
 
 // 元数据接口
 interface SatelliteMetadata {
@@ -649,7 +647,6 @@ interface SatelliteMetadata {
   dimensions?: string;
   span?: number;
   lifetime?: string;
-  platform?: string;
   firstEpoch?: string;
   predDecayDate?: string;
   flightNo?: string;
@@ -787,167 +784,6 @@ watch(
   },
   { immediate: true },
 );
-
-// 国家代码到中文名称的映射 (CelesTrak 格式)
-const COUNTRY_NAMES: Record<string, string> = {
-  US: "美国",
-  UK: "英国",
-  FR: "法国",
-  CA: "加拿大",
-  IT: "意大利",
-  NZ: "新西兰",
-  MA: "摩洛哥",
-  IM: "马恩岛",
-  AC: "阿森松岛",
-  AB: "安提瓜和巴布达",
-  CIS: "俄罗斯",
-  PRC: "中国",
-  CN: "中国",
-  TWN: "中国台湾",
-  JPN: "日本",
-  IND: "印度",
-  BRAZ: "巴西",
-  ARGN: "阿根廷",
-  MEX: "墨西哥",
-  SAUD: "沙特阿拉伯",
-  INDO: "印度尼西亚",
-  TURK: "土耳其",
-  NETH: "荷兰",
-  THAI: "泰国",
-  SAFR: "南非",
-  UKR: "乌克兰",
-  SING: "新加坡",
-  POL: "波兰",
-  SWED: "瑞典",
-  NOR: "挪威",
-  BEL: "比利时",
-  MALA: "马来西亚",
-  PAKI: "巴基斯坦",
-  RP: "菲律宾",
-  VENZ: "委内瑞拉",
-  SWTZ: "瑞士",
-  DEN: "丹麦",
-  EGYP: "埃及",
-  FIN: "芬兰",
-  GREC: "希腊",
-  IRAN: "伊朗",
-  IRAQ: "伊拉克",
-  KAZ: "哈萨克斯坦",
-  KWT: "科威特",
-  NIG: "尼日利亚",
-  POR: "葡萄牙",
-  SKOR: "韩国",
-  UAE: "阿联酋",
-  ISRA: "以色列",
-  SPN: "西班牙",
-  GER: "德国",
-  CZE: "捷克",
-  EST: "爱沙尼亚",
-  HUN: "匈牙利",
-  LTU: "立陶宛",
-  BGR: "保加利亚",
-  ROM: "罗马尼亚",
-  SVN: "斯洛文尼亚",
-  SVK: "斯洛伐克",
-  HRV: "克罗地亚",
-  AZER: "阿塞拜疆",
-  MDA: "摩尔多瓦",
-  MNG: "蒙古",
-  NKOR: "朝鲜",
-  LAOS: "老挝",
-  BGD: "孟加拉国",
-  LKA: "斯里兰卡",
-  MMR: "缅甸",
-  NPL: "尼泊尔",
-  PER: "秘鲁",
-  COL: "哥伦比亚",
-  CHLE: "智利",
-  BOL: "玻利维亚",
-  PRY: "巴拉圭",
-  URY: "乌拉圭",
-  ECU: "厄瓜多尔",
-  CRI: "哥斯达黎加",
-  DJI: "吉布提",
-  RWA: "卢旺达",
-  UGA: "乌干达",
-  GHA: "加纳",
-  ZWE: "津巴布韦",
-  BWA: "博茨瓦纳",
-  MUS: "毛里求斯",
-  AGO: "安哥拉",
-  SDN: "苏丹",
-  TUN: "突尼斯",
-  ALG: "阿尔及利亚",
-  QAT: "卡塔尔",
-  BHR: "巴林",
-  JOR: "约旦",
-  PRI: "波多黎各",
-  SLB: "所罗门群岛",
-  MCO: "摩纳哥",
-  KEN: "肯尼亚",
-  VTNM: "越南",
-  CHBZ: "瑞士",
-  BELA: "白俄罗斯",
-  ASRA: "奥地利",
-  FGER: "法国/德国",
-  FRIT: "法国/意大利",
-  CZCH: "捷克",
-  USBZ: "美国/巴西",
-  ESA: "欧洲航天局",
-  ESRO: "欧洲空间研究组织",
-  EUTE: "欧洲通信卫星组织",
-  EUME: "欧洲气象卫星组织",
-  NATO: "北约",
-  ITSO: "国际通信卫星组织",
-  SES: "SES公司",
-  O3B: "O3b网络",
-  ORB: "轨道科学公司",
-  GLOB: "全球星",
-  STCT: "空间通信",
-  RASC: "俄罗斯航天局",
-  SEAL: "海射公司",
-  TBD: "待定",
-  ABS: "ABS公司",
-};
-
-// 发射场映射
-const LAUNCH_SITES: Record<string, string> = {
-  AFETR: "卡纳维拉尔角空军基地",
-  AFWTR: "范登堡空军基地",
-  KSC: "肯尼迪航天中心",
-  TTFFB: "太原卫星发射中心",
-  JSC: "酒泉卫星发射中心",
-  XSC: "西昌卫星发射中心",
-  WSC: "文昌航天发射场",
-  TTMTR: "拜科努尔航天发射场",
-  PLMSC: "普列谢茨克航天发射场",
-  SNMLP: "圣马科发射平台",
-  SEM: "种岛航天中心",
-  TNG: "种子岛航天中心",
-  KSCUT: "内之浦宇宙空间观测所",
-  YAVNE: "亚夫内发射场",
-  FRGUI: "圭亚那航天中心",
-  NSW: "新南威尔士发射场",
-};
-
-// 对象类型映射
-const OBJECT_TYPES: Record<string, { label: string; class: string }> = {
-  PAYLOAD: { label: "有效载荷", class: "payload" },
-  "ROCKET BODY": { label: "火箭体", class: "rocket" },
-  DEBRIS: { label: "碎片", class: "debris" },
-};
-
-// 状态映射
-const STATUS_LABELS: Record<string, string> = {
-  "+": "在轨运行",
-  "-": "未运行",
-  D: "已衰减",
-  P: "部分衰减",
-  B: "备份",
-  S: "储备",
-  X: "试验",
-  "N/A": "不适用",
-};
 
 // 格式化函数
 const formatNumber = (num: number | undefined | null, decimals: number): string => {
