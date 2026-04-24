@@ -15,7 +15,8 @@
           <span class="subtitle">从这里开始</span>
         </h1>
         <p class="hero-desc">
-          诺维空间探索平台 —— 集卫星数据态势展示、航天知识科普、航天情报分级服务于一体的综合航天信息平台
+          诺维空间探索平台 ——
+          集卫星数据态势展示、航天知识科普、航天情报分级服务于一体的综合航天信息平台
         </p>
         <div class="hero-actions">
           <a-button type="primary" size="large" class="cta-btn" @click="$router.push('/satellite')">
@@ -40,8 +41,8 @@
           <span class="gradient-text">三大核心服务</span>
         </h2>
         <div class="features-grid">
-          <div 
-            v-for="(feature, index) in features" 
+          <div
+            v-for="(feature, index) in features"
             :key="index"
             class="feature-card"
             :style="{ animationDelay: `${index * 0.1}s` }"
@@ -83,12 +84,16 @@
           </a-button>
         </div>
         <div class="intelligence-list">
-          <div 
-            v-for="(item, index) in latestIntelligence" 
+          <div
+            v-for="(item, index) in latestIntelligence"
             :key="index"
-            class="intelligence-card"
+            :class="['intelligence-card', { locked: item.isLocked }]"
+            @click="handleIntelligenceClick(item)"
           >
-            <div class="card-tag" :class="item.type">{{ item.tag }}</div>
+            <div class="card-tag" :class="item.type">
+              {{ item.tag }}
+              <LockOutlined v-if="item.isLocked" class="lock-icon" />
+            </div>
             <h4>{{ item.title }}</h4>
             <p>{{ item.summary }}</p>
             <div class="card-meta">
@@ -103,97 +108,132 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted } from "vue";
+import { useRouter } from "vue-router";
+import { message } from "ant-design-vue";
+import { useUserStore } from "@/stores/user";
 import {
   RightOutlined,
   ArrowRightOutlined,
   GlobalOutlined,
   BookOutlined,
-  FileTextOutlined
-} from '@ant-design/icons-vue'
-import { statsApi } from '@/api'
+  FileTextOutlined,
+  LockOutlined,
+} from "@ant-design/icons-vue";
+import { statsApi, intelligenceApi } from "@/api";
+
+const router = useRouter();
+const userStore = useUserStore();
 
 const features = [
   {
     icon: GlobalOutlined,
-    title: '卫星数据中心',
-    desc: '实时追踪全球在轨卫星，提供轨道预测、关联分析等专业功能',
-    path: '/satellite'
+    title: "卫星数据中心",
+    desc: "实时追踪全球在轨卫星，提供轨道预测、关联分析等专业功能",
+    path: "/satellite",
   },
   {
     icon: BookOutlined,
-    title: '航天科普中心',
-    desc: '体系化航天知识库，从入门到进阶，让每个人都能读懂航天',
-    path: '/education'
+    title: "航天科普中心",
+    desc: "体系化航天知识库，从入门到进阶，让每个人都能读懂航天",
+    path: "/education",
   },
   {
     icon: FileTextOutlined,
-    title: '航天情报中心',
-    desc: '精选航天领域最新动态，深度解读行业发展趋势',
-    path: '/intelligence'
-  }
-]
+    title: "航天动态中心",
+    desc: "精选航天领域最新动态，深度解读行业发展趋势",
+    path: "/intelligence",
+  },
+];
 
 // 格式化数字显示
 const formatNumber = (num: number): string => {
-  return `${num.toLocaleString()}+`
-}
+  return `${num.toLocaleString()}+`;
+};
 
 const stats = ref([
-  { number: '-', label: '在轨卫星' },
-  { number: '-', label: '国家/地区' },
-  { number: '-', label: '知识条目' },
-  { number: '-', label: '活跃用户' }
-])
+  { number: "-", label: "在轨卫星" },
+  { number: "-", label: "国家/地区" },
+  { number: "-", label: "知识条目" },
+  { number: "-", label: "活跃用户" },
+]);
 
 // 加载统计数据
 const loadStats = async () => {
   try {
-    const res = await statsApi.getHomeStats()
+    const res = await statsApi.getHomeStats();
     if (res.data.code === 0) {
-      const data = res.data.data
+      const data = res.data.data;
       stats.value = [
-        { number: formatNumber(data.satellites), label: '在轨卫星' },
-        { number: `${data.countries}+`, label: '国家/地区' },
-        { number: formatNumber(data.articles), label: '知识条目' },
-        { number: formatNumber(data.users), label: '活跃用户' }
-      ]
+        // { number: formatNumber(data.satellites), label: "在轨卫星" },
+        { number: "16096+", label: "在轨卫星" },
+        { number: `${data.countries}+`, label: "国家/地区" },
+        { number: formatNumber((data.articles || 0) + (data.intelligences || 0)), label: "知识条目" },
+        { number: "4000+", label: "活跃用户" },
+      ];
     }
   } catch {
     // 加载失败时使用默认显示
   }
-}
+};
+
+const latestIntelligence = ref<any[]>([]);
+const intelligenceLoading = ref(false);
+
+const categoryMap: Record<string, { tag: string; type: string }> = {
+  launch: { tag: "发射任务", type: "launch" },
+  satellite: { tag: "卫星动态", type: "satellite" },
+  industry: { tag: "行业动态", type: "industry" },
+  research: { tag: "科研进展", type: "research" },
+  environment: { tag: "空间环境", type: "environment" },
+};
+
+const formatDate = (dateStr: string): string => {
+  if (!dateStr) return "";
+  return dateStr.split("T")[0] || "";
+};
+
+const loadIntelligence = async () => {
+  try {
+    intelligenceLoading.value = true;
+    const res = await intelligenceApi.getList({ pageSize: 3 });
+    if (res.data.code === 0 && res.data.data?.list) {
+      latestIntelligence.value = res.data.data.list.map((item) => {
+        const map = categoryMap[item.category] || { tag: item.category, type: item.category };
+        return {
+          type: map.type,
+          tag: map.tag,
+          title: item.title,
+          summary: item.summary,
+          date: formatDate(item.createdAt),
+          source: item.source,
+          isLocked: item.isLocked,
+        };
+      });
+    }
+  } catch {
+    message.error("加载情报失败");
+  } finally {
+    intelligenceLoading.value = false;
+  }
+};
+
+const handleIntelligenceClick = (item: any) => {
+  if (item.isLocked) {
+    if (!userStore.isLoggedIn) {
+      message.warning("请先登录");
+    } else {
+      message.warning("请升级会员后查看");
+    }
+    return;
+  }
+  router.push(`/intelligence/${item.id}`);
+};
 
 onMounted(() => {
-  loadStats()
-})
-
-const latestIntelligence = [
-  {
-    type: 'launch',
-    tag: '发射任务',
-    title: 'SpaceX星舰第五次试飞即将进行',
-    summary: '预计本周进行关键测试，将尝试新的回收方案...',
-    date: '2026-03-04',
-    source: 'SpaceX官方'
-  },
-  {
-    type: 'satellite',
-    tag: '卫星动态',
-    title: '中国空间站完成新一轮科学实验',
-    summary: '本次实验涉及微重力环境下的材料科学研究...',
-    date: '2026-03-03',
-    source: '中国航天'
-  },
-  {
-    type: 'industry',
-    tag: '行业动态',
-    title: '全球商业航天市场规模突破5000亿美元',
-    summary: '报告显示卫星互联网和太空旅游成为主要增长点...',
-    date: '2026-03-02',
-    source: '航天产业报告'
-  }
-]
+  loadStats();
+  loadIntelligence();
+});
 </script>
 
 <style scoped lang="scss">
@@ -226,36 +266,42 @@ const latestIntelligence = [
   // 第一层星星 - 小而密集，缓慢漂移
   .stars-layer-1 {
     background-image:
-      radial-gradient(1px 1px at 10px 20px, rgba(255,255,255,0.8), rgba(0,0,0,0)),
-      radial-gradient(1px 1px at 50px 80px, rgba(255,255,255,0.6), rgba(0,0,0,0)),
-      radial-gradient(1px 1px at 90px 40px, rgba(255,255,255,0.7), rgba(0,0,0,0)),
-      radial-gradient(1px 1px at 130px 120px, rgba(255,255,255,0.5), rgba(0,0,0,0)),
-      radial-gradient(1px 1px at 170px 60px, rgba(255,255,255,0.6), rgba(0,0,0,0));
+      radial-gradient(1px 1px at 10px 20px, rgba(255, 255, 255, 0.8), rgba(0, 0, 0, 0)),
+      radial-gradient(1px 1px at 50px 80px, rgba(255, 255, 255, 0.6), rgba(0, 0, 0, 0)),
+      radial-gradient(1px 1px at 90px 40px, rgba(255, 255, 255, 0.7), rgba(0, 0, 0, 0)),
+      radial-gradient(1px 1px at 130px 120px, rgba(255, 255, 255, 0.5), rgba(0, 0, 0, 0)),
+      radial-gradient(1px 1px at 170px 60px, rgba(255, 255, 255, 0.6), rgba(0, 0, 0, 0));
     background-size: 200px 200px;
-    animation: starDrift1 60s linear infinite, twinkle1 3s ease-in-out infinite;
+    animation:
+      starDrift1 60s linear infinite,
+      twinkle1 3s ease-in-out infinite;
   }
 
   // 第二层星星 - 中等大小，反向漂移
   .stars-layer-2 {
     background-image:
-      radial-gradient(2px 2px at 20px 30px, #fff, rgba(0,0,0,0)),
-      radial-gradient(2px 2px at 60px 90px, #eee, rgba(0,0,0,0)),
-      radial-gradient(2px 2px at 100px 50px, #fff, rgba(0,0,0,0)),
-      radial-gradient(2px 2px at 140px 130px, #ddd, rgba(0,0,0,0)),
-      radial-gradient(2px 2px at 180px 70px, #fff, rgba(0,0,0,0));
+      radial-gradient(2px 2px at 20px 30px, #fff, rgba(0, 0, 0, 0)),
+      radial-gradient(2px 2px at 60px 90px, #eee, rgba(0, 0, 0, 0)),
+      radial-gradient(2px 2px at 100px 50px, #fff, rgba(0, 0, 0, 0)),
+      radial-gradient(2px 2px at 140px 130px, #ddd, rgba(0, 0, 0, 0)),
+      radial-gradient(2px 2px at 180px 70px, #fff, rgba(0, 0, 0, 0));
     background-size: 250px 250px;
-    animation: starDrift2 80s linear infinite, twinkle2 4s ease-in-out infinite;
+    animation:
+      starDrift2 80s linear infinite,
+      twinkle2 4s ease-in-out infinite;
   }
 
   // 第三层星星 - 大而稀疏，缓慢闪烁
   .stars-layer-3 {
     background-image:
-      radial-gradient(3px 3px at 30px 60px, #00d4ff, rgba(0,0,0,0)),
-      radial-gradient(2px 2px at 80px 150px, #fff, rgba(0,0,0,0)),
-      radial-gradient(3px 3px at 150px 30px, #7b2cbf, rgba(0,0,0,0)),
-      radial-gradient(2px 2px at 200px 100px, #fff, rgba(0,0,0,0));
+      radial-gradient(3px 3px at 30px 60px, #00d4ff, rgba(0, 0, 0, 0)),
+      radial-gradient(2px 2px at 80px 150px, #fff, rgba(0, 0, 0, 0)),
+      radial-gradient(3px 3px at 150px 30px, #7b2cbf, rgba(0, 0, 0, 0)),
+      radial-gradient(2px 2px at 200px 100px, #fff, rgba(0, 0, 0, 0));
     background-size: 300px 300px;
-    animation: starDrift3 100s linear infinite, twinkle3 5s ease-in-out infinite;
+    animation:
+      starDrift3 100s linear infinite,
+      twinkle3 5s ease-in-out infinite;
   }
 
   .planet {
@@ -274,37 +320,70 @@ const latestIntelligence = [
 
 // 星星漂移动画
 @keyframes starDrift1 {
-  from { transform: translateX(0) translateY(0); }
-  to { transform: translateX(-200px) translateY(-200px); }
+  from {
+    transform: translateX(0) translateY(0);
+  }
+  to {
+    transform: translateX(-200px) translateY(-200px);
+  }
 }
 
 @keyframes starDrift2 {
-  from { transform: translateX(0) translateY(0); }
-  to { transform: translateX(250px) translateY(-250px); }
+  from {
+    transform: translateX(0) translateY(0);
+  }
+  to {
+    transform: translateX(250px) translateY(-250px);
+  }
 }
 
 @keyframes starDrift3 {
-  from { transform: translateX(0) translateY(0); }
-  to { transform: translateX(-150px) translateY(-150px); }
+  from {
+    transform: translateX(0) translateY(0);
+  }
+  to {
+    transform: translateX(-150px) translateY(-150px);
+  }
 }
 
 // 闪烁动画 - 不同频率
 @keyframes twinkle1 {
-  0%, 100% { opacity: 0.4; }
-  50% { opacity: 0.8; }
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.8;
+  }
 }
 
 @keyframes twinkle2 {
-  0%, 100% { opacity: 0.5; }
-  30% { opacity: 1; }
-  70% { opacity: 0.3; }
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  30% {
+    opacity: 1;
+  }
+  70% {
+    opacity: 0.3;
+  }
 }
 
 @keyframes twinkle3 {
-  0%, 100% { opacity: 0.6; }
-  25% { opacity: 0.2; }
-  50% { opacity: 1; }
-  75% { opacity: 0.4; }
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  25% {
+    opacity: 0.2;
+  }
+  50% {
+    opacity: 1;
+  }
+  75% {
+    opacity: 0.4;
+  }
 }
 
 .hero-content {
@@ -336,7 +415,9 @@ const latestIntelligence = [
 }
 
 @keyframes shine {
-  to { background-position: 200% center; }
+  to {
+    background-position: 200% center;
+  }
 }
 
 .hero-desc {
@@ -400,7 +481,7 @@ const latestIntelligence = [
     position: relative;
 
     &::before {
-      content: '';
+      content: "";
       position: absolute;
       top: 8px;
       left: 50%;
@@ -415,8 +496,15 @@ const latestIntelligence = [
 }
 
 @keyframes scroll {
-  0%, 100% { opacity: 1; top: 8px; }
-  50% { opacity: 0.3; top: 20px; }
+  0%,
+  100% {
+    opacity: 1;
+    top: 8px;
+  }
+  50% {
+    opacity: 0.3;
+    top: 20px;
+  }
 }
 
 // Section Common Styles
@@ -575,10 +663,22 @@ const latestIntelligence = [
   border-radius: 12px;
   padding: 24px;
   transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
 
   &:hover {
     border-color: rgba(0, 212, 255, 0.3);
     transform: translateY(-4px);
+  }
+
+  &.locked {
+    opacity: 0.6;
+    cursor: pointer;
+
+    &:hover {
+      transform: none;
+      border-color: rgba(0, 212, 255, 0.1);
+    }
   }
 
   .card-tag {
@@ -587,6 +687,7 @@ const latestIntelligence = [
     border-radius: 4px;
     font-size: 12px;
     margin-bottom: 16px;
+    align-self: flex-start;
 
     &.launch {
       background: rgba(0, 212, 255, 0.15);
@@ -601,6 +702,21 @@ const latestIntelligence = [
     &.industry {
       background: rgba(255, 193, 7, 0.15);
       color: #ffc107;
+    }
+
+    &.research {
+      background: rgba(59, 130, 246, 0.15);
+      color: #3b82f6;
+    }
+
+    &.environment {
+      background: rgba(34, 197, 94, 0.15);
+      color: #22c55e;
+    }
+
+    .lock-icon {
+      margin-left: 6px;
+      font-size: 10px;
     }
   }
 
@@ -617,6 +733,7 @@ const latestIntelligence = [
     color: rgba(255, 255, 255, 0.5);
     line-height: 1.6;
     margin-bottom: 16px;
+    flex: 1;
   }
 
   .card-meta {
@@ -624,6 +741,7 @@ const latestIntelligence = [
     justify-content: space-between;
     font-size: 12px;
     color: rgba(255, 255, 255, 0.4);
+    margin-top: auto;
 
     .source {
       color: #00d4ff;

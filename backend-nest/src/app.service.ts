@@ -9,7 +9,7 @@ export class AppService {
   constructor(@Inject(DRIZZLE) private db: DrizzleClient) {}
 
   getHello(): string {
-    return 'Nova Space API v1.0.0';
+    return 'Navi Space API v1.0.0';
   }
 
   async getStats() {
@@ -34,6 +34,10 @@ export class AppService {
       .from(schema.educationArticles)
       .where(eq(schema.educationArticles.isPublished, true));
 
+    const [{ intelligenceCount }] = await this.db
+      .select({ intelligenceCount: sql<number>`count(*)` })
+      .from(schema.intelligences);
+
     const [{ userCount }] = await this.db
       .select({ userCount: sql<number>`count(*)` })
       .from(schema.users)
@@ -43,6 +47,7 @@ export class AppService {
       satellites: Number(satelliteCount),
       countries: Number(countryCount),
       articles: Number(articleCount),
+      intelligences: Number(intelligenceCount),
       users: Number(userCount),
     };
   }

@@ -8,10 +8,10 @@
     <div class="auth-left">
       <div class="brand-content">
         <div class="logo">
-          <img src="/favicon.svg?v=2" alt="Nova Space" class="logo-icon" />
+          <img src="/favicon.svg?v=2" alt="Navi Space" class="logo-icon" />
         </div>
         <h1 class="brand-title">
-          <span class="gradient-text">Nova Space</span>
+          <span class="gradient-text">Navi Space</span>
         </h1>
         <p class="brand-desc">探索宇宙，从这里开始</p>
       </div>

@@ -12,6 +12,7 @@ import { SubscriptionService } from './subscription.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CreateSubscriptionDto, UpdateSubscriptionDto } from './dto';
 import type { RequestWithUser } from '../../common/interfaces';
+import { Public } from '../../common/decorators/public.decorator';
 
 @Controller('subscriptions')
 @UseGuards(JwtAuthGuard)
@@ -19,6 +20,7 @@ export class SubscriptionController {
   constructor(private readonly subscriptionService: SubscriptionService) {}
 
   @Get('plans')
+  @Public()
   async getPlans() {
     const result = await this.subscriptionService.getPlans();
     return { code: 0, data: result };

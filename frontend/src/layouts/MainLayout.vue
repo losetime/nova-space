@@ -3,10 +3,15 @@
     <!-- 顶部导航 -->
     <header class="navbar">
       <div class="nav-container">
+        <!-- 汉堡菜单按钮（移动端） -->
+        <a-button class="hamburger" @click="mobileMenuVisible = true">
+          <MenuOutlined />
+        </a-button>
+
         <!-- Logo -->
         <div class="logo" @click="router.push('/')">
-          <img src="/favicon.svg?v=2" alt="Nova Space" class="logo-icon" />
-          <span class="logo-text">NOVA SPACE</span>
+          <img src="/favicon.svg?v=2" alt="Navi Space" class="logo-icon" />
+          <span class="logo-text">NAVI SPACE</span>
         </div>
 
         <!-- 主导航 -->
@@ -47,7 +52,11 @@
                   <span class="user-name">{{
                     userStore.user?.nickname || userStore.user?.username
                   }}</span>
-                  <span v-if="userStore.user?.level && userStore.user.level !== 'basic'" class="user-level" :class="userStore.user.level">
+                  <span
+                    v-if="userStore.user?.level && userStore.user.level !== 'basic'"
+                    class="user-level"
+                    :class="userStore.user.level"
+                  >
                     {{ getLevelText(userStore.user.level) }}
                   </span>
                 </div>
@@ -84,6 +93,34 @@
       </div>
     </header>
 
+    <!-- 移动端抽屉菜单 -->
+    <a-drawer
+      v-model:open="mobileMenuVisible"
+      placement="left"
+      :width="280"
+      :bodyStyle="{ padding: 0, background: 'rgba(10, 10, 15, 0.98)' }"
+      :headerStyle="{ display: 'none' }"
+      :maskStyle="{ background: 'rgba(0, 0, 0, 0.6)' }"
+    >
+      <div class="mobile-nav-header">
+        <div class="mobile-nav-logo" @click="router.push('/')">
+          <img src="/favicon.svg?v=2" alt="Navi Space" class="logo-icon" />
+          <span class="logo-text">NAVI SPACE</span>
+        </div>
+      </div>
+      <nav class="mobile-nav">
+        <div
+          v-for="item in navItems"
+          :key="item.path"
+          :class="['mobile-nav-item', { active: route.path === item.path }]"
+          @click="handleMobileNavClick(item.path)"
+        >
+          <component :is="item.icon" class="nav-icon" />
+          <span>{{ item.name }}</span>
+        </div>
+      </nav>
+    </a-drawer>
+
     <!-- 主内容区 -->
     <main class="main-content">
       <router-view />
@@ -92,7 +129,7 @@
     <!-- 底部 -->
     <footer class="footer">
       <div class="footer-content">
-        <p>© 2026 Nova Space. All rights reserved.</p>
+        <p>© 2026 Navi Space. All rights reserved.</p>
         <div class="footer-links">
           <a
             href="http://www.nwbd.net/?m=home&c=Lists&a=index&tid=8"
@@ -114,7 +151,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from "vue";
+import { ref, onMounted, onUnmounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { message } from "ant-design-vue";
 import { useUserStore } from "@/stores/user";
@@ -132,14 +169,33 @@ import {
   BellOutlined,
   RocketOutlined,
   CrownOutlined,
+  MenuOutlined,
 } from "@ant-design/icons-vue";
 
 const route = useRoute();
 const router = useRouter();
 const userStore = useUserStore();
 
+const isMobile = ref(false);
+const mobileMenuVisible = ref(false);
+
+const checkMobile = () => {
+  isMobile.value = window.innerWidth < 768;
+};
+
+const handleResize = () => {
+  checkMobile();
+};
+
+const handleMobileNavClick = (path: string) => {
+  mobileMenuVisible.value = false;
+  router.push(path);
+};
+
 // 页面加载时获取用户信息
 onMounted(() => {
+  checkMobile();
+  window.addEventListener("resize", handleResize);
   console.log("MainLayout mounted:", {
     token: userStore.token,
     user: userStore.user,
@@ -150,13 +206,17 @@ onMounted(() => {
   }
 });
 
+onUnmounted(() => {
+  window.removeEventListener("resize", handleResize);
+});
+
 const navItems = [
   { name: "首页", path: "/", icon: HomeOutlined },
-  { name: "卫星数据", path: "/satellite", icon: GlobalOutlined },
-  { name: "空间天气", path: "/space-weather", icon: ThunderboltOutlined },
-  { name: "航天科普", path: "/education", icon: BookOutlined },
-  { name: "航天情报", path: "/intelligence", icon: FileTextOutlined },
-  { name: "发展里程碑", path: "/milestone", icon: RocketOutlined },
+  { name: "卫星态势总览", path: "/satellite", icon: GlobalOutlined },
+  // { name: "空间天气", path: "/space-weather", icon: ThunderboltOutlined },
+  { name: "航天知识科普", path: "/education", icon: BookOutlined },
+  { name: "航天动态中心", path: "/intelligence", icon: FileTextOutlined },
+  // { name: "发展里程碑", path: "/milestone", icon: RocketOutlined },
 ];
 
 const handleMenuClick = ({ key }: { key: string }) => {
@@ -183,11 +243,11 @@ const handleMenuClick = ({ key }: { key: string }) => {
 
 function getLevelText(level?: string) {
   const levelMap: Record<string, string> = {
-    basic: '普通会员',
-    advanced: '高级会员',
-    professional: '专业会员'
-  }
-  return levelMap[level || 'basic'] || '普通会员'
+    basic: "普通会员",
+    advanced: "高级会员",
+    professional: "专业会员",
+  };
+  return levelMap[level || "basic"] || "普通会员";
 }
 </script>
 
@@ -381,7 +441,8 @@ function getLevelText(level?: string) {
         border-radius: 4px;
         width: fit-content;
 
-        &.advanced, &.professional {
+        &.advanced,
+        &.professional {
           background: linear-gradient(135deg, #f6d365, #fda085);
           color: #333;
         }
@@ -482,6 +543,130 @@ function getLevelText(level?: string) {
 
       &::after {
         width: 100%;
+      }
+    }
+  }
+}
+
+// 移动端响应式
+.hamburger {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: rgba(0, 212, 255, 0.1);
+  border: 1px solid rgba(0, 212, 255, 0.2);
+  border-radius: 8px;
+  color: #00d4ff;
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.3s;
+
+  &:hover {
+    background: rgba(0, 212, 255, 0.2);
+  }
+}
+
+.mobile-nav-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid rgba(0, 212, 255, 0.1);
+
+  .mobile-nav-logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+
+    .logo-icon {
+      width: 32px;
+      height: 32px;
+      filter: drop-shadow(0 0 8px rgba(0, 212, 255, 0.5));
+    }
+
+    .logo-text {
+      font-size: 18px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #00d4ff 0%, #7b2cbf 50%, #00d4ff 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: 2px;
+    }
+  }
+}
+
+.mobile-nav {
+  padding: 16px 0;
+
+  .mobile-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 24px;
+    color: rgba(255, 255, 255, 0.7);
+    cursor: pointer;
+    transition: all 0.3s;
+    font-size: 15px;
+
+    .nav-icon {
+      font-size: 18px;
+      transition: all 0.3s;
+    }
+
+    &:hover {
+      background: rgba(0, 212, 255, 0.08);
+      color: #ffffff;
+
+      .nav-icon {
+        transform: translateX(4px);
+        color: #00d4ff;
+      }
+    }
+
+    &.active {
+      background: rgba(0, 212, 255, 0.12);
+      color: #00d4ff;
+      border-right: 3px solid #00d4ff;
+
+      .nav-icon {
+        color: #00d4ff;
+        filter: drop-shadow(0 0 5px rgba(0, 212, 255, 0.5));
+      }
+    }
+  }
+}
+
+@media (max-width: 1200px) {
+  .hamburger {
+    display: flex;
+  }
+
+  .main-nav {
+    display: none;
+  }
+
+  .nav-container {
+    grid-template-columns: auto 1fr auto;
+    gap: 12px;
+  }
+
+  .logo {
+    .logo-text {
+      font-size: 16px;
+    }
+  }
+
+  .nav-actions {
+    .user-wrapper {
+      padding: 8px;
+
+      .user-info {
+        display: none;
+      }
+
+      .user-arrow {
+        display: none;
       }
     }
   }

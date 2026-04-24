@@ -12,6 +12,7 @@ import { IntelligenceService } from './intelligence.service';
 import { CreateIntelligenceDto } from './dto/create-intelligence.dto';
 import { QueryIntelligenceDto } from './dto/query-intelligence.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { Public } from '../../common/decorators/public.decorator';
 import type { RequestWithUser } from '../../common/interfaces';
 
 @Controller('intelligence')
@@ -19,11 +20,13 @@ export class IntelligenceController {
   constructor(private readonly intelligenceService: IntelligenceService) {}
 
   @Get()
+  @Public()
+  @UseGuards(JwtAuthGuard)
   async findAll(
     @Query() query: QueryIntelligenceDto,
     @Request() req: RequestWithUser,
   ) {
-    const userLevel = req.user?.level || 'basic';
+    const userLevel = req.user?.level;
     return this.intelligenceService.findAll(query, userLevel);
   }
 

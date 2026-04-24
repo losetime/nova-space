@@ -6,7 +6,7 @@ export type IntelligenceCategory =
   | 'industry'
   | 'research'
   | 'environment';
-export type IntelligenceLevel = 'free' | 'advanced' | 'professional';
+export type IntelligenceLevel = 'basic' | 'professional';
 
 export class CreateIntelligenceDto {
   @IsString()
@@ -26,7 +26,7 @@ export class CreateIntelligenceDto {
   category: IntelligenceCategory;
 
   @IsOptional()
-  @IsEnum(['free', 'advanced', 'professional'])
+  @IsEnum(['basic', 'professional'])
   level?: IntelligenceLevel;
 
   @IsString()

@@ -2,17 +2,22 @@ import { Injectable, Inject } from '@nestjs/common';
 import { DRIZZLE } from '../../db/drizzle.module';
 import type { DrizzleClient } from '../../db';
 import * as schema from '../../db/schema';
-import { eq, desc, and, inArray, sql, type SQLWrapper } from 'drizzle-orm';
+import { eq, desc, and, sql, type SQLWrapper } from 'drizzle-orm';
 import { CreateIntelligenceDto } from './dto/create-intelligence.dto';
 import { QueryIntelligenceDto } from './dto/query-intelligence.dto';
 
-type IntelligenceLevel = 'free' | 'advanced' | 'professional';
+type IntelligenceLevel = 'basic' | 'professional';
 type IntelligenceCategory =
   | 'satellite'
   | 'launch'
   | 'industry'
   | 'research'
   | 'environment';
+
+const levelRank: Record<string, number> = {
+  basic: 1,
+  professional: 2,
+};
 
 @Injectable()
 export class IntelligenceService {
@@ -27,21 +32,6 @@ export class IntelligenceService {
     if (category) {
       conditions.push(
         eq(schema.intelligences.category, category as IntelligenceCategory),
-      );
-    }
-
-    if (userLevel === 'professional') {
-      // professional 用户可以访问所有内容
-    } else if (userLevel === 'advanced') {
-      conditions.push(
-        inArray(schema.intelligences.level, [
-          'free',
-          'advanced',
-        ] as IntelligenceLevel[]),
-      );
-    } else {
-      conditions.push(
-        eq(schema.intelligences.level, 'free' as IntelligenceLevel),
       );
     }
 
@@ -69,7 +59,9 @@ export class IntelligenceService {
               .map((t) => t.trim())
               .filter(Boolean)
           : [],
-        isLocked: userLevel === 'basic' && item.level !== 'free',
+        isLocked: userLevel
+          ? levelRank[userLevel] < levelRank[item.level]
+          : true,
       })),
       total: Number(count),
       page,

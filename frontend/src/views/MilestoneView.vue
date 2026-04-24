@@ -97,7 +97,7 @@
     <!-- 详情弹窗 -->
     <a-drawer
       v-model:open="detailVisible"
-      :width="600"
+      :width="isMobile ? '100vw' : 600"
       :title="selectedMilestone?.title || '里程碑详情'"
       class="milestone-detail-drawer"
       placement="right"
@@ -163,7 +163,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, shallowRef, markRaw } from 'vue'
+import { ref, onMounted, onUnmounted, computed, shallowRef, markRaw } from 'vue'
 import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 import {
@@ -181,6 +181,16 @@ import { milestoneApi } from '@/api'
 import { marked } from 'marked'
 import DOMPurify from 'dompurify'
 import { getFullImageUrl } from '@/utils/image-url'
+
+const isMobile = ref(false)
+
+const checkMobile = () => {
+  isMobile.value = window.innerWidth < 768
+}
+
+const handleResize = () => {
+  checkMobile()
+}
 
 // 类型定义
 interface MediaItem {
@@ -313,7 +323,13 @@ function viewRelatedSatellite(noradId?: string) {
 }
 
 onMounted(() => {
+  checkMobile()
+  window.addEventListener('resize', handleResize)
   loadTimeline()
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize)
 })
 </script>
 
@@ -820,6 +836,56 @@ onMounted(() => {
     display: flex;
     align-items: center;
     gap: 8px;
+  }
+}
+
+// 移动端响应式
+@media (max-width: 768px) {
+  .milestone-detail-drawer {
+    :deep(.ant-drawer-header) {
+      padding: 16px;
+    }
+
+    :deep(.ant-drawer-body) {
+      padding: 16px;
+    }
+
+    :deep(.ant-drawer-title) {
+      font-size: 16px;
+    }
+  }
+
+  .detail-content {
+    gap: 16px;
+  }
+
+  .detail-cover {
+    min-height: 150px;
+
+    img {
+      max-height: 200px;
+    }
+  }
+
+  .detail-meta {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .meta-item {
+    padding: 12px;
+  }
+
+  .detail-description,
+  .detail-content-markdown,
+  .detail-related {
+    h4 {
+      font-size: 14px;
+    }
+
+    p {
+      font-size: 13px;
+    }
   }
 }
 </style>

@@ -346,7 +346,7 @@ export interface Intelligence {
   content: string
   cover?: string
   category: 'launch' | 'satellite' | 'industry' | 'research' | 'environment'
-  level: 'free' | 'advanced' | 'professional'
+  level: 'basic' | 'professional'
   views: number
   likes: number
   collects: number
@@ -819,6 +819,7 @@ export interface HomeStats {
   satellites: number
   countries: number
   articles: number
+  intelligences: number
   users: number
 }
 

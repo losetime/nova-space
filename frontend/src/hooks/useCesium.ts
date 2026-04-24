@@ -548,9 +548,6 @@ export function useCesium() {
       },
     });
 
-    // 启用 FPS 显示
-    viewer.value.scene.debugShowFramesPerSecond = true;
-
     // 初始化轨道线集合
     orbitCollection = new Cesium.PolylineCollection();
     viewer.value.scene.primitives.add(orbitCollection);

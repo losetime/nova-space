@@ -72,7 +72,7 @@
                     <ReadOutlined />
                   </div>
                   <div class="option-content">
-                    <h4>航天情报</h4>
+                    <h4>航天动态</h4>
                     <p>接收最新航天资讯和行业动态</p>
                   </div>
                   <div class="option-check">
@@ -188,8 +188,8 @@ const form = reactive({
 });
 
 const SUBSCRIPTION_TYPES = {
-  SPACE_WEATHER: 'space_weather',
-  INTELLIGENCE: 'intelligence',
+  SPACE_WEATHER: "space_weather",
+  INTELLIGENCE: "intelligence",
 } as const;
 
 async function fetchSubscription() {
@@ -200,8 +200,12 @@ async function fetchSubscription() {
 
     if (subscription.value) {
       form.email = subscription.value.email;
-      form.subscribeSpaceWeather = subscription.value.subscriptionTypes.includes(SUBSCRIPTION_TYPES.SPACE_WEATHER);
-      form.subscribeIntelligence = subscription.value.subscriptionTypes.includes(SUBSCRIPTION_TYPES.INTELLIGENCE);
+      form.subscribeSpaceWeather = subscription.value.subscriptionTypes.includes(
+        SUBSCRIPTION_TYPES.SPACE_WEATHER,
+      );
+      form.subscribeIntelligence = subscription.value.subscriptionTypes.includes(
+        SUBSCRIPTION_TYPES.INTELLIGENCE,
+      );
     }
   } catch {
     // 忽略错误

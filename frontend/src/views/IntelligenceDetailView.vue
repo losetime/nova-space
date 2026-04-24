@@ -11,8 +11,13 @@
 
         <!-- 文章头部 -->
         <div class="detail-header">
-          <div class="detail-tag" :class="detail.category">
-            {{ getCategoryLabel(detail.category) }}
+          <div class="detail-tags">
+            <div class="detail-tag" :class="detail.category">
+              {{ getCategoryLabel(detail.category) }}
+            </div>
+            <div class="detail-level-tag">
+              {{ detail.level === "free" ? "免费" : levelMap[detail.level] || detail.level }}
+            </div>
           </div>
           <h1>{{ detail.title }}</h1>
           <div class="detail-meta">
@@ -55,14 +60,14 @@
 
         <!-- 操作栏 -->
         <div class="action-bar">
-          <a-button 
+          <a-button
             :type="detail.isCollected ? 'primary' : 'default'"
             size="large"
             @click="handleCollect"
           >
             <StarFilled v-if="detail.isCollected" />
             <StarOutlined v-else />
-            {{ detail.isCollected ? '已收藏' : '收藏' }}
+            {{ detail.isCollected ? "已收藏" : "收藏" }}
           </a-button>
           <a-button size="large" @click="handleShare">
             <ShareAltOutlined />
@@ -73,15 +78,9 @@
 
       <!-- 加载失败 -->
       <div v-else-if="!loading" class="error-state">
-        <a-result
-          status="404"
-          title="情报不存在"
-          sub-title="该情报可能已被删除或您没有访问权限"
-        >
+        <a-result status="404" title="情报不存在" sub-title="该情报可能已被删除或您没有访问权限">
           <template #extra>
-            <a-button type="primary" @click="router.push('/intelligence')">
-              返回情报列表
-            </a-button>
+            <a-button type="primary" @click="router.push('/intelligence')"> 返回情报列表 </a-button>
           </template>
         </a-result>
       </div>
@@ -90,9 +89,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { message } from 'ant-design-vue'
+import { ref, onMounted } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import { message } from "ant-design-vue";
 import {
   LeftOutlined,
   ClockCircleOutlined,
@@ -104,115 +103,137 @@ import {
   LineChartOutlined,
   LinkOutlined,
   ShareAltOutlined,
-} from '@ant-design/icons-vue'
-import { intelligenceApi, type Intelligence } from '@/api'
-import { useUserStore } from '@/stores/user'
-import { marked } from 'marked'
+} from "@ant-design/icons-vue";
+import { intelligenceApi, subscriptionApi, type Intelligence } from "@/api";
+import { useUserStore } from "@/stores/user";
+import { marked } from "marked";
 
-const route = useRoute()
-const router = useRouter()
-const userStore = useUserStore()
+const route = useRoute();
+const router = useRouter();
+const userStore = useUserStore();
 
-const loading = ref(false)
-const detail = ref<Intelligence | null>(null)
+const loading = ref(false);
+const detail = ref<Intelligence | null>(null);
+const levelMap = ref<Record<string, string>>({});
 
 const categoryLabels: Record<string, string> = {
-  launch: '发射任务',
-  satellite: '卫星运行',
-  industry: '行业动态',
-  research: '科研成果',
-  environment: '空间环境',
-}
+  launch: "发射任务",
+  satellite: "卫星运行",
+  industry: "行业动态",
+  research: "科研成果",
+  environment: "空间环境",
+};
 
 const getCategoryLabel = (category: string) => {
-  return categoryLabels[category] || category
-}
+  return categoryLabels[category] || category;
+};
+
+const fetchLevelMap = async () => {
+  try {
+    const res = await subscriptionApi.getPlans();
+    if (res.data.code === 0) {
+      const map: Record<string, string> = {};
+      for (const item of res.data.data) {
+        map[item.level] = item.levelName;
+      }
+      levelMap.value = map;
+    }
+  } catch (error) {
+    console.error("获取会员等级映射失败:", error);
+  }
+};
 
 const formatDate = (dateStr: string | Date | null | undefined) => {
-  if (!dateStr) return ''
-  const date = new Date(dateStr)
-  if (isNaN(date.getTime())) return ''
-  const pad = (n: number) => n.toString().padStart(2, '0')
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`
-}
+  if (!dateStr) return "";
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return "";
+  const pad = (n: number) => n.toString().padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+};
 
 const formatViews = (views: number) => {
   if (views >= 10000) {
-    return (views / 10000).toFixed(1) + '万'
+    return (views / 10000).toFixed(1) + "万";
   }
-  return views?.toString() || '0'
-}
+  return views?.toString() || "0";
+};
 
 const renderMarkdown = (content: string) => {
-  if (!content) return ''
-  return marked(content)
-}
+  if (!content) return "";
+  return marked(content);
+};
 
 const fetchDetail = async () => {
-  const id = Number(route.params.id)
+  const id = Number(route.params.id);
   if (!id) {
-    router.push('/intelligence')
-    return
+    router.push("/intelligence");
+    return;
   }
 
-  loading.value = true
+  loading.value = true;
   try {
-    const res = await intelligenceApi.getDetail(id)
+    const res = await intelligenceApi.getDetail(id);
     if (res.data.code === 0) {
-      detail.value = res.data.data
+      detail.value = res.data.data;
 
       // 单独检查收藏状态（如果已登录）
       if (userStore.isLoggedIn) {
         try {
-          const collectRes = await intelligenceApi.isCollected(id)
-          detail.value.isCollected = collectRes.data.data.isCollected
-        } catch { /* silent fail */ }
+          const collectRes = await intelligenceApi.isCollected(id);
+          detail.value.isCollected = collectRes.data.data.isCollected;
+        } catch {
+          /* silent fail */
+        }
       }
     }
   } catch (error) {
-    console.error('获取情报详情失败:', error)
+    console.error("获取情报详情失败:", error);
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 const handleCollect = async () => {
-  const token = localStorage.getItem('accessToken')
+  const token = localStorage.getItem("accessToken");
   if (!token) {
-    message.warning('请先登录')
-    return
+    message.warning("请先登录");
+    return;
   }
 
-  if (!detail.value) return
+  if (!detail.value) return;
 
   try {
-    const res = await intelligenceApi.toggleCollect(detail.value.id)
+    const res = await intelligenceApi.toggleCollect(detail.value.id);
     if (res.data.code === 0) {
-      const collected = res.data.data.collected
-      message.success(collected ? '收藏成功' : '已取消收藏')
+      const collected = res.data.data.collected;
+      message.success(collected ? "收藏成功" : "已取消收藏");
       if (detail.value) {
-        detail.value.isCollected = collected
-        detail.value.collects += collected ? 1 : -1
+        detail.value.isCollected = collected;
+        detail.value.collects += collected ? 1 : -1;
       }
     }
   } catch (error) {
-    console.error('收藏操作失败:', error)
-    message.error('操作失败')
+    console.error("收藏操作失败:", error);
+    message.error("操作失败");
   }
-}
+};
 
 const handleShare = () => {
-  const url = window.location.href
-  navigator.clipboard.writeText(url).then(() => {
-    message.success('链接已复制到剪贴板')
-  }).catch(() => {
-    message.info('分享链接: ' + url)
-  })
-}
+  const url = window.location.href;
+  navigator.clipboard
+    .writeText(url)
+    .then(() => {
+      message.success("链接已复制到剪贴板");
+    })
+    .catch(() => {
+      message.info("分享链接: " + url);
+    });
+};
 
 onMounted(() => {
-  fetchDetail()
-})
+  fetchLevelMap();
+  fetchDetail();
+});
 </script>
 
 <style scoped lang="scss">
@@ -242,12 +263,17 @@ onMounted(() => {
 .detail-header {
   margin-bottom: 32px;
 
+  .detail-tags {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
   .detail-tag {
     display: inline-block;
     padding: 4px 12px;
     border-radius: 4px;
     font-size: 12px;
-    margin-bottom: 16px;
 
     &.launch {
       background: rgba(0, 212, 255, 0.15);
@@ -273,6 +299,15 @@ onMounted(() => {
       background: rgba(255, 107, 53, 0.15);
       color: #ff6b35;
     }
+  }
+
+  .detail-level-tag {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    background: rgba(0, 255, 136, 0.15);
+    color: #00ff88;
   }
 
   h1 {
@@ -319,21 +354,30 @@ onMounted(() => {
   line-height: 1.9;
   margin-bottom: 32px;
 
-  :deep(h1), :deep(h2), :deep(h3) {
+  :deep(h1),
+  :deep(h2),
+  :deep(h3) {
     color: #fff;
     margin-top: 32px;
     margin-bottom: 16px;
   }
 
-  :deep(h1) { font-size: 28px; }
-  :deep(h2) { font-size: 24px; }
-  :deep(h3) { font-size: 20px; }
+  :deep(h1) {
+    font-size: 28px;
+  }
+  :deep(h2) {
+    font-size: 24px;
+  }
+  :deep(h3) {
+    font-size: 20px;
+  }
 
   :deep(p) {
     margin-bottom: 20px;
   }
 
-  :deep(ul), :deep(ol) {
+  :deep(ul),
+  :deep(ol) {
     padding-left: 28px;
     margin-bottom: 20px;
   }
@@ -377,7 +421,8 @@ onMounted(() => {
   }
 }
 
-.analysis-box, .trend-box {
+.analysis-box,
+.trend-box {
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(0, 212, 255, 0.15);
   border-radius: 12px;

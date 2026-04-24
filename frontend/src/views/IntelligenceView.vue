@@ -2,7 +2,7 @@
   <div class="intelligence-view">
     <!-- 顶部 Tab -->
     <div class="intel-header">
-      <h1>航天情报中心</h1>
+      <h1>航天动态中心</h1>
       <p>精选航天领域最新动态，深度解读行业发展趋势</p>
     </div>
 
@@ -25,7 +25,7 @@
           <div v-if="intelligenceList.length === 0 && !loading" class="empty-state">
             <p>暂无情报数据</p>
           </div>
-          
+
           <div
             v-for="item in intelligenceList"
             :key="item.id"
@@ -33,8 +33,13 @@
             @click="handleCardClick(item)"
           >
             <div class="article-main">
-              <div class="article-tag" :class="item.category">
-                {{ getCategoryLabel(item.category) }}
+              <div class="article-tags">
+                <div class="article-tag" :class="item.category">
+                  {{ getCategoryLabel(item.category) }}
+                </div>
+                <div class="article-level-tag">
+                  {{ levelMap[item.level] || item.level }}
+                </div>
               </div>
               <h3>{{ item.title }}</h3>
               <p>{{ item.summary }}</p>
@@ -45,18 +50,16 @@
               </div>
             </div>
             <div class="article-action">
-              <a-button v-if="!item.isLocked" type="primary" ghost>
-                阅读全文
-              </a-button>
+              <a-button v-if="!item.isLocked" type="primary" ghost> 阅读全文 </a-button>
             </div>
           </div>
         </a-spin>
 
         <!-- 分页 -->
         <div class="pagination-wrapper" v-if="total > pageSize">
-          <a-pagination 
-            v-model:current="currentPage" 
-            :total="total" 
+          <a-pagination
+            v-model:current="currentPage"
+            :total="total"
             :pageSize="pageSize"
             @change="handlePageChange"
           />
@@ -83,127 +86,140 @@
             </div>
           </a-spin>
         </div>
-
-        
       </aside>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, onMounted } from "vue";
+import { useRouter } from "vue-router";
 import {
   ClockCircleOutlined,
   UserOutlined,
   EyeOutlined,
   FireOutlined,
-} from '@ant-design/icons-vue'
-import { intelligenceApi, type Intelligence } from '@/api'
+} from "@ant-design/icons-vue";
+import { intelligenceApi, subscriptionApi, type Intelligence } from "@/api";
 
-const router = useRouter()
-const activeTab = ref('all')
-const currentPage = ref(1)
-const pageSize = ref(12)
-const total = ref(0)
-const loading = ref(false)
-const hotLoading = ref(false)
+const router = useRouter();
+const activeTab = ref("all");
+const currentPage = ref(1);
+const pageSize = ref(12);
+const total = ref(0);
+const loading = ref(false);
+const hotLoading = ref(false);
 
-const intelligenceList = ref<Intelligence[]>([])
-const hotList = ref<{ id: number; title: string; views: number }[]>([])
+const intelligenceList = ref<Intelligence[]>([]);
+const hotList = ref<{ id: number; title: string; views: number }[]>([]);
+const levelMap = ref<Record<string, string>>({});
 
 const categoryLabels: Record<string, string> = {
-  launch: '发射任务',
-  satellite: '卫星运行',
-  industry: '行业动态',
-  research: '科研成果',
-  environment: '空间环境',
-}
+  launch: "发射任务",
+  satellite: "卫星运行",
+  industry: "行业动态",
+  research: "科研成果",
+  environment: "空间环境",
+};
 
 const getCategoryLabel = (category: string) => {
-  return categoryLabels[category] || category
-}
+  return categoryLabels[category] || category;
+};
 
 const formatDate = (dateStr: string) => {
-  if (!dateStr) return ''
-  const date = new Date(dateStr)
-  const pad = (n: number) => n.toString().padStart(2, '0')
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`
-}
+  if (!dateStr) return "";
+  const date = new Date(dateStr);
+  const pad = (n: number) => n.toString().padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+};
 
 const formatViews = (views: number) => {
   if (views >= 10000) {
-    return (views / 10000).toFixed(1) + '万'
+    return (views / 10000).toFixed(1) + "万";
   }
-  return views?.toString() || '0'
-}
+  return views?.toString() || "0";
+};
 
 // 获取情报列表
 const fetchIntelligenceList = async () => {
-  loading.value = true
+  loading.value = true;
   try {
     const params: { category?: string; page: number; pageSize: number } = {
       page: currentPage.value,
       pageSize: pageSize.value,
+    };
+    if (activeTab.value !== "all") {
+      params.category = activeTab.value;
     }
-    if (activeTab.value !== 'all') {
-      params.category = activeTab.value
-    }
-    
-    const res = await intelligenceApi.getList(params)
+
+    const res = await intelligenceApi.getList(params);
     if (res.data.code === 0) {
-      intelligenceList.value = res.data.data.list
-      total.value = res.data.data.total
+      intelligenceList.value = res.data.data.list;
+      total.value = res.data.data.total;
     }
   } catch (error) {
-    console.error('获取情报列表失败:', error)
+    console.error("获取情报列表失败:", error);
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 // 获取热门排行
 const fetchHotList = async () => {
-  hotLoading.value = true
+  hotLoading.value = true;
   try {
-    const res = await intelligenceApi.getHotList()
+    const res = await intelligenceApi.getHotList();
     if (res.data.code === 0) {
-      hotList.value = res.data.data
+      hotList.value = res.data.data;
     }
   } catch (error) {
-    console.error('获取热门排行失败:', error)
+    console.error("获取热门排行失败:", error);
   } finally {
-    hotLoading.value = false
+    hotLoading.value = false;
   }
-}
+};
 
 const handleTabChange = () => {
-  currentPage.value = 1
-  fetchIntelligenceList()
-}
+  currentPage.value = 1;
+  fetchIntelligenceList();
+};
 
 const handlePageChange = (page: number) => {
-  currentPage.value = page
-  fetchIntelligenceList()
-}
+  currentPage.value = page;
+  fetchIntelligenceList();
+};
 
 const handleCardClick = (item: Intelligence) => {
   if (item.isLocked) {
-    return
+    return;
   }
-  router.push(`/intelligence/${item.id}`)
-}
+  router.push(`/intelligence/${item.id}`);
+};
 
 const handleHotClick = (id: number) => {
-  router.push(`/intelligence/${id}`)
-}
+  router.push(`/intelligence/${id}`);
+};
 
-
+const fetchLevelMap = async () => {
+  try {
+    const res = await subscriptionApi.getPlans();
+    if (res.data.code === 0) {
+      const map: Record<string, string> = {};
+      for (const item of res.data.data) {
+        map[item.level] = item.levelName;
+      }
+      levelMap.value = map;
+    }
+  } catch (error) {
+    console.error("获取会员等级映射失败:", error);
+  }
+};
 
 onMounted(() => {
-  fetchIntelligenceList()
-  fetchHotList()
-})
+  fetchLevelMap();
+  fetchIntelligenceList();
+  fetchHotList();
+});
 </script>
 
 <style scoped lang="scss">
@@ -255,7 +271,11 @@ onMounted(() => {
       }
 
       &.ant-tabs-tab-active {
-        background: linear-gradient(135deg, rgba(0, 212, 255, 0.2) 0%, rgba(123, 44, 191, 0.2) 100%);
+        background: linear-gradient(
+          135deg,
+          rgba(0, 212, 255, 0.2) 0%,
+          rgba(123, 44, 191, 0.2) 100%
+        );
         border-color: rgba(0, 212, 255, 0.3) !important;
         color: #00d4ff;
       }
@@ -302,12 +322,17 @@ onMounted(() => {
     .article-main {
       flex: 1;
 
+      .article-tags {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+
       .article-tag {
         display: inline-block;
         padding: 4px 12px;
         border-radius: 4px;
         font-size: 12px;
-        margin-bottom: 12px;
 
         &.launch {
           background: rgba(0, 212, 255, 0.15);
@@ -333,6 +358,15 @@ onMounted(() => {
           background: rgba(255, 107, 53, 0.15);
           color: #ff6b35;
         }
+      }
+
+      .article-level-tag {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 4px;
+        font-size: 12px;
+        background: rgba(0, 255, 136, 0.15);
+        color: #00ff88;
       }
 
       h3 {
@@ -487,8 +521,6 @@ onMounted(() => {
     }
   }
 }
-
-
 
 @media (max-width: 1024px) {
   .intel-content {

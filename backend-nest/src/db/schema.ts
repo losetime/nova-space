@@ -104,8 +104,7 @@ export const intelligenceCategory = pgEnum('intelligence_category', [
   'environment',
 ]);
 export const intelligenceLevel = pgEnum('intelligence_level', [
-  'free',
-  'advanced',
+  'basic',
   'professional',
 ]);
 
@@ -433,7 +432,7 @@ export const intelligences = pgTable('intelligences', {
   content: text('content').notNull(),
   cover: varchar('cover', { length: 500 }),
   category: intelligenceCategory('category').notNull().default('launch'),
-  level: intelligenceLevel('level').notNull().default('free'),
+  level: intelligenceLevel('level').notNull().default('basic'),
   views: integer('views').notNull().default(0),
   likes: integer('likes').notNull().default(0),
   collects: integer('collects').notNull().default(0),
