@@ -70,9 +70,56 @@ export function useLocalSatellites() {
     return workerState.value.lastUpdate
   })
 
+  const CACHE_KEY = 'satellite_tle_cache'
+  const CACHE_DURATION = 60 * 60 * 1000 // 1小时
+
+  const getCache = (): { tles: TLEData[]; count: number } | null => {
+    try {
+      const cached = localStorage.getItem(CACHE_KEY)
+      if (!cached) return null
+
+      const { data, timestamp } = JSON.parse(cached)
+      const now = Date.now()
+
+      if (now - timestamp > CACHE_DURATION) {
+        localStorage.removeItem(CACHE_KEY)
+        return null
+      }
+
+      console.log('[LocalSatellites] 使用缓存数据，卫星数量:', data.count)
+      return data
+    } catch {
+      localStorage.removeItem(CACHE_KEY)
+      return null
+    }
+  }
+
+  const setCache = (tleData: { tles: TLEData[]; count: number }) => {
+    try {
+      localStorage.setItem(CACHE_KEY, JSON.stringify({
+        data: tleData,
+        timestamp: Date.now()
+      }))
+      console.log('[LocalSatellites] TLE 数据已缓存，卫星数量:', tleData.count)
+    } catch (e) {
+      console.warn('[LocalSatellites] 缓存写入失败:', e)
+    }
+  }
+
   const loadTLEData = async () => {
     if (state.value.isLoading) return
 
+    // 尝试从缓存读取
+    const cached = getCache()
+    if (cached && cached.tles && cached.tles.length > 0) {
+      initSatellites(cached.tles as TLEData[])
+      state.value.satelliteCount = cached.count
+      state.value.status = 'ready'
+      state.value.isLoading = false
+      return
+    }
+
+    // 缓存不存在或过期，从服务器获取
     state.value.isLoading = true
     state.value.status = 'loading'
     state.value.error = null
@@ -85,6 +132,8 @@ export function useLocalSatellites() {
         initSatellites(tles as TLEData[])
         state.value.satelliteCount = count
         state.value.status = 'ready'
+        // 写入缓存
+        setCache({ tles: tles as TLEData[], count })
       } else {
         state.value.status = 'error'
         state.value.error = '没有可用的卫星数据'
