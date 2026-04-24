@@ -307,7 +307,7 @@
               @click="toggleLeftPanel('filter')"
             >
               <FilterOutlined class="tool-icon" />
-              <span class="tool-text">筛选</span>
+              <span class="tool-text hide-on-mobile">筛选</span>
             </div>
             <div
               class="tool-btn"
@@ -315,7 +315,7 @@
               @click="toggleLeftPanel('satellite-list')"
             >
               <UnorderedListOutlined class="tool-icon" />
-              <span class="tool-text">卫星列表</span>
+              <span class="tool-text hide-on-mobile">卫星列表</span>
             </div>
             <div
               class="tool-btn"
@@ -323,7 +323,7 @@
               @click="handleAdvancedFeatureClick('orbit', 'satellite_orbit')"
             >
               <RocketOutlined class="tool-icon" />
-              <span class="tool-text">轨道预测</span>
+              <span class="tool-text hide-on-mobile">轨道预测</span>
             </div>
             <div
               class="tool-btn"
@@ -331,7 +331,7 @@
               @click="handleAdvancedFeatureClick('transit', 'satellite_passes')"
             >
               <EyeOutlined class="tool-icon" />
-              <span class="tool-text">过境预测</span>
+              <span class="tool-text hide-on-mobile">过境预测</span>
             </div>
             <div
               class="tool-btn"
@@ -339,7 +339,7 @@
               @click="handleAdvancedFeatureClick('sunlight', 'satellite_sunlight')"
             >
               <BulbOutlined class="tool-icon" />
-              <span class="tool-text">日照分析</span>
+              <span class="tool-text hide-on-mobile">日照分析</span>
             </div>
             <div class="tool-divider"></div>
             <a-tooltip title="全屏模式">
@@ -1007,7 +1007,7 @@ const toggleFullscreen = () => {
 // 浮动状态指示器
 .floating-stats {
   position: absolute;
-  top: 20px;
+  bottom: 80px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -1306,7 +1306,7 @@ const toggleFullscreen = () => {
 // 底部功能栏
 .bottom-toolbar {
   position: absolute;
-  bottom: 24px;
+  top: 20px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 100;
@@ -1625,5 +1625,46 @@ const toggleFullscreen = () => {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+// 移动端响应式 - 底部功能栏
+@media (max-width: 768px) {
+  .bottom-toolbar {
+    bottom: 16px;
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    max-width: calc(100vw + 20px);
+  }
+
+  .toolbar-inner {
+    justify-content: space-around;
+    padding: 6px 8px;
+    border-radius: 12px;
+  }
+
+  .tool-btn {
+    padding: 10px;
+
+    &.icon-only {
+      padding: 10px;
+    }
+
+    .tool-text {
+      display: none;
+    }
+
+    .hide-on-mobile {
+      display: none;
+    }
+  }
+
+  .tool-divider {
+    display: none;
+  }
+
+  .floating-stats {
+    display: none;
+  }
 }
 </style>
