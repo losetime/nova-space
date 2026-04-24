@@ -732,7 +732,10 @@ function toggleSection(section: keyof typeof expandedSections.value) {
     status: canViewStatus.value,
   }[section];
 
-  if (!hasPermission) return;
+  if (!hasPermission) {
+    message.warning("登录后可用");
+    return;
+  }
 
   expandedSections.value[section] = !expandedSections.value[section];
 }
@@ -1014,7 +1017,6 @@ const getStatusLabel = (status: string | undefined): string => {
   &.disabled {
     cursor: not-allowed;
     opacity: 0.5;
-    pointer-events: none;
   }
 
   &:hover:not(.disabled) {

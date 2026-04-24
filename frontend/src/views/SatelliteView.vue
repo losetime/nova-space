@@ -426,6 +426,7 @@ import {
   StarOutlined,
   BulbOutlined,
 } from "@ant-design/icons-vue";
+import { message } from "ant-design-vue";
 import SatelliteList from "@/components/SatelliteList.vue";
 import SatelliteDetail from "@/components/SatelliteDetail.vue";
 import OrbitPrediction from "@/components/OrbitPrediction.vue";
@@ -469,12 +470,11 @@ const canUseAdvancedFeature = computed(() => {
 function handleAdvancedFeatureClick(panel: string, featureCode: string) {
   if (!userStore.isLoggedIn) {
     // 提示用户登录
-    window.message?.warning("请先登录后再使用此功能");
+    message.warning("请先登录");
     return;
   }
   if (!userStore.hasFeature(featureCode)) {
-    // 提示用户权限不足
-    window.message?.warning("您的会员等级无法使用此功能，请升级会员");
+    message.warning("升级会员后可用");
     return;
   }
   // 正常切换面板
