@@ -37,7 +37,7 @@
                 <div class="article-tag" :class="item.category">
                   {{ getCategoryLabel(item.category) }}
                 </div>
-                <div class="article-level-tag">
+                <div class="article-level-tag" :class="item.level">
                   {{ levelMap[item.level] || item.level }}
                 </div>
               </div>
@@ -365,8 +365,16 @@ onMounted(() => {
         padding: 4px 12px;
         border-radius: 4px;
         font-size: 12px;
-        background: rgba(0, 255, 136, 0.15);
-        color: #00ff88;
+
+        &.professional {
+          background: rgba(0, 255, 136, 0.15);
+          color: #00ff88;
+        }
+
+        &.basic {
+          background: rgba(255, 255, 255, 0.08);
+          color: rgba(255, 255, 255, 0.5);
+        }
       }
 
       h3 {

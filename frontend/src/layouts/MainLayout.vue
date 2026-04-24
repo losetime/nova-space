@@ -72,7 +72,7 @@
                     <CrownOutlined />
                     会员中心
                   </a-menu-item>
-                  <a-menu-item key="push-subscription">
+                  <a-menu-item v-if="userStore.isVip" key="push-subscription">
                     <BellOutlined />
                     订阅推送
                   </a-menu-item>

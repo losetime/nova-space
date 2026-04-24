@@ -268,7 +268,7 @@
             </div>
 
             <!-- 颜色分类 -->
-            <div class="filter-section">
+            <!-- <div class="filter-section">
               <div class="filter-section-header" @click="toggleFilterSection('color')">
                 <span class="section-title">
                   颜色分类
@@ -286,10 +286,9 @@
                     <RocketOutlined class="option-icon leo" />
                     <span>轨道分类</span>
                   </div>
-                  <!-- 后续可扩展其他分类方式 -->
                 </div>
               </transition>
-            </div>
+            </div> -->
           </div>
         </aside>
       </transition>
@@ -297,6 +296,9 @@
       <!-- 中央可视化区 -->
       <div class="visualization-area">
         <div id="cesium-container" class="cesium-container"></div>
+
+        <!-- 图例 -->
+        <SatelliteLegend />
 
         <!-- 底部功能栏 -->
         <div class="bottom-toolbar">
@@ -433,6 +435,7 @@ import OrbitPrediction from "@/components/OrbitPrediction.vue";
 import PassPrediction from "@/components/PassPrediction.vue";
 import SunlightAnalysis from "@/components/SunlightAnalysis.vue";
 import FlagIcon from "@/components/FlagIcon.vue";
+import SatelliteLegend from "@/components/SatelliteLegend.vue";
 import { useCesium, type ColorSchemeType } from "@/hooks/useCesium";
 import { useLocalSatellites } from "@/hooks/useLocalSatellites";
 import { usePanel } from "@/hooks/usePanel";
@@ -1007,7 +1010,7 @@ const toggleFullscreen = () => {
 // 浮动状态指示器
 .floating-stats {
   position: absolute;
-  bottom: 80px;
+  bottom: 40px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -1116,52 +1119,6 @@ const toggleFullscreen = () => {
 }
 
 // 颜色分类选择卡片（已移动到筛选面板）
-
-// 浮动图例
-.floating-legend {
-  position: absolute;
-  right: 20px;
-  bottom: 80px;
-  background: rgba(12, 12, 20, 0.9);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(0, 212, 255, 0.12);
-  border-radius: 12px;
-  padding: 12px 16px;
-  z-index: 100;
-
-  .legend-title {
-    font-size: 12px;
-    font-weight: 600;
-    color: rgba(255, 255, 255, 0.7);
-    margin-bottom: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-
-  .legend-items {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .legend-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .legend-color {
-    width: 16px;
-    height: 16px;
-    border-radius: 4px;
-    flex-shrink: 0;
-  }
-
-  .legend-label {
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.8);
-  }
-}
 
 // 主内容区
 .main-area {

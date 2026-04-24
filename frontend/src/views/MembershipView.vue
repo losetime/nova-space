@@ -8,6 +8,7 @@
       <header class="page-header">
         <h1 class="title">会员中心</h1>
         <p class="subtitle">解锁专属权益，探索更多航天奥秘</p>
+        <p class="contact-line">会员咨询电话：029-85641930</p>
       </header>
 
       <section v-if="status" class="status-card">
@@ -280,6 +281,12 @@ $color-points: #ffd700;
     font-size: 14px;
     color: $text-gray;
     margin: 0;
+  }
+
+  .contact-line {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.5);
+    margin: 8px 0 0;
   }
 }
 

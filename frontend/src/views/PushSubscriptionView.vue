@@ -46,7 +46,7 @@
             <div class="form-section">
               <h3><SettingOutlined /> 选择推送内容</h3>
               <div class="subscription-options">
-                <div
+                <!-- <div
                   class="option-card"
                   :class="{ active: form.subscribeSpaceWeather }"
                   @click="form.subscribeSpaceWeather = !form.subscribeSpaceWeather"
@@ -61,7 +61,7 @@
                   <div class="option-check">
                     <CheckOutlined v-if="form.subscribeSpaceWeather" />
                   </div>
-                </div>
+                </div> -->
 
                 <div
                   class="option-card"
@@ -184,7 +184,7 @@ const subscription = ref<PushSubscription | null>(null);
 const form = reactive({
   email: "",
   subscribeSpaceWeather: true,
-  subscribeIntelligence: false,
+  subscribeIntelligence: true,
 });
 
 const SUBSCRIPTION_TYPES = {

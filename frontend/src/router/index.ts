@@ -66,13 +66,18 @@ const router = createRouter({
         name: 'milestone',
         component: () => import('@/views/MilestoneView.vue'),
       },
-      {
-        path: 'membership',
-        name: 'membership',
-        component: () => import('@/views/MembershipView.vue'),
-        meta: { requiresAuth: true },
-      },
-    ],
+{
+          path: 'membership',
+          name: 'membership',
+          component: () => import('@/views/MembershipView.vue'),
+          meta: { requiresAuth: true },
+        },
+        {
+          path: '*',
+          name: 'not-found',
+          component: () => import('@/views/NotFoundView.vue'),
+        },
+      ],
   },
     {
       path: '/login',
@@ -101,6 +106,12 @@ router.beforeEach(async (to, _from, next) => {
   // 需要登录的页面
   if (to.meta.requiresAuth && !userStore.isLoggedIn) {
     next({ name: 'login', query: { redirect: to.fullPath } })
+    return
+  }
+
+  // 专业会员专属页面
+  if (to.path === '/push-subscription' && !userStore.isVip) {
+    next({ name: 'not-found' })
     return
   }
 

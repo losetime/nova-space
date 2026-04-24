@@ -179,7 +179,7 @@
             </div>
             <div class="info-item">
               <span class="info-label">雷达截面</span>
-              <span class="info-value">{{ metadata.rcs || "--" }}</span>
+              <span class="info-value">{{ metadata.rcs || "--" }}㎡</span>
             </div>
             <div class="info-item">
               <span class="info-label">配置</span>
