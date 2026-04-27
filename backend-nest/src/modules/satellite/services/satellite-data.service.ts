@@ -50,9 +50,7 @@ export class SatelliteDataService implements OnModuleInit {
       completenessScores.set(entity.noradId, score);
     });
 
-    const tleEntities = await this.db
-      .select()
-      .from(schema.satelliteTle);
+    const tleEntities = await this.db.select().from(schema.satelliteTle);
 
     tleEntities.sort((a, b) => {
       const scoreA = completenessScores.get(a.noradId) ?? 0;
@@ -207,7 +205,9 @@ export class SatelliteDataService implements OnModuleInit {
     const missionCount = new Map<string, number>();
     metadata.forEach((meta, noradId) => {
       if (tleNoradIds.has(noradId)) {
-        const category = meta.mission ? this.categorizeMission(meta.mission) : '其他';
+        const category = meta.mission
+          ? this.categorizeMission(meta.mission)
+          : '其他';
         missionCount.set(category, (missionCount.get(category) || 0) + 1);
       }
     });
@@ -238,9 +238,9 @@ export class SatelliteDataService implements OnModuleInit {
     'Civil Communications': '通信',
     'Defense Communications': '通信',
     'Commercial Communications': '通信',
-    'Communications': '通信',
-    'Telecommunications': '通信',
-    'Broadcasting': '通信',
+    Communications: '通信',
+    Telecommunications: '通信',
+    Broadcasting: '通信',
     'Mobile Communications': '通信',
     'Fixed Satellite Services': '通信',
 
@@ -248,13 +248,13 @@ export class SatelliteDataService implements OnModuleInit {
     'Civil Navigation': '导航',
     'Defense Navigation': '导航',
     'Commercial Navigation': '导航',
-    'Navigation': '导航',
-    'Positioning': '导航',
-    'GNSS': '导航',
-    'GPS': '导航',
-    'GLONASS': '导航',
-    'Galileo': '导航',
-    'BeiDou': '导航',
+    Navigation: '导航',
+    Positioning: '导航',
+    GNSS: '导航',
+    GPS: '导航',
+    GLONASS: '导航',
+    Galileo: '导航',
+    BeiDou: '导航',
 
     // 遥感/对地观测类
     'Civil Imaging': '遥感',
@@ -267,13 +267,13 @@ export class SatelliteDataService implements OnModuleInit {
     'Commercial Remote Sensing': '遥感',
     'Earth Observation': '遥感',
     'Remote Sensing': '遥感',
-    'Imaging': '遥感',
-    'Reconnaissance': '遥感',
-    'Surveillance': '遥感',
-    'Mapping': '遥感',
-    'Cartography': '遥感',
+    Imaging: '遥感',
+    Reconnaissance: '遥感',
+    Surveillance: '遥感',
+    Mapping: '遥感',
+    Cartography: '遥感',
     'Terrain Mapping': '遥感',
-    'Oceanography': '遥感',
+    Oceanography: '遥感',
     'Marine Observation': '遥感',
     'Land Observation': '遥感',
 
@@ -281,10 +281,10 @@ export class SatelliteDataService implements OnModuleInit {
     'Civil Weather': '气象',
     'Defense Weather': '气象',
     'Commercial Weather': '气象',
-    'Weather': '气象',
-    'Meteorological': '气象',
-    'Meteorology': '气象',
-    'Climate': '气象',
+    Weather: '气象',
+    Meteorological: '气象',
+    Meteorology: '气象',
+    Climate: '气象',
     'Climate Research': '气象',
     'Environmental Monitoring': '气象',
 
@@ -295,17 +295,17 @@ export class SatelliteDataService implements OnModuleInit {
     'Scientific Research': '科学',
     'Space Science': '科学',
     'Earth Science': '科学',
-    'Astronomy': '科学',
-    'Astrophysics': '科学',
-    'Geodetic': '科学',
-    'Geodesy': '科学',
-    'Geophysical': '科学',
-    'Geophysics': '科学',
-    'Biological': '科学',
-    'Biology': '科学',
-    'Materials': '科学',
+    Astronomy: '科学',
+    Astrophysics: '科学',
+    Geodetic: '科学',
+    Geodesy: '科学',
+    Geophysical: '科学',
+    Geophysics: '科学',
+    Biological: '科学',
+    Biology: '科学',
+    Materials: '科学',
     'Materials Science': '科学',
-    'Physics': '科学',
+    Physics: '科学',
     'Solar Physics': '科学',
     'Space Physics': '科学',
     'Plasma Physics': '科学',
@@ -316,55 +316,55 @@ export class SatelliteDataService implements OnModuleInit {
     'Technology Demonstration': '技术试验',
     'Civil Experimental': '技术试验',
     'Defense Technology': '技术试验',
-    'Experimental': '技术试验',
-    'Test': '技术试验',
+    Experimental: '技术试验',
+    Test: '技术试验',
     'Technology Development': '技术试验',
-    'Technology': '技术试验',
-    'Demonstration': '技术试验',
-    'Prototype': '技术试验',
-    'Engineering': '技术试验',
+    Technology: '技术试验',
+    Demonstration: '技术试验',
+    Prototype: '技术试验',
+    Engineering: '技术试验',
 
     // 国防军事类
     'Defense Sigint': '国防',
     'Defense Early Warning': '国防',
-    'Defense': '国防',
-    'Military': '国防',
+    Defense: '国防',
+    Military: '国防',
     'Missile Warning': '国防',
     'Nuclear Detection': '国防',
     'Electronic Intelligence': '国防',
     'Signals Intelligence': '国防',
-    'ELINT': '国防',
-    'SIGINT': '国防',
+    ELINT: '国防',
+    SIGINT: '国防',
 
     // 载人航天类
     'Space Station': '载人航天',
-    'Manned': '载人航天',
-    'Crewed': '载人航天',
-    'Cargo': '载人航天',
-    'Supply': '载人航天',
+    Manned: '载人航天',
+    Crewed: '载人航天',
+    Cargo: '载人航天',
+    Supply: '载人航天',
     'Human Spaceflight': '载人航天',
     'Space Tourism': '载人航天',
 
     // 数据中继类
     'Data Relay': '数据中继',
     'Tracking and Data Relay': '数据中继',
-    'TDRS': '数据中继',
+    TDRS: '数据中继',
     'Satellite Inter-satellite Link': '数据中继',
 
     // 其他
     'Civil Education': '教育',
-    'Education': '教育',
-    'Academic': '教育',
-    'Amateur': '业余无线电',
+    Education: '教育',
+    Academic: '教育',
+    Amateur: '业余无线电',
     'Amateur Radio': '业余无线电',
-    'Rescue': '搜救',
+    Rescue: '搜救',
     'Search and Rescue': '搜救',
-    'SAR': '搜救',
-    'Training': '训练',
-    'Calibration': '校准',
-    'Tracking': '跟踪',
+    SAR: '搜救',
+    Training: '训练',
+    Calibration: '校准',
+    Tracking: '跟踪',
     'Space Debris': '碎片',
-    'Debris': '碎片',
+    Debris: '碎片',
   };
 
   private categorizeMission(mission: string): string {

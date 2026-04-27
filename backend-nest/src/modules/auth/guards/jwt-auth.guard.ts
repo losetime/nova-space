@@ -29,7 +29,13 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     return result;
   }
 
-  handleRequest(err: any, user: any, info: any, context: ExecutionContext, status?: any) {
+  handleRequest(
+    err: any,
+    user: any,
+    info: any,
+    context: ExecutionContext,
+    status?: any,
+  ) {
     if (err || !user) {
       return null;
     }
