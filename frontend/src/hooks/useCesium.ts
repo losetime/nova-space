@@ -616,6 +616,18 @@ export function useCesium() {
     orbitPolylines.set(orbitId, polyline);
   };
 
+  // 删除详情轨道（开始预测时调用，之后由调用方重新创建）
+  const removeOrbit = (noradId: string) => {
+    if (!viewer.value || !orbitCollection) return;
+
+    const orbitId = `orbit_${noradId}`;
+    const existingOrbit = orbitPolylines.get(orbitId);
+    if (existingOrbit) {
+      orbitCollection.remove(existingOrbit);
+      orbitPolylines.delete(orbitId);
+    }
+  };
+
   // 显示预测轨道
   const showPredictedOrbit = (
     noradId: string,
@@ -671,6 +683,51 @@ export function useCesium() {
     }
 
     // 不自动飞行，保持相机当前位置
+  };
+
+  // 飞到预测轨道视图（拉远相机，确保能看到整体轨道）
+  const flyToOrbit = (orbitPoints: Array<{ lat: number; lng: number; alt: number }>) => {
+    if (!viewer.value || !orbitPoints.length) return;
+
+    const camera = viewer.value.camera;
+
+    // 计算轨道点的包围球
+    const allPoints = orbitPoints.map((p) =>
+      Cesium.Cartesian3.fromDegrees(p.lng, p.lat, p.alt)
+    );
+    const boundingSphere = Cesium.BoundingSphere.fromPoints(allPoints);
+
+    // 根据包围球半径计算合适的距离（3倍半径确保轨道完整可见）
+    const targetDistance = boundingSphere.radius * 3;
+
+    // 计算当前相机到目标中心的距离
+    const center = boundingSphere.center;
+    const currentDistance = Cesium.Cartesian3.distance(camera.position, center);
+
+    if (targetDistance > currentDistance) {
+      // 需要拉远，使用 camera.flyTo 实现动画效果
+      const currentHeading = camera.heading;
+      const currentPitch = camera.pitch;
+
+      // 计算新位置：沿当前视线方向拉远
+      const direction = new Cesium.Cartesian3();
+      Cesium.Cartesian3.subtract(camera.position, center, direction);
+      Cesium.Cartesian3.normalize(direction, direction);
+
+      const newPosition = new Cesium.Cartesian3();
+      Cesium.Cartesian3.multiplyByScalar(direction, targetDistance, newPosition);
+      Cesium.Cartesian3.add(center, newPosition, newPosition);
+
+      camera.flyTo({
+        destination: newPosition,
+        orientation: {
+          heading: currentHeading,
+          pitch: currentPitch,
+          roll: 0,
+        },
+        duration: 1.5,
+      });
+    }
   };
 
   // 清除预测轨道
@@ -1232,6 +1289,89 @@ export function useCesium() {
     });
   };
 
+  // 飞到指定位置并标记
+  const flyToAndMarkPoint = (
+    position: { lat: number; lng: number; alt: number },
+    pointId?: string,
+    label?: string,
+  ) => {
+    if (!viewer.value) return;
+
+    const { lat, lng, alt } = position;
+    const id = pointId || `mark_point_${Date.now()}`;
+    const labelText = label || "目标点";
+
+    // 清除之前的标记
+    const existingMark = viewer.value.entities.getById(id);
+    if (existingMark) {
+      viewer.value.entities.remove(existingMark);
+    }
+
+    // 飞到该位置（视角与点击详情卫星保持一致）
+    viewer.value.camera.flyTo({
+      destination: Cesium.Cartesian3.fromDegrees(lng, lat, alt + 500000),
+      orientation: {
+        heading: Cesium.Math.toRadians(0),
+        pitch: Cesium.Math.toRadians(-90),
+        roll: 0,
+      },
+      duration: 1.5,
+    });
+
+    // 添加标记点
+    viewer.value.entities.add({
+      id: id,
+      position: Cesium.Cartesian3.fromDegrees(lng, lat, alt),
+      point: {
+        pixelSize: 15,
+        color: Cesium.Color.fromCssColorString("#ff6b6b"),
+        outlineColor: Cesium.Color.WHITE,
+        outlineWidth: 2,
+        heightReference: Cesium.HeightReference.NONE,
+      },
+      label: {
+        text: labelText,
+        font: "12px sans-serif",
+        fillColor: Cesium.Color.WHITE,
+        outlineColor: Cesium.Color.BLACK,
+        outlineWidth: 2,
+        style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+        verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+        pixelOffset: new Cesium.Cartesian2(0, -20),
+        showBackground: true,
+        backgroundColor: Cesium.Color.fromCssColorString("rgba(255, 107, 107, 0.8)"),
+      },
+    });
+  };
+
+  // 清除标记点
+  const clearMarkPoint = (pointId?: string) => {
+    if (!viewer.value) return;
+
+    if (pointId) {
+      // 清除指定标记点
+      const entity = viewer.value.entities.getById(pointId);
+      if (entity) {
+        viewer.value.entities.remove(entity);
+      }
+    } else {
+      // 清除所有标记点（包括轨道点标记和时间位置标记）
+      const idsToRemove: string[] = [];
+      viewer.value.entities.values.forEach((entity) => {
+        const id = entity.id?.toString() || "";
+        if (id.startsWith("mark_point_") || id.startsWith("position_point_")) {
+          idsToRemove.push(id);
+        }
+      });
+      idsToRemove.forEach((id) => {
+        const entity = viewer.value.entities.getById(id);
+        if (entity) {
+          viewer.value.entities.remove(entity);
+        }
+      });
+    }
+  };
+
   // 显示指定卫星标签（选中卫星）
   const showSatelliteLabel = (noradId: string, name?: string) => {
     if (!satelliteRenderer.value) return;
@@ -1344,12 +1484,14 @@ export function useCesium() {
     updateSatellitePosition,
     clearAllSatellites,
     updateOrbit,
+    removeOrbit,
     clearAllOrbits,
     flyToSatellite,
     showSatelliteLabel,
     hideSatelliteLabel,
     cleanupSatellites,
     showPredictedOrbit,
+    flyToOrbit,
     clearPredictedOrbit,
     clearAllPredictedOrbits,
     showPassTrajectory,
@@ -1364,6 +1506,8 @@ export function useCesium() {
     setAnimationProgress,
     setAnimationSpeed,
     flyToPosition,
+    flyToAndMarkPoint,
+    clearMarkPoint,
     destroyCesium,
     setOnSatelliteClick,
     setColorScheme,

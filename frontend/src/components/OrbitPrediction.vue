@@ -187,6 +187,9 @@ const emit = defineEmits<{
   (e: 'showOrbit', points: Array<{ lat: number; lng: number; alt: number }>): void
   (e: 'flyTo', position: { lat: number; lng: number; alt: number }): void
   (e: 'clearOrbit', noradId: string): void
+  (e: 'removeOrbit', noradId: string): void
+  (e: 'restoreOrbit', noradId: string): void
+  (e: 'markPoint', position: { lat: number; lng: number; alt: number }, label: string): void
 }>()
 
 // 重置预测数据
@@ -235,6 +238,8 @@ const formatTime = (time: string | undefined) => {
 const handleClearOrbit = () => {
   if (props.satellite) {
     emit('clearOrbit', props.satellite.noradId)
+    // 恢复详情轨道
+    emit('restoreOrbit', props.satellite.noradId)
     prediction.value = null
   }
 }
@@ -248,6 +253,10 @@ const handlePredict = async () => {
   positionResult.value = null
   showPoints.value = false
   showAllPoints.value = false
+
+  // 删除详情轨道（避免干扰预测轨道显示）
+  emit('removeOrbit', props.satellite.noradId)
+  // 清除之前的预测轨道
   emit('clearOrbit', props.satellite.noradId)
 
   loading.value = true
@@ -287,6 +296,8 @@ const handlePositionPredict = async () => {
 
     if (res.data.code === 0) {
       positionResult.value = res.data.data
+      // 标记这个位置
+      emit('markPoint', res.data.data.position, positionTime.value.format('MM-DD HH:mm'))
     } else {
       message.error(res.data.message || '位置预测失败')
     }

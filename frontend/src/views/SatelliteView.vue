@@ -389,6 +389,9 @@
               @show-orbit="handleShowPredictedOrbit"
               @fly-to="handleFlyToPosition"
               @clear-orbit="handleClearOrbit"
+              @remove-orbit="handleRemoveOrbit"
+              @restore-orbit="handleRestoreOrbit"
+              @mark-point="handleMarkPoint"
             />
           </div>
 
@@ -744,13 +747,15 @@ const handleSatelliteClick = (noradId: string, _name: string) => {
 const handleShowPredictedOrbit = (points: Array<{ lat: number; lng: number; alt: number }>) => {
   if (cesium && selectedSatellite.value) {
     cesium.showPredictedOrbit(selectedSatellite.value.noradId, points);
+    // 飞行到能看到整体轨道的位置
+    cesium.flyToOrbit(points);
   }
 };
 
 // 飞到指定位置
 const handleFlyToPosition = (position: { lat: number; lng: number; alt: number }) => {
   if (cesium) {
-    cesium.flyToPosition(position);
+    cesium.flyToAndMarkPoint(position);
   }
 };
 
@@ -758,6 +763,36 @@ const handleFlyToPosition = (position: { lat: number; lng: number; alt: number }
 const handleClearOrbit = (noradId: string) => {
   if (cesium && noradId) {
     cesium.clearPredictedOrbit(noradId);
+    // 清除标记点
+    cesium.clearMarkPoint();
+  }
+};
+
+// 删除详情轨道（开始预测时）
+const handleRemoveOrbit = (noradId: string) => {
+  if (cesium && noradId) {
+    cesium.removeOrbit(noradId);
+  }
+};
+
+// 恢复详情轨道（清除预测时，重新获取最新数据）
+const handleRestoreOrbit = async (noradId: string) => {
+  if (!cesium || !selectedSatellite.value) return;
+
+  try {
+    const res = await satelliteApi.getDetail(noradId);
+    if (res.data.code === 0 && res.data.data.orbit?.orbitPoints) {
+      cesium.updateOrbit(noradId, res.data.data.orbit.orbitPoints);
+    }
+  } catch (error) {
+    console.error("恢复详情轨道失败:", error);
+  }
+};
+
+// 标记指定时间位置
+const handleMarkPoint = (position: { lat: number; lng: number; alt: number }, label: string) => {
+  if (cesium) {
+    cesium.flyToAndMarkPoint(position, `position_point_${Date.now()}`, label);
   }
 };
 
@@ -882,6 +917,18 @@ watch(filteredSatellites, (newSatellites) => {
 // 监听颜色分类变化
 watch(colorScheme, (newScheme) => {
   cesium.setColorScheme?.(newScheme);
+});
+
+// 监听右侧面板变化，当轨道预测面板关闭时恢复详情轨道
+watch(activeRightPanel, (newPanel, oldPanel) => {
+  if (oldPanel === 'orbit' && newPanel !== 'orbit' && selectedSatellite.value) {
+    // 清除预测轨道
+    cesium.clearPredictedOrbit(selectedSatellite.value.noradId);
+    // 清除标记点
+    cesium.clearMarkPoint();
+    // 恢复详情轨道
+    handleRestoreOrbit(selectedSatellite.value.noradId);
+  }
 });
 
 // 获取用户收藏的卫星
