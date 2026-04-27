@@ -13,7 +13,7 @@ interface Satellite {
 }
 
 // 颜色分类类型
-export type ColorSchemeType = 'orbit' | 'mission' | 'country' | 'objectType';
+export type ColorSchemeType = "orbit" | "mission" | "country" | "objectType";
 
 // 图例项
 export interface LegendItem {
@@ -23,26 +23,26 @@ export interface LegendItem {
 
 // 轨道类型颜色配置
 const ORBIT_COLORS: Record<string, { color: Cesium.Color; label: string }> = {
-  LEO: { color: Cesium.Color.fromCssColorString('#00ff88'), label: '低轨 LEO' },
-  MEO: { color: Cesium.Color.fromCssColorString('#00d4ff'), label: '中轨 MEO' },
-  GEO: { color: Cesium.Color.fromCssColorString('#b366e8'), label: '地球同步 GEO' },
-  HEO: { color: Cesium.Color.fromCssColorString('#ffaa00'), label: '大椭圆轨道' },
+  LEO: { color: Cesium.Color.fromCssColorString("#00ff88"), label: "低轨 LEO" },
+  MEO: { color: Cesium.Color.fromCssColorString("#00d4ff"), label: "中轨 MEO" },
+  GEO: { color: Cesium.Color.fromCssColorString("#b366e8"), label: "地球同步 GEO" },
+  HEO: { color: Cesium.Color.fromCssColorString("#ffaa00"), label: "大椭圆轨道" },
 };
 
 // 轨道类型判断（基于高度，单位：米）
 function getOrbitType(alt: number): string {
-  if (alt < 2000000) return 'LEO';      // < 2000 km
-  if (alt < 35000000) return 'MEO';     // 2000-35000 km
-  if (alt < 45000000) return 'GEO';     // 35000-45000 km
-  return 'HEO';
+  if (alt < 2000000) return "LEO"; // < 2000 km
+  if (alt < 35000000) return "MEO"; // 2000-35000 km
+  if (alt < 45000000) return "GEO"; // 35000-45000 km
+  return "HEO";
 }
 
 // 轨道类型图例
 const ORBIT_LEGEND: LegendItem[] = [
-  { color: '#00ff88', label: '低轨 LEO (<2000km)' },
-  { color: '#00d4ff', label: '中轨 MEO (2000-35000km)' },
-  { color: '#b366e8', label: '地球同步 GEO (35000-45000km)' },
-  { color: '#ffaa00', label: '大椭圆轨道 HEO (>45000km)' },
+  { color: "#00ff88", label: "低轨 LEO (<2000km)" },
+  { color: "#00d4ff", label: "中轨 MEO (2000-35000km)" },
+  { color: "#b366e8", label: "地球同步 GEO (35000-45000km)" },
+  { color: "#ffaa00", label: "大椭圆轨道 HEO (>45000km)" },
 ];
 
 // 卫星渲染器 - PointPrimitive + Model 混合方案
@@ -55,8 +55,10 @@ class SatelliteRenderer {
   private selectedNoradId: string | null = null;
   private selectedModel: Cesium.Entity | null = null;
   private selectedLabel: Cesium.Label | null = null;
-  private satellitePositions: Map<string, { name: string; position: Cesium.Cartesian3; alt: number }> =
-    new Map();
+  private satellitePositions: Map<
+    string,
+    { name: string; position: Cesium.Cartesian3; alt: number }
+  > = new Map();
   private clickHandler: Cesium.ScreenSpaceEventHandler | null = null;
   private onSatelliteClick: ((noradId: string, name: string) => void) | null = null;
 
@@ -72,7 +74,7 @@ class SatelliteRenderer {
   private readonly HOVER_COLOR = Cesium.Color.fromCssColorString("#00ffff");
 
   // 颜色分类
-  private colorScheme: ColorSchemeType = 'orbit';
+  private colorScheme: ColorSchemeType = "orbit";
 
   // 轨道类型缓存（避免每次更新都重新计算）
   private orbitTypeCache: Map<string, string> = new Map();
@@ -142,18 +144,15 @@ class SatelliteRenderer {
 
     this.hoverHandler = new Cesium.ScreenSpaceEventHandler(this.viewer.scene.canvas);
 
-    this.hoverHandler.setInputAction(
-      (movement: Cesium.ScreenSpaceEventHandler.MotionEvent) => {
-        this.lastMousePosition = movement.endPosition;
-        this.hoverDelayFrameCount = 0;
+    this.hoverHandler.setInputAction((movement: Cesium.ScreenSpaceEventHandler.MotionEvent) => {
+      this.lastMousePosition = movement.endPosition;
+      this.hoverDelayFrameCount = 0;
 
-        if (!this.hoverCheckScheduled) {
-          this.hoverCheckScheduled = true;
-          requestAnimationFrame(this.checkHover);
-        }
-      },
-      Cesium.ScreenSpaceEventType.MOUSE_MOVE
-    );
+      if (!this.hoverCheckScheduled) {
+        this.hoverCheckScheduled = true;
+        requestAnimationFrame(this.checkHover);
+      }
+    }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
   }
 
   // 延迟检测：等待鼠标停下来
@@ -210,9 +209,9 @@ class SatelliteRenderer {
         outlineColor: Cesium.Color.BLACK,
         outlineWidth: 2,
         style: Cesium.LabelStyle.FILL_AND_OUTLINE,
-        verticalOrigin: Cesium.VerticalOrigin.TOP,  // 标签顶部对齐卫星
-        horizontalOrigin: Cesium.HorizontalOrigin.CENTER,  // 水平居中
-        pixelOffset: new Cesium.Cartesian2(0, 15),  // 向下偏移
+        verticalOrigin: Cesium.VerticalOrigin.TOP, // 标签顶部对齐卫星
+        horizontalOrigin: Cesium.HorizontalOrigin.CENTER, // 水平居中
+        pixelOffset: new Cesium.Cartesian2(0, 15), // 向下偏移
         showBackground: true,
         backgroundColor: Cesium.Color.fromCssColorString("rgba(0, 0, 0, 0.7)"),
       });
@@ -226,7 +225,9 @@ class SatelliteRenderer {
       point.pixelSize = this.DEFAULT_PIXEL_SIZE;
       // 恢复原来的轨道类型颜色（从缓存获取）
       const orbitType = this.orbitTypeCache.get(noradId);
-      const color = orbitType ? ORBIT_COLORS[orbitType]?.color || this.DEFAULT_COLOR : this.DEFAULT_COLOR;
+      const color = orbitType
+        ? ORBIT_COLORS[orbitType]?.color || this.DEFAULT_COLOR
+        : this.DEFAULT_COLOR;
       point.color = color;
       // 移除发光效果
       point.outlineWidth = 0;
@@ -244,7 +245,7 @@ class SatelliteRenderer {
     const currentIds = new Set(satellites.map((s) => s.noradId));
 
     // 1. 同步删除不在新列表中的卫星（数量通常很少）
-    this.lastSatelliteIds.forEach(id => {
+    this.lastSatelliteIds.forEach((id) => {
       if (!currentIds.has(id)) {
         const point = this.pointMap.get(id);
         if (point && this.pointCollection) {
@@ -299,7 +300,11 @@ class SatelliteRenderer {
           this.pointMap.set(sat.noradId, point);
         }
 
-        this.satellitePositions.set(sat.noradId, { name: sat.name, position, alt: sat.position.alt });
+        this.satellitePositions.set(sat.noradId, {
+          name: sat.name,
+          position,
+          alt: sat.position.alt,
+        });
       }
 
       currentIndex = endIndex;
@@ -317,7 +322,7 @@ class SatelliteRenderer {
 
   // 获取卫星颜色（基于分类方式）
   private getSatelliteColor(sat: Satellite): Cesium.Color {
-    if (this.colorScheme === 'orbit') {
+    if (this.colorScheme === "orbit") {
       const orbitType = getOrbitType(sat.position.alt);
       return ORBIT_COLORS[orbitType]?.color || this.DEFAULT_COLOR;
     }
@@ -347,7 +352,7 @@ class SatelliteRenderer {
 
   // 获取当前分类的图例
   getLegend(): LegendItem[] {
-    if (this.colorScheme === 'orbit') {
+    if (this.colorScheme === "orbit") {
       return ORBIT_LEGEND;
     }
     // 其他分类方式的图例
@@ -426,7 +431,9 @@ class SatelliteRenderer {
         point.pixelSize = this.DEFAULT_PIXEL_SIZE;
         // 恢复原来的轨道类型颜色（从缓存获取）
         const orbitType = this.orbitTypeCache.get(this.selectedNoradId);
-        const color = orbitType ? ORBIT_COLORS[orbitType]?.color || this.DEFAULT_COLOR : this.DEFAULT_COLOR;
+        const color = orbitType
+          ? ORBIT_COLORS[orbitType]?.color || this.DEFAULT_COLOR
+          : this.DEFAULT_COLOR;
         point.color = color;
         // 移除发光效果
         point.outlineWidth = 0;
@@ -601,8 +608,8 @@ export function useCesium() {
       show: true,
       positions: positions,
       width: 1,
-      material: Cesium.Material.fromType('Color', {
-        color: Cesium.Color.CYAN
+      material: Cesium.Material.fromType("Color", {
+        color: Cesium.Color.CYAN,
       }),
     });
 
@@ -722,7 +729,7 @@ export function useCesium() {
     noradId: string,
     orbitPoints: Array<{ lat: number; lng: number; alt: number; timestamp?: string }>,
     observer: { lat: number; lng: number; alt: number },
-    _passInfo?: { startTime: string; endTime: string; maxElevationTime?: string }
+    _passInfo?: { startTime: string; endTime: string; maxElevationTime?: string },
   ) => {
     if (!viewer.value || !orbitPoints.length) return;
 
@@ -741,19 +748,20 @@ export function useCesium() {
 
       // 颜色根据位置渐变：开始(蓝) -> 中间(青) -> 结束(蓝)
       const ratio = index / (orbitPoints.length - 1);
-      const color = ratio < 0.5
-        ? Cesium.Color.lerp(
-            Cesium.Color.fromCssColorString("#3b82f6"), // 蓝色
-            Cesium.Color.fromCssColorString("#00ff88"), // 青绿色
-            ratio * 2,
-            new Cesium.Color()
-          )
-        : Cesium.Color.lerp(
-            Cesium.Color.fromCssColorString("#00ff88"),
-            Cesium.Color.fromCssColorString("#3b82f6"),
-            (ratio - 0.5) * 2,
-            new Cesium.Color()
-          );
+      const color =
+        ratio < 0.5
+          ? Cesium.Color.lerp(
+              Cesium.Color.fromCssColorString("#3b82f6"), // 蓝色
+              Cesium.Color.fromCssColorString("#00ff88"), // 青绿色
+              ratio * 2,
+              new Cesium.Color(),
+            )
+          : Cesium.Color.lerp(
+              Cesium.Color.fromCssColorString("#00ff88"),
+              Cesium.Color.fromCssColorString("#3b82f6"),
+              (ratio - 0.5) * 2,
+              new Cesium.Color(),
+            );
       colors.push(color);
     });
 
@@ -785,8 +793,8 @@ export function useCesium() {
         heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
       },
       label: {
-        text: '观察者',
-        font: '14px sans-serif',
+        text: "观察者",
+        font: "14px sans-serif",
         fillColor: Cesium.Color.WHITE,
         outlineColor: Cesium.Color.BLACK,
         outlineWidth: 2,
@@ -806,24 +814,24 @@ export function useCesium() {
         viewer.value.entities.add({
           id: startId,
           position: Cesium.Cartesian3.fromDegrees(startPoint.lng, startPoint.lat, startPoint.alt),
-        point: {
-          pixelSize: 8,
-          color: Cesium.Color.fromCssColorString("#3b82f6"),
-          outlineColor: Cesium.Color.WHITE,
-          outlineWidth: 1,
-        },
-        label: {
-          text: '开始',
-          font: '12px sans-serif',
-          fillColor: Cesium.Color.fromCssColorString("#3b82f6"),
-          outlineColor: Cesium.Color.BLACK,
-          outlineWidth: 1,
-          style: Cesium.LabelStyle.FILL_AND_OUTLINE,
-          verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
-          pixelOffset: new Cesium.Cartesian2(0, -10),
-        },
-      });
-      passTrajectoryEntities.set(startId, true);
+          point: {
+            pixelSize: 8,
+            color: Cesium.Color.fromCssColorString("#3b82f6"),
+            outlineColor: Cesium.Color.WHITE,
+            outlineWidth: 1,
+          },
+          label: {
+            text: "开始",
+            font: "12px sans-serif",
+            fillColor: Cesium.Color.fromCssColorString("#3b82f6"),
+            outlineColor: Cesium.Color.BLACK,
+            outlineWidth: 1,
+            style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+            verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+            pixelOffset: new Cesium.Cartesian2(0, -10),
+          },
+        });
+        passTrajectoryEntities.set(startId, true);
       }
     }
 
@@ -835,24 +843,24 @@ export function useCesium() {
         viewer.value.entities.add({
           id: endId,
           position: Cesium.Cartesian3.fromDegrees(endPoint.lng, endPoint.lat, endPoint.alt),
-        point: {
-          pixelSize: 8,
-          color: Cesium.Color.fromCssColorString("#3b82f6"),
-          outlineColor: Cesium.Color.WHITE,
-          outlineWidth: 1,
-        },
-        label: {
-          text: '结束',
-          font: '12px sans-serif',
-          fillColor: Cesium.Color.fromCssColorString("#3b82f6"),
-          outlineColor: Cesium.Color.BLACK,
-          outlineWidth: 1,
-          style: Cesium.LabelStyle.FILL_AND_OUTLINE,
-          verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
-          pixelOffset: new Cesium.Cartesian2(0, -10),
-        },
-      });
-      passTrajectoryEntities.set(endId, true);
+          point: {
+            pixelSize: 8,
+            color: Cesium.Color.fromCssColorString("#3b82f6"),
+            outlineColor: Cesium.Color.WHITE,
+            outlineWidth: 1,
+          },
+          label: {
+            text: "结束",
+            font: "12px sans-serif",
+            fillColor: Cesium.Color.fromCssColorString("#3b82f6"),
+            outlineColor: Cesium.Color.BLACK,
+            outlineWidth: 1,
+            style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+            verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+            pixelOffset: new Cesium.Cartesian2(0, -10),
+          },
+        });
+        passTrajectoryEntities.set(endId, true);
       }
     }
 
@@ -865,24 +873,24 @@ export function useCesium() {
         viewer.value.entities.add({
           id: maxId,
           position: Cesium.Cartesian3.fromDegrees(maxPoint.lng, maxPoint.lat, maxPoint.alt),
-        point: {
-          pixelSize: 10,
-          color: Cesium.Color.fromCssColorString("#00ff88"),
-          outlineColor: Cesium.Color.WHITE,
-          outlineWidth: 2,
-        },
-        label: {
-          text: '最高点',
-          font: '12px sans-serif',
-          fillColor: Cesium.Color.fromCssColorString("#00ff88"),
-          outlineColor: Cesium.Color.BLACK,
-          outlineWidth: 1,
-          style: Cesium.LabelStyle.FILL_AND_OUTLINE,
-          verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
-          pixelOffset: new Cesium.Cartesian2(0, -10),
-        },
-      });
-      passTrajectoryEntities.set(maxId, true);
+          point: {
+            pixelSize: 10,
+            color: Cesium.Color.fromCssColorString("#00ff88"),
+            outlineColor: Cesium.Color.WHITE,
+            outlineWidth: 2,
+          },
+          label: {
+            text: "最高点",
+            font: "12px sans-serif",
+            fillColor: Cesium.Color.fromCssColorString("#00ff88"),
+            outlineColor: Cesium.Color.BLACK,
+            outlineWidth: 1,
+            style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+            verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+            pixelOffset: new Cesium.Cartesian2(0, -10),
+          },
+        });
+        passTrajectoryEntities.set(maxId, true);
       }
     }
 
@@ -890,7 +898,7 @@ export function useCesium() {
     // 计算所有点的包围球，然后调整相机位置
     const allPoints = [
       Cesium.Cartesian3.fromDegrees(observer.lng, observer.lat, observer.alt),
-      ...orbitPoints.map(p => Cesium.Cartesian3.fromDegrees(p.lng, p.lat, p.alt))
+      ...orbitPoints.map((p) => Cesium.Cartesian3.fromDegrees(p.lng, p.lat, p.alt)),
     ];
 
     // 计算包围球，确保所有内容可见
@@ -899,9 +907,9 @@ export function useCesium() {
     // 飞到包围球，确保所有内容可见
     viewer.value.camera.flyToBoundingSphere(boundingSphere, {
       offset: new Cesium.HeadingPitchRange(
-        Cesium.Math.toRadians(0),   // heading: 正北
+        Cesium.Math.toRadians(0), // heading: 正北
         Cesium.Math.toRadians(-45), // pitch: 俯视45度
-        boundingSphere.radius * 3   // range: 3倍包围球半径，确保地球可见
+        boundingSphere.radius * 3, // range: 3倍包围球半径，确保地球可见
       ),
       duration: 1.5,
     });
@@ -929,7 +937,7 @@ export function useCesium() {
   interface OrbitSegment {
     startTime: string;
     endTime: string;
-    status: 'sunlight' | 'eclipse';
+    status: "sunlight" | "eclipse";
     points: Array<{ lat: number; lng: number; alt: number }>;
   }
 
@@ -943,19 +951,19 @@ export function useCesium() {
     clearSunlightOrbit(noradId);
 
     // 日照段颜色：金黄色
-    const sunlightColor = Cesium.Color.fromCssColorString('#fbbf24');
+    const sunlightColor = Cesium.Color.fromCssColorString("#fbbf24");
     // 阴影段颜色：深蓝色
-    const eclipseColor = Cesium.Color.fromCssColorString('#3b82f6');
+    const eclipseColor = Cesium.Color.fromCssColorString("#3b82f6");
 
     // 按段绘制轨道
     segments.forEach((segment, index) => {
       if (!segment.points || segment.points.length < 2) return;
 
       const positions = segment.points.map((p) =>
-        Cesium.Cartesian3.fromDegrees(p.lng, p.lat, p.alt)
+        Cesium.Cartesian3.fromDegrees(p.lng, p.lat, p.alt),
       );
 
-      const color = segment.status === 'sunlight' ? sunlightColor : eclipseColor;
+      const color = segment.status === "sunlight" ? sunlightColor : eclipseColor;
 
       // 添加轨道线
       const orbitId = `sunlight_orbit_${noradId}_${index}`;
@@ -1011,7 +1019,7 @@ export function useCesium() {
 
     // 从 Map 中移除
     const keysToRemove = Array.from(sunlightOrbitEntities.keys()).filter((k) =>
-      k.includes(noradId)
+      k.includes(noradId),
     );
     keysToRemove.forEach((k) => sunlightOrbitEntities.delete(k));
   };
@@ -1040,9 +1048,9 @@ export function useCesium() {
   const animationState = ref({
     isPlaying: false,
     progress: 0, // 0-100
-    currentTime: '',
-    startTime: '',
-    endTime: '',
+    currentTime: "",
+    startTime: "",
+    endTime: "",
     duration: 0, // 秒
   });
 
@@ -1056,7 +1064,7 @@ export function useCesium() {
     orbitPoints: Array<{ lat: number; lng: number; alt: number; timestamp?: string }>,
     options?: {
       speed?: number; // 播放速度倍数，默认 60（1秒=1分钟）
-    }
+    },
   ) => {
     if (!viewer.value || !orbitPoints.length) return;
 
@@ -1133,8 +1141,9 @@ export function useCesium() {
       if (!viewer.value) return;
 
       const currentTime = viewer.value.clock.currentTime;
-      const progress = Cesium.JulianDate.secondsDifference(currentTime, startTime) /
-                       Cesium.JulianDate.secondsDifference(stopTime, startTime);
+      const progress =
+        Cesium.JulianDate.secondsDifference(currentTime, startTime) /
+        Cesium.JulianDate.secondsDifference(stopTime, startTime);
 
       animationState.value.progress = Math.max(0, Math.min(100, progress * 100));
       animationState.value.currentTime = Cesium.JulianDate.toIso8601(currentTime);
@@ -1242,7 +1251,7 @@ export function useCesium() {
     satelliteRenderer.value.deselectSatellite();
   };
 
-  // 切换视角到卫星
+  // 切换视角到卫星（最近距离查看）
   const flyToSatellite = (satellite: Satellite) => {
     if (!satellite || !viewer.value) return;
 
@@ -1255,7 +1264,7 @@ export function useCesium() {
     const destination = Cesium.Cartesian3.fromDegrees(
       position.lng,
       position.lat,
-      position.alt + 20000000,
+      position.alt + 500000,
     );
 
     viewer.value.camera.flyTo({
@@ -1265,7 +1274,7 @@ export function useCesium() {
         pitch: Cesium.Math.toRadians(-90),
         roll: 0,
       },
-      duration: 2.0,
+      duration: 1.5,
     });
   };
 
