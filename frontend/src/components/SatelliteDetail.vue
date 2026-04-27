@@ -119,7 +119,7 @@
         <div v-show="expandedSections.technical" class="section-content">
           <div class="info-grid">
             <div class="info-item">
-              <span class="info-label">发射质量</span>
+              <span class="info-label">起飞质量</span>
               <span class="info-value">{{
                 metadata.launchMass ? `${metadata.launchMass.toLocaleString()} kg` : "--"
               }}</span>
@@ -222,7 +222,7 @@
               </div>
               <div class="param-content">
                 <label>经度</label>
-                <span class="param-value">{{ formatNumber(satellite.position.lng, 4) }}°</span>
+                <span class="param-value">{{ formatLongitude(satellite.position.lng) }}</span>
               </div>
             </div>
             <div class="param-card">
@@ -231,7 +231,7 @@
               </div>
               <div class="param-content">
                 <label>纬度</label>
-                <span class="param-value">{{ formatNumber(satellite.position.lat, 4) }}°</span>
+                <span class="param-value">{{ formatLatitude(satellite.position.lat) }}</span>
               </div>
             </div>
             <div class="param-card">
@@ -836,6 +836,18 @@ const getOrbitClass = (alt: number): string => {
 
 const getCountryName = (code: string): string => {
   return COUNTRY_NAMES[code] || code;
+};
+
+const formatLatitude = (lat: number): string => {
+  if (lat > 0) return `${lat.toFixed(4)}°北`;
+  if (lat < 0) return `${Math.abs(lat).toFixed(4)}°南`;
+  return `0.0000°`;
+};
+
+const formatLongitude = (lng: number): string => {
+  if (lng > 0) return `${lng.toFixed(4)}°东`;
+  if (lng < 0) return `${Math.abs(lng).toFixed(4)}°西`;
+  return `0.0000°`;
 };
 
 const getLaunchSiteName = (code: string): string => {
