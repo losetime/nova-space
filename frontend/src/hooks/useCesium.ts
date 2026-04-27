@@ -951,23 +951,37 @@ export function useCesium() {
       }
     }
 
-    // 6. 飞到轨迹视图（确保地球和轨迹都可见）
-    // 计算所有点的包围球，然后调整相机位置
+    // 6. 飞到轨迹视图（保持当前视角，只拉远确保能看到整体）
     const allPoints = [
       Cesium.Cartesian3.fromDegrees(observer.lng, observer.lat, observer.alt),
       ...orbitPoints.map((p) => Cesium.Cartesian3.fromDegrees(p.lng, p.lat, p.alt)),
     ];
 
-    // 计算包围球，确保所有内容可见
     const boundingSphere = Cesium.BoundingSphere.fromPoints(allPoints);
+    const camera = viewer.value.camera;
+    const currentHeading = camera.heading;
+    const currentPitch = camera.pitch;
 
-    // 飞到包围球，确保所有内容可见
-    viewer.value.camera.flyToBoundingSphere(boundingSphere, {
-      offset: new Cesium.HeadingPitchRange(
-        Cesium.Math.toRadians(0), // heading: 正北
-        Cesium.Math.toRadians(-45), // pitch: 俯视45度
-        boundingSphere.radius * 3, // range: 3倍包围球半径，确保地球可见
-      ),
+    // 计算目标距离
+    const targetDistance = boundingSphere.radius * 3;
+
+    // 计算新位置：沿当前视线方向拉远
+    const center = boundingSphere.center;
+    const direction = new Cesium.Cartesian3();
+    Cesium.Cartesian3.subtract(camera.position, center, direction);
+    Cesium.Cartesian3.normalize(direction, direction);
+
+    const newPosition = new Cesium.Cartesian3();
+    Cesium.Cartesian3.multiplyByScalar(direction, targetDistance, newPosition);
+    Cesium.Cartesian3.add(center, newPosition, newPosition);
+
+    camera.flyTo({
+      destination: newPosition,
+      orientation: {
+        heading: currentHeading,
+        pitch: currentPitch,
+        roll: 0,
+      },
       duration: 1.5,
     });
   };

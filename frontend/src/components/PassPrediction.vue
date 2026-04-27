@@ -259,6 +259,8 @@ const emit = defineEmits<{
     endTime: string
     observer: { lat: number; lng: number; alt: number }
   }]
+  'remove-orbit': [noradId: string]
+  'restore-orbit': [noradId: string]
 }>()
 
 // 选中的过境索引
@@ -348,6 +350,9 @@ const selectCity = (city: typeof presetCities[0]) => {
 // 开始预测
 const handlePredict = async () => {
   if (!props.satellite || !isValidLocation.value) return
+
+  // 删除详情轨道（避免干扰）
+  emit('remove-orbit', props.satellite.noradId)
 
   loading.value = true
   try {

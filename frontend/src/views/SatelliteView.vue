@@ -402,6 +402,8 @@
               :satellite="selectedSatellite"
               @show-trajectory="handleShowPassTrajectory"
               @play-animation="handlePlayPassAnimation"
+              @remove-orbit="handleRemoveOrbit"
+              @restore-orbit="handleRestoreOrbit"
             />
           </div>
 
@@ -919,13 +921,24 @@ watch(colorScheme, (newScheme) => {
   cesium.setColorScheme?.(newScheme);
 });
 
-// 监听右侧面板变化，当轨道预测面板关闭时恢复详情轨道
+// 监听右侧面板变化，当轨道预测或过境预测面板关闭时恢复详情轨道
 watch(activeRightPanel, (newPanel, oldPanel) => {
-  if (oldPanel === 'orbit' && newPanel !== 'orbit' && selectedSatellite.value) {
+  if (!selectedSatellite.value) return;
+
+  if (oldPanel === 'orbit' && newPanel !== 'orbit') {
     // 清除预测轨道
     cesium.clearPredictedOrbit(selectedSatellite.value.noradId);
     // 清除标记点
     cesium.clearMarkPoint();
+    // 恢复详情轨道
+    handleRestoreOrbit(selectedSatellite.value.noradId);
+  }
+
+  if (oldPanel === 'transit' && newPanel !== 'transit') {
+    // 清除过境轨迹
+    cesium.clearPassTrajectory();
+    // 停止过境动画
+    cesium.stopPassAnimation();
     // 恢复详情轨道
     handleRestoreOrbit(selectedSatellite.value.noradId);
   }
