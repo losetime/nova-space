@@ -298,6 +298,13 @@ export interface QuizStats {
   streak: number
 }
 
+// 每日问答响应
+export interface DailyQuizResponse {
+  quiz: Quiz | null
+  hasAnsweredToday: boolean
+  previousAnswer?: { selectedIndex: number; isCorrect: boolean }
+}
+
 // 科普 API
 export const educationApi = {
   // 获取文章列表
@@ -328,7 +335,7 @@ export const educationApi = {
     api.get<ApiResponse<{ isLiked: boolean }>>(`/education/articles/${id}/liked`),
 
   // 获取每日问答
-  getDailyQuiz: () => api.get<ApiResponse<Quiz>>('/education/quiz/daily'),
+  getDailyQuiz: () => api.get<ApiResponse<DailyQuizResponse>>('/education/quiz/daily'),
 
   // 提交答案
   submitAnswer: (data: { quizId: number; selectedIndex: number }) =>

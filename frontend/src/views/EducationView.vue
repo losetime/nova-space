@@ -102,28 +102,24 @@
           <a-spin />
         </div>
 
-        <!-- 已答完今日题目 -->
-        <div v-else-if="!currentQuiz" class="quiz-done">
-          <CheckCircleOutlined class="done-icon" />
-          <p>今日问答已完成</p>
-          <p class="done-sub">明天再来挑战吧！</p>
-        </div>
-
         <!-- 答题卡片 -->
-        <div v-else class="quiz-card">
+        <div v-if="quizData?.quiz" class="quiz-card">
+          <div v-if="quizData.hasAnsweredToday" class="quiz-answered-hint">
+            <CheckCircleOutlined /> 今日已作答
+          </div>
           <div class="quiz-question">
             <span class="question-label">问题：</span>
-            <p>{{ currentQuiz.question }}</p>
+            <p>{{ quizData.quiz.question }}</p>
           </div>
           <div class="quiz-options">
             <a-button
-              v-for="(option, index) in currentQuiz.options"
+              v-for="(option, index) in quizData.quiz.options"
               :key="index"
               block
               class="quiz-option"
               :class="{
                 selected: selectedOption === index,
-                correct: showResult && index === currentQuiz.correctIndex,
+                correct: showResult && index === quizData.quiz.correctIndex,
                 wrong: showResult && selectedOption === index && !quizResult?.isCorrect,
               }"
               :disabled="showResult"
@@ -162,7 +158,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, shallowRef } from "vue";
+import { ref, onMounted, computed } from "vue";
 import {
   RocketOutlined,
   ExperimentOutlined,
@@ -177,7 +173,7 @@ import {
 } from "@ant-design/icons-vue";
 import { message } from "ant-design-vue";
 import { emitter } from "@/utils/emitter";
-import { educationApi, type Article, type Quiz, type QuizResult, type QuizStats } from "@/api";
+import { educationApi, type Article, type DailyQuizResponse, type QuizResult, type QuizStats } from "@/api";
 import { useUserStore } from "@/stores/user";
 import { getFullImageUrl } from "@/utils/image-url";
 
@@ -201,7 +197,7 @@ const pageSize = 12;
 const total = ref(0);
 
 const quizLoading = ref(false);
-const currentQuiz = ref<Quiz | null>(null);
+const quizData = ref<DailyQuizResponse | null>(null);
 const selectedOption = ref<number | null>(null);
 const showResult = ref(false);
 const submitting = ref(false);
@@ -238,8 +234,20 @@ const loadDailyQuiz = async () => {
       educationApi.getDailyQuiz(),
       educationApi.getQuizStats(),
     ]);
-    currentQuiz.value = quizRes.data.data;
+    quizData.value = quizRes.data.data;
     quizStats.value = statsRes.data.data;
+
+    // 如果今日已作答，自动显示答题结果状态
+    if (quizData.value?.hasAnsweredToday && quizData.value?.previousAnswer) {
+      selectedOption.value = quizData.value.previousAnswer.selectedIndex;
+      quizResult.value = {
+        isCorrect: quizData.value.previousAnswer.isCorrect,
+        correctIndex: quizData.value.quiz?.correctIndex || 0,
+        explanation: quizData.value.quiz?.explanation || '',
+        pointsEarned: quizData.value.previousAnswer.isCorrect ? (quizData.value.quiz?.points || 0) : 0,
+      };
+      showResult.value = true;
+    }
   } catch (error) {
     console.error("加载问答失败:", error);
   } finally {
@@ -270,12 +278,12 @@ const selectOption = (index: number) => {
 
 // 提交答案
 const submitAnswer = async () => {
-  if (selectedOption.value === null || !currentQuiz.value) return;
+  if (selectedOption.value === null || !quizData.value?.quiz) return;
 
   submitting.value = true;
   try {
     const res = await educationApi.submitAnswer({
-      quizId: currentQuiz.value.id,
+      quizId: quizData.value.quiz.id,
       selectedIndex: selectedOption.value,
     });
     quizResult.value = res.data.data;
@@ -590,6 +598,23 @@ onMounted(() => {
         font-size: 14px;
         margin-top: 8px;
       }
+    }
+  }
+
+  .quiz-answered-hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: rgba(82, 196, 26, 0.15);
+    border: 1px solid rgba(82, 196, 26, 0.3);
+    border-radius: 20px;
+    color: #52c41a;
+    font-size: 13px;
+    margin-bottom: 16px;
+
+    :deep(.anticon) {
+      font-size: 14px;
     }
   }
 

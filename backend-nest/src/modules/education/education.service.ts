@@ -92,7 +92,11 @@ export class EducationService {
     return article;
   }
 
-  async getDailyQuiz(userId: string): Promise<schema.Quiz | null> {
+  async getDailyQuiz(userId: string): Promise<{
+    quiz: schema.Quiz | null;
+    hasAnsweredToday: boolean;
+    previousAnswer?: { selectedIndex: number; isCorrect: boolean };
+  }> {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -106,17 +110,35 @@ export class EducationService {
         ),
       );
 
+    let quiz: schema.Quiz | null = null;
+
     if (answeredToday) {
-      return null;
+      // 如果已作答，返回用户实际回答的那道题
+      const [answeredQuiz] = await this.db
+        .select()
+        .from(schema.educationQuizzes)
+        .where(eq(schema.educationQuizzes.id, answeredToday.quizId));
+      quiz = answeredQuiz || null;
+    } else {
+      // 未作答，随机获取一道题
+      const [randomQuiz] = await this.db
+        .select()
+        .from(schema.educationQuizzes)
+        .orderBy(sql`RANDOM()`)
+        .limit(1);
+      quiz = randomQuiz || null;
     }
 
-    const [quiz] = await this.db
-      .select()
-      .from(schema.educationQuizzes)
-      .orderBy(sql`RANDOM()`)
-      .limit(1);
-
-    return quiz || null;
+    return {
+      quiz,
+      hasAnsweredToday: !!answeredToday,
+      previousAnswer: answeredToday
+        ? {
+            selectedIndex: answeredToday.selectedIndex,
+            isCorrect: answeredToday.isCorrect,
+          }
+        : undefined,
+    };
   }
 
   async submitAnswer(
