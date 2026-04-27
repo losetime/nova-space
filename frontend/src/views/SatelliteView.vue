@@ -45,8 +45,15 @@
             </a-button>
           </div>
           <SatelliteList
-            :satellites="filteredSatellites"
+            :satellites="satellites"
             :selected-satellite="selectedSatellite"
+            :countries="countries"
+            :missions="missions"
+            :favorited-ids="favoritedIds"
+            v-model:filter-type="filterType"
+            v-model:selected-country="selectedCountry"
+            v-model:selected-mission="selectedMission"
+            v-model:favorite-filter="favoriteFilter"
             @select-satellite="handleSelectSatellite"
           />
         </aside>
@@ -444,10 +451,10 @@ import { satelliteApi } from "@/api";
 import { useUserStore } from "@/stores/user";
 import { COUNTRY_NAMES, MISSION_CATEGORIES } from "@/constants/satellite";
 
-const filterType = ref("all");
-const selectedCountry = ref("");
-const selectedMission = ref("");
-const favoriteFilter = ref<"all" | "favorited" | "unfavorited">("all");
+const filterType = ref<string | null>(null);
+const selectedCountry = ref<string | null>(null);
+const selectedMission = ref<string | null>(null);
+const favoriteFilter = ref<string | null>(null);
 const loading = ref(true);
 const userStore = useUserStore();
 
@@ -531,25 +538,25 @@ const getCountryName = (code: string): string => {
 };
 
 // 轨道类型标签（与列表格式一致）
-const getOrbitTypeLabel = (type: string): string => {
+const getOrbitTypeLabel = (type: string | null): string => {
+  if (!type) return "全部轨道";
   const labels: Record<string, string> = {
-    all: "全部",
     leo: "低轨(LEO)",
     meo: "中轨(MEO)",
     geo: "地球同步(GEO)",
     heo: "大椭圆轨道(HEO)",
   };
-  return labels[type] || "";
+  return labels[type] || "全部轨道";
 };
 
 // 收藏筛选标签
-const getFavoriteLabel = (type: string): string => {
+const getFavoriteLabel = (type: string | null): string => {
+  if (!type) return "全部";
   const labels: Record<string, string> = {
-    all: "全部",
     favorited: "已收藏",
     unfavorited: "未收藏",
   };
-  return labels[type] || "";
+  return labels[type] || "全部";
 };
 
 // 颜色分类标签
@@ -564,7 +571,7 @@ const getColorSchemeLabel = (scheme: ColorSchemeType): string => {
 };
 
 // 获取国家选择标签文本（不含国旗）
-const getCountryLabel = (code: string): string => {
+const getCountryLabel = (code: string | null): string => {
   if (!code) return "全部";
   const country = countries.value.find((c) => c.code === code);
   const count = country ? country.count : 0;
@@ -572,7 +579,7 @@ const getCountryLabel = (code: string): string => {
 };
 
 // 获取任务选择标签文本
-const getMissionLabel = (mission: string): string => {
+const getMissionLabel = (mission: string | null): string => {
   if (!mission) return "全部";
   const missionItem = missions.value.find((m) => m.name === mission);
   const count = missionItem ? missionItem.count : 0;
@@ -624,7 +631,7 @@ const filteredSatellites = computed(() => {
   let result = satellites.value;
 
   // 按轨道类型筛选（alt 单位是米）
-  if (filterType.value !== "all") {
+  if (filterType.value) {
     result = result.filter((sat) => {
       const alt = sat.position.alt;
       if (filterType.value === "leo") return alt < 2000000; // < 2000 km

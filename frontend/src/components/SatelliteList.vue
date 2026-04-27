@@ -16,12 +16,24 @@
           </div>
         </transition>
       </div>
+      <SatelliteFilters
+        v-if="showFilters"
+        v-model:filter-type="filterType"
+        v-model:selected-country="selectedCountry"
+        v-model:selected-mission="selectedMission"
+        v-model:favorite-filter="favoriteFilter"
+        :countries="props.countries"
+        :missions="props.missions"
+      />
       <div class="search-meta">
         <span class="result-count">
           <span class="count">{{ filteredSatellites.length }}</span>
           <span class="divider">/</span>
           <span class="total">{{ satellites.length }}</span>
         </span>
+        <button class="filter-toggle-btn" @click="showFilters = !showFilters">
+          {{ showFilters ? "取消" : "更多筛选" }}
+        </button>
       </div>
     </div>
 
@@ -81,28 +93,110 @@ import {
   ArrowUpOutlined,
 } from "@ant-design/icons-vue";
 import type { Satellite } from "@/hooks/useLocalSatellites";
+import SatelliteFilters from "./SatelliteFilters.vue";
+import { MISSION_CATEGORIES } from "@/constants/satellite";
+interface Country {
+  code: string;
+  count: number;
+}
+
+interface Mission {
+  name: string;
+  count: number;
+}
 
 interface Props {
   satellites: Satellite[];
   selectedSatellite: Satellite | null;
-  filterType?: string;
-  filterCountry?: string;
+  countries?: Country[];
+  missions?: Mission[];
+  favoritedIds?: Set<string>;
+  filterType?: string | null;
+  selectedCountry?: string | null;
+  selectedMission?: string | null;
+  favoriteFilter?: string | null;
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  filterType: "all",
-  filterCountry: "",
+  countries: () => [],
+  missions: () => [],
+  favoritedIds: () => new Set(),
+  filterType: null,
+  selectedCountry: null,
+  selectedMission: null,
+  favoriteFilter: null,
 });
-defineEmits<{
+
+const emit = defineEmits<{
   "select-satellite": [satellite: Satellite];
+  "update:filterType": [value: string | null];
+  "update:selectedCountry": [value: string | null];
+  "update:selectedMission": [value: string | null];
+  "update:favoriteFilter": [value: string | null];
 }>();
 
+const filterType = computed({
+  get: () => props.filterType,
+  set: (val) => emit("update:filterType", val),
+});
+
+const selectedCountry = computed({
+  get: () => props.selectedCountry,
+  set: (val) => emit("update:selectedCountry", val),
+});
+
+const selectedMission = computed({
+  get: () => props.selectedMission,
+  set: (val) => emit("update:selectedMission", val),
+});
+
+const favoriteFilter = computed({
+  get: () => props.favoriteFilter,
+  set: (val) => emit("update:favoriteFilter", val),
+});
+
 const searchQuery = ref("");
+const showFilters = ref(false);
 
 const filteredSatellites = computed(() => {
   let result = props.satellites;
 
-  // 按搜索关键词过滤
+  // 按轨道类型筛选
+  if (filterType.value) {
+    result = result.filter((sat) => {
+      const alt = sat.position.alt;
+      if (filterType.value === "leo") return alt < 2000000;
+      if (filterType.value === "meo") return alt >= 2000000 && alt < 35000000;
+      if (filterType.value === "geo") return alt >= 35000000 && alt < 45000000;
+      if (filterType.value === "heo") return alt >= 45000000;
+      return true;
+    });
+  }
+
+  // 按国家筛选
+  if (selectedCountry.value) {
+    result = result.filter((sat) => sat.countryCode === selectedCountry.value);
+  }
+
+  // 按任务筛选
+  if (selectedMission.value) {
+    result = result.filter((sat) => {
+      const categorizeMission = (mission: string | undefined): string => {
+        if (!mission) return "其他";
+        return MISSION_CATEGORIES[mission] || "其他";
+      };
+      return categorizeMission(sat.mission) === selectedMission.value;
+    });
+  }
+
+  // 按收藏筛选
+  if (favoriteFilter.value === "favorited") {
+    result = result.filter((sat) => props.favoritedIds?.has(sat.noradId));
+  } else if (favoriteFilter.value === "unfavorited") {
+    result = result.filter((sat) => !props.favoritedIds?.has(sat.noradId));
+  }
+
+  // 按搜索关键词筛选
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase();
     result = result.filter(
@@ -226,7 +320,8 @@ const formatAlt = (alt: number): string => {
 
 .search-meta {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
   margin-top: 10px;
 
   .result-count {
@@ -246,6 +341,23 @@ const formatAlt = (alt: number): string => {
 
     .total {
       color: rgba(255, 255, 255, 0.5);
+    }
+  }
+
+  .filter-toggle-btn {
+    padding: 4px 12px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.7);
+    background: rgba(0, 212, 255, 0.08);
+    border: 1px solid rgba(0, 212, 255, 0.2);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover {
+      color: #00d4ff;
+      background: rgba(0, 212, 255, 0.12);
+      border-color: rgba(0, 212, 255, 0.35);
     }
   }
 }

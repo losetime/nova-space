@@ -1,0 +1,272 @@
+<template>
+  <div class="satellite-filters">
+    <a-select
+      v-model:value="localFilterType"
+      class="filter-select"
+      :dropdown-match-select-width="false"
+      placeholder="轨道类型"
+      allow-clear
+      @change="emit('update:filterType', $event)"
+    >
+      <a-select-option value="leo">低轨 (LEO)</a-select-option>
+      <a-select-option value="meo">中轨 (MEO)</a-select-option>
+      <a-select-option value="geo">地球同步 (GEO)</a-select-option>
+      <a-select-option value="heo">大椭圆轨道 (HEO)</a-select-option>
+    </a-select>
+
+    <a-select
+      v-model:value="localSelectedCountry"
+      class="filter-select"
+      :dropdown-match-select-width="false"
+      placeholder="国家/地区"
+      allow-clear
+      @change="emit('update:selectedCountry', $event)"
+    >
+      <a-select-option v-for="country in countries" :key="country.code" :value="country.code">
+        <div class="country-option">
+          <FlagIcon
+            v-if="country.code"
+            :code="country.code"
+            :country-name="getCountryName(country.code)"
+            class="flag-icon"
+          />
+          <span class="country-name">{{ getCountryName(country.code) }}</span>
+          <!-- <span class="country-count">({{ country.count }})</span> -->
+        </div>
+      </a-select-option>
+    </a-select>
+
+    <a-select
+      v-model:value="localSelectedMission"
+      class="filter-select"
+      :dropdown-match-select-width="false"
+      placeholder="任务分类"
+      allow-clear
+      @change="emit('update:selectedMission', $event)"
+    >
+      <a-select-option v-for="mission in missions" :key="mission.name" :value="mission.name">
+        <div class="mission-option">
+          <span class="mission-name">{{ mission.name }}</span>
+          <!-- <span class="mission-count">({{ mission.count }})</span> -->
+        </div>
+      </a-select-option>
+    </a-select>
+
+    <a-select
+      v-model:value="localFavoriteFilter"
+      class="filter-select"
+      :dropdown-match-select-width="false"
+      placeholder="收藏状态"
+      allow-clear
+      @change="emit('update:favoriteFilter', $event)"
+    >
+      <a-select-option value="favorited">已收藏</a-select-option>
+      <a-select-option value="unfavorited">未收藏</a-select-option>
+    </a-select>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, watch } from "vue";
+import FlagIcon from "./FlagIcon.vue";
+import { COUNTRY_NAMES } from "@/constants/satellite";
+
+interface Country {
+  code: string;
+  count: number;
+}
+
+interface Mission {
+  name: string;
+  count: number;
+}
+
+interface Props {
+  filterType: string | null;
+  selectedCountry: string | null;
+  selectedMission: string | null;
+  favoriteFilter: string | null;
+  countries: Country[];
+  missions: Mission[];
+}
+
+const props = defineProps<Props>();
+
+const emit = defineEmits<{
+  "update:filterType": [value: string | null];
+  "update:selectedCountry": [value: string | null];
+  "update:selectedMission": [value: string | null];
+  "update:favoriteFilter": [value: string | null];
+}>();
+
+const localFilterType = ref<string | null>(props.filterType);
+const localSelectedCountry = ref<string | null>(props.selectedCountry);
+const localSelectedMission = ref<string | null>(props.selectedMission);
+const localFavoriteFilter = ref<string | null>(props.favoriteFilter);
+
+watch(
+  () => props.filterType,
+  (val) => {
+    localFilterType.value = val;
+  },
+);
+watch(
+  () => props.selectedCountry,
+  (val) => {
+    localSelectedCountry.value = val;
+  },
+);
+watch(
+  () => props.selectedMission,
+  (val) => {
+    localSelectedMission.value = val;
+  },
+);
+watch(
+  () => props.favoriteFilter,
+  (val) => {
+    localFavoriteFilter.value = val;
+  },
+);
+
+const getCountryName = (code: string): string => {
+  return COUNTRY_NAMES[code] || code;
+};
+</script>
+
+<style scoped lang="scss">
+.satellite-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.filter-select {
+  width: 100%;
+
+  :deep(.ant-select-selector) {
+    width: 100%;
+    height: 41px !important;
+    padding: 0 52px 0 14px !important;
+    background: rgba(0, 212, 255, 0.04) !important;
+    border: 1px solid rgba(0, 212, 255, 0.12) !important;
+    border-radius: 14px !important;
+    box-shadow: none !important;
+
+    &:hover {
+      border-color: rgba(0, 212, 255, 0.25) !important;
+    }
+  }
+
+  :deep(.ant-select-selection-search) {
+    inset-inline-start: 14px;
+  }
+
+  :deep(.ant-select-selection-search-input) {
+    height: 39px !important;
+    background: transparent !important;
+    color: #fff !important;
+    font-size: 13px !important;
+  }
+
+  :deep(.ant-select-selection-item) {
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 13px;
+    line-height: 39px !important;
+    padding-inline-end: 0 !important;
+  }
+
+  :deep(.ant-select-selection-placeholder) {
+    color: rgba(255, 255, 255, 0.3);
+    font-size: 13px;
+    line-height: 39px !important;
+    padding-inline-end: 0 !important;
+  }
+
+  :deep(.ant-select-arrow) {
+    color: rgba(255, 255, 255, 0.35);
+    right: 14px;
+    top: 50% !important;
+    transform: translateY(-50%);
+    margin-top: 0;
+  }
+
+  :deep(.ant-select-clear) {
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    margin-top: 0;
+    color: rgba(255, 255, 255, 0.4);
+    background: transparent;
+
+    &:hover {
+      color: rgba(255, 255, 255, 0.65);
+      background: transparent;
+    }
+  }
+
+  &.ant-select-focused {
+    :deep(.ant-select-selector) {
+      border-color: #00d4ff !important;
+      box-shadow:
+        0 0 0 3px rgba(0, 212, 255, 0.1),
+        0 0 20px rgba(0, 212, 255, 0.1) !important;
+    }
+  }
+
+  :deep(.ant-select-dropdown) {
+    background: rgba(16, 24, 40, 0.95);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(0, 212, 255, 0.15);
+    border-radius: 12px;
+    padding: 6px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  }
+
+  :deep(.ant-select-item) {
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 13px;
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin: 2px 0;
+    min-height: 36px;
+    line-height: 20px !important;
+
+    &:hover {
+      background: rgba(0, 212, 255, 0.08);
+    }
+  }
+
+  :deep(.ant-select-item-option-selected) {
+    background: rgba(0, 212, 255, 0.15) !important;
+    font-weight: 500;
+  }
+
+  :deep(.ant-select-item-option-active) {
+    background: rgba(0, 212, 255, 0.08) !important;
+  }
+}
+
+.country-option,
+.mission-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  .flag-icon {
+    font-size: 14px;
+  }
+
+  .country-name,
+  .mission-name {
+    flex: 1;
+  }
+
+  .country-count,
+  .mission-count {
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 12px;
+  }
+}
+</style>
