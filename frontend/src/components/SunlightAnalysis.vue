@@ -153,6 +153,8 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'showSunlightOrbit', segments: OrbitSegment[]): void
   (e: 'clearSunlightOrbit', noradId: string): void
+  (e: 'remove-orbit', noradId: string): void
+  (e: 'restore-orbit', noradId: string): void
 }>()
 
 // 重置分析数据
@@ -232,6 +234,9 @@ const fetchCurrentStatus = async () => {
 // 开始分析
 const handleAnalyze = async () => {
   if (!props.satellite) return
+
+  // 删除详情轨道（避免干扰）
+  emit('remove-orbit', props.satellite.noradId)
 
   // 清除之前的分析结果
   analysis.value = null

@@ -1026,6 +1026,9 @@ export function useCesium() {
     // 阴影段颜色：深蓝色
     const eclipseColor = Cesium.Color.fromCssColorString("#3b82f6");
 
+    // 收集所有轨道点用于计算包围球
+    const allPoints: Cesium.Cartesian3[] = [];
+
     // 按段绘制轨道
     segments.forEach((segment, index) => {
       if (!segment.points || segment.points.length < 2) return;
@@ -1033,6 +1036,9 @@ export function useCesium() {
       const positions = segment.points.map((p) =>
         Cesium.Cartesian3.fromDegrees(p.lng, p.lat, p.alt),
       );
+
+      // 收集点用于包围球计算
+      allPoints.push(...positions);
 
       const color = segment.status === "sunlight" ? sunlightColor : eclipseColor;
 
@@ -1071,6 +1077,34 @@ export function useCesium() {
 
     // 启用地球光照效果
     viewer.value.scene.globe.enableLighting = true;
+
+    // 飞到日照轨道视图（保持当前视角，只拉远确保能看到整体）
+    if (allPoints.length > 0) {
+      const boundingSphere = Cesium.BoundingSphere.fromPoints(allPoints);
+      const camera = viewer.value.camera;
+      const currentHeading = camera.heading;
+      const currentPitch = camera.pitch;
+      const targetDistance = boundingSphere.radius * 3;
+
+      const center = boundingSphere.center;
+      const direction = new Cesium.Cartesian3();
+      Cesium.Cartesian3.subtract(camera.position, center, direction);
+      Cesium.Cartesian3.normalize(direction, direction);
+
+      const newPosition = new Cesium.Cartesian3();
+      Cesium.Cartesian3.multiplyByScalar(direction, targetDistance, newPosition);
+      Cesium.Cartesian3.add(center, newPosition, newPosition);
+
+      camera.flyTo({
+        destination: newPosition,
+        orientation: {
+          heading: currentHeading,
+          pitch: currentPitch,
+          roll: 0,
+        },
+        duration: 1.5,
+      });
+    }
   };
 
   /**
@@ -1093,6 +1127,9 @@ export function useCesium() {
       k.includes(noradId),
     );
     keysToRemove.forEach((k) => sunlightOrbitEntities.delete(k));
+
+    // 关闭地球光照效果
+    viewer.value.scene.globe.enableLighting = false;
   };
 
   /**

@@ -414,6 +414,8 @@
               :satellite="selectedSatellite"
               @show-sunlight-orbit="handleShowSunlightOrbit"
               @clear-sunlight-orbit="handleClearSunlightOrbit"
+              @remove-orbit="handleRemoveOrbit"
+              @restore-orbit="handleRestoreOrbit"
             />
           </div>
         </aside>
@@ -939,6 +941,13 @@ watch(activeRightPanel, (newPanel, oldPanel) => {
     cesium.clearPassTrajectory();
     // 停止过境动画
     cesium.stopPassAnimation();
+    // 恢复详情轨道
+    handleRestoreOrbit(selectedSatellite.value.noradId);
+  }
+
+  if (oldPanel === 'sunlight' && newPanel !== 'sunlight') {
+    // 清除日照轨道
+    cesium.clearSunlightOrbit(selectedSatellite.value.noradId);
     // 恢复详情轨道
     handleRestoreOrbit(selectedSatellite.value.noradId);
   }
