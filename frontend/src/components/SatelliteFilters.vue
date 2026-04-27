@@ -40,7 +40,7 @@
       v-model:value="localSelectedMission"
       class="filter-select"
       :dropdown-match-select-width="false"
-      placeholder="任务分类"
+      placeholder="用途分类"
       allow-clear
       @change="emit('update:selectedMission', $event)"
     >

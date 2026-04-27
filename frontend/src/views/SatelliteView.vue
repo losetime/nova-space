@@ -123,7 +123,7 @@
                     <span class="country-name"
                       >{{ getCountryName(country.code) }}({{ country.code }})</span
                     >
-                    <span class="country-count">{{ country.count }}</span>
+                    <!-- <span class="country-count">{{ country.count }}</span> -->
                   </div>
                   <div v-if="filteredCountries.length === 0 && countrySearch" class="no-result">
                     未找到匹配的国家
@@ -194,7 +194,7 @@
             <div class="filter-section">
               <div class="filter-section-header" @click="toggleFilterSection('mission')">
                 <span class="section-title">
-                  任务分类
+                  用途分类
                   <span class="selected-tag">{{ getMissionLabel(selectedMission) }}</span>
                 </span>
                 <DownOutlined :class="['expand-icon', { expanded: expandedSections.mission }]" />
@@ -225,7 +225,7 @@
                     @click="selectedMission = mission.name"
                   >
                     <span class="option-name">{{ mission.name }}</span>
-                    <span class="option-count">{{ mission.count }}</span>
+                    <!-- <span class="option-count">{{ mission.count }}</span> -->
                   </div>
                   <div v-if="filteredMissions.length === 0 && missionSearch" class="no-result">
                     未找到匹配的任务
@@ -573,17 +573,17 @@ const getColorSchemeLabel = (scheme: ColorSchemeType): string => {
 // 获取国家选择标签文本（不含国旗）
 const getCountryLabel = (code: string | null): string => {
   if (!code) return "全部";
-  const country = countries.value.find((c) => c.code === code);
-  const count = country ? country.count : 0;
-  return `${getCountryName(code)}(${code}) ${count}`;
+  // const country = countries.value.find((c) => c.code === code);
+  // const count = country ? country.count : 0;
+  return `${getCountryName(code)}(${code})`;
 };
 
 // 获取任务选择标签文本
 const getMissionLabel = (mission: string | null): string => {
   if (!mission) return "全部";
-  const missionItem = missions.value.find((m) => m.name === mission);
-  const count = missionItem ? missionItem.count : 0;
-  return `${mission} ${count}`;
+  // const missionItem = missions.value.find((m) => m.name === mission);
+  // const count = missionItem ? missionItem.count : 0;
+  return `${mission}`;
 };
 
 // 切换筛选区域展开/折叠（同时关闭其他区域）
