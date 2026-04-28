@@ -4,7 +4,7 @@
  */
 
 // 从环境变量获取 MinIO 基础 URL
-const MINIO_BASE_URL = import.meta.env.VITE_MINIO_BASE_URL || 'https://space.nwbd.net'
+const MINIO_BASE_URL = import.meta.env.VITE_MINIO_BASE_URL || "https://space.nuoweibd.com";
 
 /**
  * 获取完整图片 URL
@@ -12,13 +12,13 @@ const MINIO_BASE_URL = import.meta.env.VITE_MINIO_BASE_URL || 'https://space.nwb
  * @returns 完整 URL
  */
 export function getFullImageUrl(url: string | undefined | null): string {
-  if (!url) return ''
+  if (!url) return "";
 
   // MinIO 相对路径 -> 拼接 HTTPS 域名 URL
-  if (url.startsWith('/minio/')) {
-    return `${MINIO_BASE_URL}${url}`
+  if (url.startsWith("/minio/")) {
+    return `${MINIO_BASE_URL}${url}`;
   }
 
   // 其他 URL（外链图片等） -> 不处理
-  return url
+  return url;
 }
