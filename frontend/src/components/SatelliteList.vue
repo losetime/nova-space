@@ -43,7 +43,7 @@
         <div
           v-for="{ data: satellite } in list"
           :key="satellite.noradId"
-          :class="['satellite-item', { active: selectedSatellite?.noradId === satellite.noradId }]"
+          :class="['satellite-item', { active: selectedSatellite?.noradId === satellite.noradId, error: satellite.status === 'error' }]"
           @click="$emit('select-satellite', satellite)"
         >
           <!-- 卫星图标 -->
@@ -59,13 +59,18 @@
               <span class="sat-id">#{{ satellite.noradId }}</span>
             </div>
             <div class="sat-meta">
-              <span :class="['orbit-badge', getOrbitClass(satellite.position.alt)]">
-                {{ getOrbitType(satellite.position.alt) }}
-              </span>
-              <span class="alt-value">
-                <ArrowUpOutlined class="alt-icon" />
-                {{ formatAlt(satellite.position.alt) }} km
-              </span>
+              <template v-if="satellite.status === 'error'">
+                <span class="orbit-badge error-badge">数据异常</span>
+              </template>
+              <template v-else>
+                <span :class="['orbit-badge', getOrbitClass(satellite.position?.alt ?? 0)]">
+                  {{ getOrbitType(satellite.position?.alt ?? 0) }}
+                </span>
+                <span class="alt-value">
+                  <ArrowUpOutlined class="alt-icon" />
+                  {{ formatAlt(satellite.position?.alt ?? 0) }} km
+                </span>
+              </template>
             </div>
           </div>
         </div>
@@ -161,10 +166,11 @@ const showFilters = ref(false);
 const filteredSatellites = computed(() => {
   let result = props.satellites;
 
-  // 按轨道类型筛选
+  // 按轨道类型筛选（排除status为error的，因为没有位置数据）
   if (filterType.value) {
     result = result.filter((sat) => {
-      const alt = sat.position.alt;
+      if (sat.status === 'error') return false;
+      const alt = sat.position?.alt ?? 0;
       if (filterType.value === "leo") return alt < 2000000;
       if (filterType.value === "meo") return alt >= 2000000 && alt < 35000000;
       if (filterType.value === "geo") return alt >= 35000000 && alt < 45000000;
@@ -442,6 +448,19 @@ const formatAlt = (alt: number): string => {
       box-shadow: 0 0 15px rgba(0, 212, 255, 0.8);
     }
   }
+
+  &.error {
+    opacity: 0.6;
+
+    .sat-dot {
+      background: #ff4d4d;
+      animation: none;
+    }
+
+    .orbit-ring {
+      border-color: rgba(255, 77, 77, 0.3);
+    }
+  }
 }
 
 // 卫星图标
@@ -553,6 +572,11 @@ const formatAlt = (alt: number): string => {
     &.geo {
       background: rgba(123, 44, 191, 0.12);
       color: #b366e8;
+    }
+
+    &.error-badge {
+      background: rgba(255, 77, 77, 0.12);
+      color: #ff4d4d;
     }
   }
 

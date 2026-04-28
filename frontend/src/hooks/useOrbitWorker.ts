@@ -12,7 +12,7 @@ export interface OrbitWorkerState {
 
 export function useOrbitWorker() {
   const worker = shallowRef<Worker | null>(null)
-  const metadata = shallowRef<Record<string, SatelliteMetadata>>({})
+  const metadata = shallowRef<Record<string, SatelliteMetadata | null>>({})
   const positions = shallowRef<PositionData[]>([])
   const state = ref<OrbitWorkerState>({
     isReady: false,

@@ -41,7 +41,8 @@ export function useSatelliteFilters(options: SatelliteFiltersOptions = {}) {
 
     if (filterType.value) {
       result = result.filter((sat) => {
-        const alt = sat.position.alt;
+        if (sat.status === 'error') return false;
+        const alt = sat.position?.alt ?? 0;
         if (filterType.value === "leo") return alt < 2000000;
         if (filterType.value === "meo") return alt >= 2000000 && alt < 35000000;
         if (filterType.value === "geo") return alt >= 35000000 && alt < 45000000;

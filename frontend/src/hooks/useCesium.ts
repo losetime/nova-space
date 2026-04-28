@@ -6,10 +6,11 @@ interface Satellite {
   noradId: string;
   name: string;
   position: {
-    lng: number;
-    lat: number;
-    alt: number;
-  };
+    lng: number | null;
+    lat: number | null;
+    alt: number | null;
+  } | null;
+  status?: 'ok' | 'error';
 }
 
 // 颜色分类类型
@@ -266,6 +267,8 @@ class SatelliteRenderer {
 
       for (let i = currentIndex; i < endIndex; i++) {
         const sat = satellites[i]!;
+        if (!sat.position || sat.position.lng === null || sat.position.lat === null || sat.position.alt === null) continue;
+        
         const position = Cesium.Cartesian3.fromDegrees(
           sat.position.lng,
           sat.position.lat,
@@ -323,7 +326,7 @@ class SatelliteRenderer {
   // 获取卫星颜色（基于分类方式）
   private getSatelliteColor(sat: Satellite): Cesium.Color {
     if (this.colorScheme === "orbit") {
-      const orbitType = getOrbitType(sat.position.alt);
+      const orbitType = getOrbitType(sat.position?.alt ?? 0);
       return ORBIT_COLORS[orbitType]?.color || this.DEFAULT_COLOR;
     }
     // 其他分类方式可以在这里扩展
@@ -1440,7 +1443,11 @@ export function useCesium() {
 
     const { position } = satellite;
 
-    if (!position || isNaN(position.lng) || isNaN(position.lat) || isNaN(position.alt)) {
+    if (!position || position.lng === null || position.lat === null || position.alt === null) {
+      return;
+    }
+
+    if (isNaN(position.lng) || isNaN(position.lat) || isNaN(position.alt)) {
       return;
     }
 

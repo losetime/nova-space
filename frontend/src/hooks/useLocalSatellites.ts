@@ -7,10 +7,11 @@ export interface Satellite {
   noradId: string
   name: string
   position: {
-    lng: number
-    lat: number
-    alt: number
-  }
+    lng: number | null
+    lat: number | null
+    alt: number | null
+  } | null
+  status: 'ok' | 'error'
   timestamp: string
   countryCode?: string
   mission?: string
@@ -50,12 +51,13 @@ export function useLocalSatellites() {
       const m = meta[p.noradId]
       return {
         noradId: p.noradId,
-        name: m?.name || '',
-        position: {
+        name: m?.name || `卫星 ${p.noradId}`,
+        position: p.status === 'ok' ? {
           lat: p.lat,
           lng: p.lng,
           alt: p.alt,
-        },
+        } : null,
+        status: p.status,
         timestamp: workerState.value.lastUpdate || new Date().toISOString(),
         countryCode: m?.countryCode,
         mission: m?.mission,
@@ -65,11 +67,11 @@ export function useLocalSatellites() {
   })
 
   const satelliteCount = computed(() => {
-    return workerState.value.satelliteCount
+    return positions.value.length
   })
 
   const errorCount = computed(() => {
-    return workerState.value.errorCount || 0
+    return positions.value.filter(p => p.status === 'error').length
   })
 
   const lastUpdate = computed(() => {

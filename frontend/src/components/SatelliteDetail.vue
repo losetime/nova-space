@@ -122,7 +122,7 @@
               </div>
               <div class="param-content">
                 <label>经度</label>
-                <span class="param-value">{{ formatLongitude(satellite.position.lng) }}</span>
+                <span class="param-value">{{ formatLongitude(satellite.position?.lng ?? 0) }}</span>
               </div>
             </div>
             <div class="param-card">
@@ -131,7 +131,7 @@
               </div>
               <div class="param-content">
                 <label>纬度</label>
-                <span class="param-value">{{ formatLatitude(satellite.position.lat) }}</span>
+                <span class="param-value">{{ formatLatitude(satellite.position?.lat ?? 0) }}</span>
               </div>
             </div>
             <div class="param-card">
@@ -141,7 +141,7 @@
               <div class="param-content">
                 <label>轨道高度</label>
                 <span class="param-value"
-                  >{{ formatNumber(satellite.position.alt / 1000, 2) }} km</span
+                  >{{ formatNumber((satellite.position?.alt ?? 0) / 1000, 2) }} km</span
                 >
               </div>
             </div>
@@ -151,8 +151,8 @@
               </div>
               <div class="param-content">
                 <label>轨道类型</label>
-                <span :class="['param-value', 'orbit-type', getOrbitClass(satellite.position.alt)]">
-                  {{ getOrbitType(satellite.position.alt) }}
+                <span :class="['param-value', 'orbit-type', getOrbitClass(satellite.position?.alt ?? 0)]">
+                  {{ getOrbitType(satellite.position?.alt ?? 0) }}
                 </span>
               </div>
             </div>

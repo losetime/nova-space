@@ -640,7 +640,8 @@ const filteredSatellites = computed(() => {
   // 按轨道类型筛选（alt 单位是米）
   if (filterType.value) {
     result = result.filter((sat) => {
-      const alt = sat.position.alt;
+      if (sat.status === 'error') return false;
+      const alt = sat.position?.alt ?? 0;
       if (filterType.value === "leo") return alt < 2000000; // < 2000 km
       if (filterType.value === "meo") return alt >= 2000000 && alt < 35000000; // 2000-35000 km
       if (filterType.value === "geo") return alt >= 35000000 && alt < 45000000; // 35000-45000 km
