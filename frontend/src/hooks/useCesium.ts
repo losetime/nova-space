@@ -951,35 +951,27 @@ export function useCesium() {
       }
     }
 
-    // 6. 飞到轨迹视图（保持当前视角，只拉远确保能看到整体）
-    const allPoints = [
-      Cesium.Cartesian3.fromDegrees(observer.lng, observer.lat, observer.alt),
-      ...orbitPoints.map((p) => Cesium.Cartesian3.fromDegrees(p.lng, p.lat, p.alt)),
-    ];
-
-    const boundingSphere = Cesium.BoundingSphere.fromPoints(allPoints);
+    // 6. 飞到轨迹正上方视图
+    const trajectoryPoints = orbitPoints.map((p) =>
+      Cesium.Cartesian3.fromDegrees(p.lng, p.lat, p.alt)
+    );
+    const boundingSphere = Cesium.BoundingSphere.fromPoints(trajectoryPoints);
     const camera = viewer.value.camera;
-    const currentHeading = camera.heading;
-    const currentPitch = camera.pitch;
 
-    // 计算目标距离
-    const targetDistance = boundingSphere.radius * 3;
+    // 将笛卡尔坐标转换为经纬度
+    const centerCartographic = Cesium.Ellipsoid.WGS84.cartesianToCartographic(boundingSphere.center);
+    const centerLng = Cesium.Math.toDegrees(centerCartographic.longitude);
+    const centerLat = Cesium.Math.toDegrees(centerCartographic.latitude);
 
-    // 计算新位置：沿当前视线方向拉远
-    const center = boundingSphere.center;
-    const direction = new Cesium.Cartesian3();
-    Cesium.Cartesian3.subtract(camera.position, center, direction);
-    Cesium.Cartesian3.normalize(direction, direction);
+    // 计算合适的视角高度：确保能看到整个轨迹
+    const targetDistance = boundingSphere.radius * 5;
 
-    const newPosition = new Cesium.Cartesian3();
-    Cesium.Cartesian3.multiplyByScalar(direction, targetDistance, newPosition);
-    Cesium.Cartesian3.add(center, newPosition, newPosition);
-
+    // 飞行到轨迹正上方，heading=0(北), pitch=-85(接近正俯视)
     camera.flyTo({
-      destination: newPosition,
+      destination: Cesium.Cartesian3.fromDegrees(centerLng, centerLat, targetDistance),
       orientation: {
-        heading: currentHeading,
-        pitch: currentPitch,
+        heading: 0, // 北向
+        pitch: Cesium.Math.toRadians(-85), // 接近正俯视
         roll: 0,
       },
       duration: 1.5,
