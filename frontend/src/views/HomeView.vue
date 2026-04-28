@@ -128,13 +128,13 @@ const userStore = useUserStore();
 const features = [
   {
     icon: GlobalOutlined,
-    title: "卫星数据中心",
+    title: "卫星态势总览",
     desc: "实时追踪全球在轨卫星，提供轨道预测、关联分析等专业功能",
     path: "/satellite",
   },
   {
     icon: BookOutlined,
-    title: "航天科普中心",
+    title: "航天只是科普",
     desc: "体系化航天知识库，从入门到进阶，让每个人都能读懂航天",
     path: "/education",
   },
@@ -168,7 +168,10 @@ const loadStats = async () => {
         // { number: formatNumber(data.satellites), label: "在轨卫星" },
         { number: "16096+", label: "在轨卫星" },
         { number: `${data.countries}+`, label: "国家/地区" },
-        { number: formatNumber((data.articles || 0) + (data.intelligences || 0)), label: "知识条目" },
+        {
+          number: formatNumber((data.articles || 0) + (data.intelligences || 0)),
+          label: "知识条目",
+        },
         { number: "4000+", label: "活跃用户" },
       ];
     }
