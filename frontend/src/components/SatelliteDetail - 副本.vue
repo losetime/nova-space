@@ -48,13 +48,15 @@
         <div v-show="expandedSections.basic" class="section-content">
           <div class="info-grid">
             <div class="info-item">
-              <span class="info-label">别名</span>
-              <span class="info-value alt-names">{{ metadata.altName || "--" }}</span>
+              <span class="info-label">对象类型</span>
+              <span :class="['info-value', 'type-badge', getObjectTypeClass(metadata.objectType)]">
+                {{ getObjectTypeLabel(metadata.objectType) }}
+              </span>
             </div>
-            <div class="info-item">
-              <span class="info-label">NORAD编号</span>
-              <span class="info-value alt-names">{{ satellite.noradId || "--" }}</span>
-            </div>
+            <!-- <div class="info-item">
+              <span class="info-label">ESA分类</span>
+              <span class="info-value">{{ metadata.objectClass || "--" }}</span>
+            </div> -->
             <div class="info-item">
               <span class="info-label">所属国家/组织</span>
               <span class="info-value">
@@ -76,25 +78,123 @@
               </span>
             </div>
             <div class="info-item">
-              <span class="info-label">对象类型</span>
-              <span :class="['info-value', 'type-badge', getObjectTypeClass(metadata.objectType)]">
-                {{ getObjectTypeLabel(metadata.objectType) }}
-              </span>
+              <span class="info-label">别名</span>
+              <span class="info-value alt-names">{{ metadata.altName || "--" }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">标准星等</span>
+              <span class="info-value">{{
+                metadata.stdMag != null ? metadata.stdMag.toFixed(2) : "--"
+              }}</span>
             </div>
             <div class="info-item">
               <span class="info-label">COSPAR编号</span>
               <span class="info-value">{{ metadata.cosparId || "--" }}</span>
             </div>
             <!-- <div class="info-item">
-              <span class="info-label">ESA分类</span>
-              <span class="info-value">{{ metadata.objectClass || "--" }}</span>
-            </div> -->
-            <!-- <div class="info-item">
               <span class="info-label">预测衰减日期</span>
               <span class="info-value">{{
                 metadata.predDecayDate ? formatDate(metadata.predDecayDate) : "--"
               }}</span>
             </div> -->
+          </div>
+        </div>
+      </transition>
+    </div>
+
+    <!-- 技术规格 -->
+    <div class="section" v-if="metadata">
+      <div
+        class="section-header"
+        :class="{ disabled: !canViewTechnical }"
+        @click="toggleSection('technical')"
+      >
+        <div class="header-left">
+          <ToolOutlined class="section-icon" />
+          <span>技术规格</span>
+        </div>
+        <DownOutlined :class="['expand-icon', { expanded: expandedSections.technical }]" />
+      </div>
+      <transition name="collapse">
+        <div v-show="expandedSections.technical" class="section-content">
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="info-label">起飞质量</span>
+              <span class="info-value">{{
+                metadata.launchMass ? `${metadata.launchMass.toLocaleString()} kg` : "--"
+              }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">干质量</span>
+              <span class="info-value">{{
+                metadata.dryMass ? `${metadata.dryMass.toLocaleString()} kg` : "--"
+              }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">形状</span>
+              <span class="info-value">{{ metadata.shape || "--" }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">尺寸</span>
+              <span class="info-value">{{ metadata.dimensions || "--" }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">翼展</span>
+              <span class="info-value">{{ metadata.span ? `${metadata.span} m` : "--" }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">长度</span>
+              <span class="info-value">{{ metadata.length ? `${metadata.length} m` : "--" }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">直径</span>
+              <span class="info-value">{{
+                metadata.diameter ? `${metadata.diameter} m` : "--"
+              }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">平台</span>
+              <span class="info-value">{{ metadata.bus || "--" }}</span>
+            </div>
+            <!-- -->
+            <div class="info-item full-width">
+              <span class="info-label">载荷</span>
+              <span class="info-value text-left">{{ metadata.payload || "--" }}</span>
+            </div>
+            <div class="info-item full-width">
+              <span class="info-label">设备信息</span>
+              <span class="info-value text-left">{{ metadata.equipment || "--" }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">姿态控制</span>
+              <span class="info-value">{{ metadata.adcs || "--" }}</span>
+            </div>
+            <div class="info-item full-width">
+              <span class="info-label">电源系统</span>
+              <span class="info-value text-left">{{ metadata.power || "--" }}</span>
+            </div>
+            <div class="info-item full-width">
+              <span class="info-label">推进系统</span>
+              <span class="info-value text-left">{{ metadata.motor || "--" }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">雷达截面</span>
+              <span class="info-value">{{ metadata.rcs || "--" }}㎡</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">配置</span>
+              <span class="info-value">{{ metadata.configuration || "--" }}</span>
+            </div>
+            <div class="info-item full-width">
+              <span class="info-label">材料组成</span>
+              <span class="info-value text-left">{{ metadata.material_composition || "--" }}</span>
+            </div>
+            <div class="info-item full-width">
+              <span class="info-label">发射频率</span>
+              <span class="info-value text-left">{{
+                metadata.transmitter_frequencies || "--"
+              }}</span>
+            </div>
           </div>
         </div>
       </transition>
@@ -261,17 +361,6 @@
                 </div>
               </div>
             </div>
-            <div class="feature-item">
-              <div class="feature-icon"><CompassOutlined /></div>
-              <div class="feature-content">
-                <div class="feature-row">
-                  <span class="feature-label">标准星等</span>
-                  <span class="feature-value">{{
-                    metadata.stdMag != null ? `${metadata.stdMag.toFixed(2)}` : "--"
-                  }}</span>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </transition>
@@ -327,11 +416,11 @@
               <span class="info-label">发射序号</span>
               <span class="info-value">{{ metadata.flightNo || "--" }}</span>
             </div> -->
-            <!-- <div class="info-item">
+            <div class="info-item">
               <span class="info-label">COSPAR发射编号</span>
               <span class="info-value">{{ metadata.cosparLaunchNo || "--" }}</span>
-            </div> -->
-            <!-- <div class="info-item">
+            </div>
+            <div class="info-item">
               <span class="info-label">发射状态</span>
               <span
                 :class="[
@@ -342,111 +431,11 @@
               >
                 {{ metadata.launchFailure ? "发射失败" : "发射成功" }}
               </span>
-            </div> -->
+            </div>
             <div class="info-item">
               <span class="info-label">衰减日期</span>
               <span class="info-value">{{
                 metadata.decayDate ? formatDate(metadata.decayDate) : "--"
-              }}</span>
-            </div>
-          </div>
-        </div>
-      </transition>
-    </div>
-
-    <!-- 技术规格 -->
-    <div class="section" v-if="metadata">
-      <div
-        class="section-header"
-        :class="{ disabled: !canViewTechnical }"
-        @click="toggleSection('technical')"
-      >
-        <div class="header-left">
-          <ToolOutlined class="section-icon" />
-          <span>技术规格</span>
-        </div>
-        <DownOutlined :class="['expand-icon', { expanded: expandedSections.technical }]" />
-      </div>
-      <transition name="collapse">
-        <div v-show="expandedSections.technical" class="section-content">
-          <div class="info-grid">
-            <div class="info-item">
-              <span class="info-label">发射质量</span>
-              <span class="info-value">{{
-                metadata.launchMass ? `${metadata.launchMass.toLocaleString()} kg` : "--"
-              }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">干质量</span>
-              <span class="info-value">{{
-                metadata.dryMass ? `${metadata.dryMass.toLocaleString()} kg` : "--"
-              }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">形状</span>
-              <span class="info-value">{{ metadata.shape || "--" }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">尺寸</span>
-              <span class="info-value">{{
-                metadata.dimensions ? `${metadata.dimensions} m` : "--"
-              }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">翼展</span>
-              <span class="info-value">{{ metadata.span ? `${metadata.span} m` : "--" }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">长度</span>
-              <span class="info-value">{{ metadata.length ? `${metadata.length} m` : "--" }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">直径</span>
-              <span class="info-value">{{
-                metadata.diameter ? `${metadata.diameter} m` : "--"
-              }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">平台</span>
-              <span class="info-value">{{ metadata.bus || "--" }}</span>
-            </div>
-            <!-- -->
-            <div class="info-item full-width">
-              <span class="info-label">载荷</span>
-              <span class="info-value text-left">{{ metadata.payload || "--" }}</span>
-            </div>
-            <div class="info-item full-width">
-              <span class="info-label">设备信息</span>
-              <span class="info-value text-left">{{ metadata.equipment || "--" }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">姿态控制</span>
-              <span class="info-value">{{ metadata.adcs || "--" }}</span>
-            </div>
-            <div class="info-item full-width">
-              <span class="info-label">电源系统</span>
-              <span class="info-value text-left">{{ metadata.power || "--" }}</span>
-            </div>
-            <div class="info-item full-width">
-              <span class="info-label">推进系统</span>
-              <span class="info-value text-left">{{ metadata.motor || "--" }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">雷达截面</span>
-              <span class="info-value">{{ metadata.rcs || "--" }}㎡</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">配置</span>
-              <span class="info-value">{{ metadata.configuration || "--" }}</span>
-            </div>
-            <div class="info-item full-width">
-              <span class="info-label">材料组成</span>
-              <span class="info-value text-left">{{ metadata.material_composition || "--" }}</span>
-            </div>
-            <div class="info-item full-width">
-              <span class="info-label">发射频率</span>
-              <span class="info-value text-left">{{
-                metadata.transmitter_frequencies || "--"
               }}</span>
             </div>
           </div>
@@ -471,7 +460,7 @@
         <div v-show="expandedSections.mission" class="section-content">
           <div class="info-grid">
             <div class="info-item">
-              <span class="info-label">任务用途</span>
+              <span class="info-label">任务</span>
               <span class="info-value mission">{{ metadata.mission || "--" }}</span>
             </div>
             <div class="info-item">
@@ -533,7 +522,7 @@
     </div>
 
     <!-- 运行状态 -->
-    <!-- <div class="section" v-if="metadata || satellite?.position">
+    <div class="section" v-if="metadata || satellite?.position">
       <div
         class="section-header"
         :class="{ disabled: !canViewStatus }"
@@ -572,7 +561,7 @@
           </div>
         </div>
       </transition>
-    </div> -->
+    </div>
   </div>
 
   <!-- 空状态 -->
