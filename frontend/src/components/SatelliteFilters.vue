@@ -11,7 +11,7 @@
       <a-select-option value="leo">低轨 (LEO)</a-select-option>
       <a-select-option value="meo">中轨 (MEO)</a-select-option>
       <a-select-option value="geo">地球同步 (GEO)</a-select-option>
-      <a-select-option value="heo">大椭圆轨道 (HEO)</a-select-option>
+      <a-select-option value="heo">高轨 (HEO)</a-select-option>
     </a-select>
 
     <a-select

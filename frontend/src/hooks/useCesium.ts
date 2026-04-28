@@ -26,7 +26,7 @@ const ORBIT_COLORS: Record<string, { color: Cesium.Color; label: string }> = {
   LEO: { color: Cesium.Color.fromCssColorString("#00ff88"), label: "低轨 LEO" },
   MEO: { color: Cesium.Color.fromCssColorString("#00d4ff"), label: "中轨 MEO" },
   GEO: { color: Cesium.Color.fromCssColorString("#b366e8"), label: "地球同步 GEO" },
-  HEO: { color: Cesium.Color.fromCssColorString("#ffaa00"), label: "大椭圆轨道" },
+  HEO: { color: Cesium.Color.fromCssColorString("#ffaa00"), label: "高轨" },
 };
 
 // 轨道类型判断（基于高度，单位：米）
@@ -42,7 +42,7 @@ const ORBIT_LEGEND: LegendItem[] = [
   { color: "#00ff88", label: "低轨 LEO (<2000km)" },
   { color: "#00d4ff", label: "中轨 MEO (2000-35000km)" },
   { color: "#b366e8", label: "地球同步 GEO (35000-45000km)" },
-  { color: "#ffaa00", label: "大椭圆轨道 HEO (>45000km)" },
+  { color: "#ffaa00", label: "高轨 HEO (>45000km)" },
 ];
 
 // 卫星渲染器 - PointPrimitive + Model 混合方案
@@ -692,9 +692,7 @@ export function useCesium() {
     const camera = viewer.value.camera;
 
     // 计算轨道点的包围球
-    const allPoints = orbitPoints.map((p) =>
-      Cesium.Cartesian3.fromDegrees(p.lng, p.lat, p.alt)
-    );
+    const allPoints = orbitPoints.map((p) => Cesium.Cartesian3.fromDegrees(p.lng, p.lat, p.alt));
     const boundingSphere = Cesium.BoundingSphere.fromPoints(allPoints);
 
     // 根据包围球半径计算合适的距离（5倍半径确保轨道完整可见）
@@ -953,13 +951,15 @@ export function useCesium() {
 
     // 6. 飞到轨迹正上方视图
     const trajectoryPoints = orbitPoints.map((p) =>
-      Cesium.Cartesian3.fromDegrees(p.lng, p.lat, p.alt)
+      Cesium.Cartesian3.fromDegrees(p.lng, p.lat, p.alt),
     );
     const boundingSphere = Cesium.BoundingSphere.fromPoints(trajectoryPoints);
     const camera = viewer.value.camera;
 
     // 将笛卡尔坐标转换为经纬度
-    const centerCartographic = Cesium.Ellipsoid.WGS84.cartesianToCartographic(boundingSphere.center);
+    const centerCartographic = Cesium.Ellipsoid.WGS84.cartesianToCartographic(
+      boundingSphere.center,
+    );
     const centerLng = Cesium.Math.toDegrees(centerCartographic.longitude);
     const centerLat = Cesium.Math.toDegrees(centerCartographic.latitude);
 

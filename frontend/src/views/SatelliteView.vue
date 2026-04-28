@@ -184,7 +184,7 @@
                     @click="filterType = 'heo'"
                   >
                     <RocketOutlined class="option-icon heo" />
-                    <span>大椭圆轨道 (HEO)</span>
+                    <span>高轨 (HEO)</span>
                   </div>
                 </div>
               </transition>
@@ -551,7 +551,7 @@ const getOrbitTypeLabel = (type: string | null): string => {
     leo: "低轨(LEO)",
     meo: "中轨(MEO)",
     geo: "地球同步(GEO)",
-    heo: "大椭圆轨道(HEO)",
+    heo: "高轨(HEO)",
   };
   return labels[type] || "全部轨道";
 };
@@ -927,7 +927,7 @@ watch(colorScheme, (newScheme) => {
 watch(activeRightPanel, (newPanel, oldPanel) => {
   if (!selectedSatellite.value) return;
 
-  if (oldPanel === 'orbit' && newPanel !== 'orbit') {
+  if (oldPanel === "orbit" && newPanel !== "orbit") {
     // 清除预测轨道
     cesium.clearPredictedOrbit(selectedSatellite.value.noradId);
     // 清除标记点
@@ -936,7 +936,7 @@ watch(activeRightPanel, (newPanel, oldPanel) => {
     handleRestoreOrbit(selectedSatellite.value.noradId);
   }
 
-  if (oldPanel === 'transit' && newPanel !== 'transit') {
+  if (oldPanel === "transit" && newPanel !== "transit") {
     // 清除过境轨迹
     cesium.clearPassTrajectory();
     // 停止过境动画
@@ -945,7 +945,7 @@ watch(activeRightPanel, (newPanel, oldPanel) => {
     handleRestoreOrbit(selectedSatellite.value.noradId);
   }
 
-  if (oldPanel === 'sunlight' && newPanel !== 'sunlight') {
+  if (oldPanel === "sunlight" && newPanel !== "sunlight") {
     // 清除日照轨道
     cesium.clearSunlightOrbit(selectedSatellite.value.noradId);
     // 恢复详情轨道

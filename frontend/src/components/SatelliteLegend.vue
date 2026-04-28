@@ -4,19 +4,19 @@
     <div class="legend-items">
       <div class="legend-item">
         <span class="legend-dot leo"></span>
-        <span class="legend-label">LEO 低轨</span>
+        <span class="legend-label">LEO 低轨卫星</span>
       </div>
       <div class="legend-item">
         <span class="legend-dot meo"></span>
-        <span class="legend-label">MEO 中轨</span>
+        <span class="legend-label">MEO 中轨卫星</span>
       </div>
       <div class="legend-item">
         <span class="legend-dot geo"></span>
-        <span class="legend-label">GEO 地球同步</span>
+        <span class="legend-label">GEO 地球同步卫星</span>
       </div>
       <div class="legend-item">
         <span class="legend-dot heo"></span>
-        <span class="legend-label">HEO 大椭圆</span>
+        <span class="legend-label">HEO 高轨卫星</span>
       </div>
     </div>
     <div class="legend-tip">
@@ -69,10 +69,18 @@ import { BulbOutlined } from "@ant-design/icons-vue";
     border-radius: 4px;
     flex-shrink: 0;
 
-    &.leo { background: #00ff88; }
-    &.meo { background: #00d4ff; }
-    &.geo { background: #b366e8; }
-    &.heo { background: #ffaa00; }
+    &.leo {
+      background: #00ff88;
+    }
+    &.meo {
+      background: #00d4ff;
+    }
+    &.geo {
+      background: #b366e8;
+    }
+    &.heo {
+      background: #ffaa00;
+    }
   }
 
   .legend-label {

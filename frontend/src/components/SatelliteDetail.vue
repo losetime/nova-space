@@ -824,7 +824,7 @@ const getOrbitType = (alt: number): string => {
   if (alt < 2000000) return "低轨 LEO";
   if (alt < 35000000) return "中轨 MEO";
   if (alt < 45000000) return "地球同步 GEO";
-  return "大椭圆轨道 HEO";
+  return "高轨 HEO";
 };
 
 const getOrbitClass = (alt: number): string => {
