@@ -697,8 +697,8 @@ export function useCesium() {
     );
     const boundingSphere = Cesium.BoundingSphere.fromPoints(allPoints);
 
-    // 根据包围球半径计算合适的距离（3倍半径确保轨道完整可见）
-    const targetDistance = boundingSphere.radius * 3;
+    // 根据包围球半径计算合适的距离（5倍半径确保轨道完整可见）
+    const targetDistance = boundingSphere.radius * 5;
 
     // 计算当前相机到目标中心的距离
     const center = boundingSphere.center;
