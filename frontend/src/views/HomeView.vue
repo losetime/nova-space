@@ -165,8 +165,7 @@ const loadStats = async () => {
     if (res.data.code === 0) {
       const data = res.data.data;
       stats.value = [
-        // { number: formatNumber(data.satellites), label: "在轨卫星" },
-        { number: "16096+", label: "在轨卫星" },
+        { number: formatNumber(data.satellites), label: "在轨卫星" },
         { number: `${data.countries}+`, label: "国家/地区" },
         {
           number: formatNumber((data.articles || 0) + (data.intelligences || 0)),

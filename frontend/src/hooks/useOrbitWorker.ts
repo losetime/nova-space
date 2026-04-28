@@ -6,6 +6,7 @@ export interface OrbitWorkerState {
   isLoading: boolean
   error: string | null
   satelliteCount: number
+  errorCount: number
   lastUpdate: string | null
 }
 
@@ -18,6 +19,7 @@ export function useOrbitWorker() {
     isLoading: false,
     error: null,
     satelliteCount: 0,
+    errorCount: 0,
     lastUpdate: null,
   })
 
@@ -38,7 +40,8 @@ export function useOrbitWorker() {
         state.value.isReady = true
         state.value.isLoading = false
         state.value.satelliteCount = data.total
-        console.log(`[OrbitWorker] 初始化完成，加载 ${data.total} 颗卫星`)
+        state.value.errorCount = data.errorCount || 0
+        console.log(`[OrbitWorker] 初始化完成，加载 ${data.total} 颗卫星，失败 ${data.errorCount || 0} 颗`)
         startComputeLoop()
       } else if (type === 'metadata') {
         metadata.value = data
@@ -46,6 +49,9 @@ export function useOrbitWorker() {
       } else if (type === 'positions') {
         positions.value = data
         state.value.lastUpdate = e.data.timestamp
+        if (e.data.computeErrorCount > 0) {
+          console.warn(`[OrbitWorker] 轨道计算失败 ${e.data.computeErrorCount} 颗`)
+        }
       }
     }
 

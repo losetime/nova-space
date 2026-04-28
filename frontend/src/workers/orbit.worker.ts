@@ -87,8 +87,9 @@ function initSatellites(tles: TLEData[]) {
       };
 
       successCount++;
-    } catch {
+    } catch (error) {
       errorCount++;
+      console.warn(`[OrbitWorker] TLE解析失败 - noradId: ${tle.noradId}, name: ${tle.name}, error:`, error?.message || error);
     }
   });
 
@@ -111,12 +112,13 @@ function initSatellites(tles: TLEData[]) {
 
 function computePositions(timestamp: number) {
   if (!isInitialized || satellites.size === 0) {
-    self.postMessage({ type: "positions", data: [] });
+    self.postMessage({ type: "positions", data: [], timestamp: new Date().toISOString() });
     return;
   }
 
   const now = new Date(timestamp);
   const positions: PositionData[] = [];
+  let computeErrorCount = 0;
 
   satellites.forEach((sat) => {
     try {
@@ -138,16 +140,25 @@ function computePositions(timestamp: number) {
             lng: longitude,
             alt: altitude,
           });
+        } else {
+          computeErrorCount++;
         }
+      } else {
+        computeErrorCount++;
       }
-    } catch (error) {
-      console.warn(`[OrbitWorker] 轨道计算失败 - noradId: ${sat.noradId}, name: ${sat.name}, error:`, error);
+    } catch {
+      computeErrorCount++;
     }
   });
+
+  if (computeErrorCount > 0) {
+    console.warn(`[OrbitWorker] 本轮轨道计算失败 ${computeErrorCount}/${satellites.size} 颗卫星`);
+  }
 
   self.postMessage({
     type: "positions",
     data: positions,
     timestamp: now.toISOString(),
+    computeErrorCount,
   });
 }

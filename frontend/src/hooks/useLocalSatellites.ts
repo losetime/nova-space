@@ -22,6 +22,7 @@ export interface LocalSatellitesState {
   isLoading: boolean
   error: string | null
   satelliteCount: number
+  errorCount: number
   lastUpdate: string | null
 }
 
@@ -33,6 +34,7 @@ export function useLocalSatellites() {
     isLoading: false,
     error: null,
     satelliteCount: 0,
+    errorCount: 0,
     lastUpdate: null,
   })
 
@@ -63,7 +65,11 @@ export function useLocalSatellites() {
   })
 
   const satelliteCount = computed(() => {
-    return positions.value.length
+    return workerState.value.satelliteCount
+  })
+
+  const errorCount = computed(() => {
+    return workerState.value.errorCount || 0
   })
 
   const lastUpdate = computed(() => {
@@ -174,6 +180,7 @@ export function useLocalSatellites() {
     state,
     satellites,
     satelliteCount,
+    errorCount,
     lastUpdate,
     status: computed(() => state.value.status),
     isInitialized: computed(() => workerState.value.isReady),

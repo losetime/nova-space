@@ -515,9 +515,9 @@ export class OrbitCalculatorService implements OnModuleInit {
 
       // 将太阳位置从天文单位转换为千米
       const sunPosKm = {
-        x: sunPosition.rsun[0] * AU_TO_KM,
-        y: sunPosition.rsun[1] * AU_TO_KM,
-        z: sunPosition.rsun[2] * AU_TO_KM,
+        x: sunPosition.rsun.x * AU_TO_KM,
+        y: sunPosition.rsun.y * AU_TO_KM,
+        z: sunPosition.rsun.z * AU_TO_KM,
       };
 
       // 2. 检查太阳是否在地平线下（观察者在黑暗中）
@@ -626,9 +626,9 @@ export class OrbitCalculatorService implements OnModuleInit {
     const jday = satellite.jday(time);
     const sunPosAU = satellite.sunPos(jday);
     return {
-      x: sunPosAU.rsun[0] * AU_TO_KM,
-      y: sunPosAU.rsun[1] * AU_TO_KM,
-      z: sunPosAU.rsun[2] * AU_TO_KM,
+      x: sunPosAU.rsun.x * AU_TO_KM,
+      y: sunPosAU.rsun.y * AU_TO_KM,
+      z: sunPosAU.rsun.z * AU_TO_KM,
     };
   }
 
