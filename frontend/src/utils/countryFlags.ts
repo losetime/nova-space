@@ -3,9 +3,9 @@
  * 用于 flag-icons 库显示国旗
  */
 export const CELESTRAK_TO_ISO: Record<string, string> = {
-  // 标准代码 (已与ISO一致)
+  // 标准 ISO 2字母代码
   US: 'us',
-  UK: 'gb',
+  GB: 'gb',
   FR: 'fr',
   CA: 'ca',
   IT: 'it',
@@ -14,8 +14,38 @@ export const CELESTRAK_TO_ISO: Record<string, string> = {
   IM: 'im',
   AC: 'sh', // 阿森松岛属于圣赫勒拿
   AB: 'ag', // 安提瓜和巴布达
+  AU: 'au', // 澳大利亚
+  AT: 'at', // 奥地利
+  BE: 'be', // 比利时
+  CH: 'ch', // 瑞士
+  CZ: 'cz', // 捷克
+  DE: 'de', // 德国
+  DK: 'dk', // 丹麦
+  EE: 'ee', // 爱沙尼亚
+  ES: 'es', // 西班牙
+  FI: 'fi', // 芬兰
+  GR: 'gr', // 希腊
+  HK: 'hk', // 香港
+  HU: 'hu', // 匈牙利
+  IE: 'ie', // 爱尔兰
+  IN: 'in', // 印度
+  JP: 'jp', // 日本
+  KR: 'kr', // 韩国
+  LT: 'lt', // 立陶宛
+  LU: 'lu', // 卢森堡
+  NL: 'nl', // 荷兰
+  NO: 'no', // 挪威
+  PL: 'pl', // 波兰
+  PT: 'pt', // 葡萄牙
+  RU: 'ru', // 俄罗斯
+  SE: 'se', // 瑞典
+  SI: 'si', // 斯洛文尼亚
+  SK: 'sk', // 斯洛伐克
+  TR: 'tr', // 土耳其
+  UA: 'ua', // 乌克兰
 
   // CelesTrak 特殊格式
+  UK: 'gb',
   CIS: 'ru',   // 俄罗斯/独联体
   PRC: 'cn',   // 中国
   CN: 'cn',
@@ -110,6 +140,7 @@ export const CELESTRAK_TO_ISO: Record<string, string> = {
   CZCH: 'cz',  // 捷克 (另一种写法)
   USBZ: 'us',  // 美国/巴西 - 用美国
   AUS: 'au',   // 澳大利亚
+  SU: 'ru',    // 苏联
 
   // 国际组织 - 使用特殊旗帜或默认
   ESA: 'eu',   // 欧洲航天局
@@ -127,6 +158,17 @@ export const CELESTRAK_TO_ISO: Record<string, string> = {
   SEAL: 'us',  // 海射公司 (美国注册)
   TBD: 'xx',   // 待定
   ABS: 'bm',   // ABS公司 (百慕大)
+
+  // CelesTrak I-* 格式 (国际组织)
+  'I-INT': 'int',   // 国际通信卫星组织
+  'I-ESA': 'eu',    // 欧洲航天局
+  'I-EU': 'eu',     // 欧盟
+  'I-EUT': 'int',   // 欧洲通信卫星组织
+  'I-EUM': 'eu',    // 欧洲气象卫星组织
+  'I-ARAB': 'int',  // 阿拉伯卫星通信组织
+  'I-INM': 'int',   // 国际移动卫星组织
+  'I-NATO': 'nato', // 北约
+  'I-RASC': 'ru',   // 俄罗斯航天局
 }
 
 /**
@@ -148,6 +190,16 @@ export const ORGANIZATION_FLAGS: Record<string, string> = {
   SEAL: 'fi fi-us',
   TBD: 'organization-flags org-tbd',
   ABS: 'fi fi-bm',
+  // CelesTrak I-* 格式
+  'I-INT': 'organization-flags org-intelsat',
+  'I-ESA': 'fi fi-eu',
+  'I-EU': 'organization-flags org-eu',
+  'I-EUT': 'organization-flags org-eutelsat',
+  'I-EUM': 'fi fi-eu',
+  'I-ARAB': 'organization-flags org-arab',
+  'I-INM': 'organization-flags org-inmarsat',
+  'I-NATO': 'organization-flags org-nato',
+  'I-RASC': 'fi fi-ru',
 }
 
 /**

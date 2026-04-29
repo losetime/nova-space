@@ -526,11 +526,12 @@ const filteredCountries = computed(() => {
     if (nameToEntry.has(name)) {
       const entry = nameToEntry.get(name)!;
       entry.count += c.count;
-      if (c.code === "CN") {
+      if (name === "中国" && c.code === "CN") {
         entry.code = "CN";
       }
     } else {
-      nameToEntry.set(name, { code: c.code, count: c.count });
+      const code = name === "其他" ? "OTHER" : c.code;
+      nameToEntry.set(name, { code, count: c.count });
     }
   });
 
@@ -563,7 +564,7 @@ const categorizeMission = (mission: string | undefined): string => {
 
 // 获取国家中文名称
 const getCountryName = (code: string): string => {
-  return COUNTRY_NAMES[code] || code;
+  return COUNTRY_NAMES[code] || "其他";
 };
 
 // 轨道类型标签（与列表格式一致）

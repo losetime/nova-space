@@ -2,9 +2,9 @@
 
 // 国家代码到中文名称的映射 (CelesTrak 格式)
 export const COUNTRY_NAMES: Record<string, string> = {
-  // 标准代码
+  // 标准 ISO 2字母代码
   US: "美国",
-  UK: "英国",
+  GB: "英国", // UK 也常用
   FR: "法国",
   CA: "加拿大",
   IT: "意大利",
@@ -13,6 +13,36 @@ export const COUNTRY_NAMES: Record<string, string> = {
   IM: "马恩岛",
   AC: "阿森松岛",
   AB: "安提瓜和巴布达",
+  AU: "澳大利亚",
+  AT: "奥地利",
+  BE: "比利时",
+  CH: "瑞士",
+  CZ: "捷克",
+  DE: "德国", // GER 也常用
+  DK: "丹麦",
+  EE: "爱沙尼亚",
+  ES: "西班牙",
+  FI: "芬兰",
+  GR: "希腊",
+  HK: "香港",
+  HU: "匈牙利",
+  IE: "爱尔兰",
+  IN: "印度",
+  JP: "日本",
+  KR: "韩国",
+  LT: "立陶宛",
+  LU: "卢森堡",
+  LV: "拉脱维亚",
+  NL: "荷兰",
+  NO: "挪威",
+  PL: "波兰",
+  PT: "葡萄牙",
+  RU: "俄罗斯",
+  SE: "瑞典",
+  SI: "斯洛文尼亚",
+  SK: "斯洛伐克",
+  TR: "土耳其",
+  UA: "乌克兰",
   // CelesTrak 特殊格式
   CIS: "俄罗斯",
   PRC: "中国",
@@ -107,7 +137,9 @@ export const COUNTRY_NAMES: Record<string, string> = {
   FRIT: "法国/意大利",
   CZCH: "捷克",
   USBZ: "美国/巴西",
-  // 组织
+  // 历史国家
+  SU: "苏联",
+  // 国际组织
   ESA: "欧洲航天局",
   ESRO: "欧洲空间研究组织",
   EUTE: "欧洲通信卫星组织",
@@ -123,6 +155,21 @@ export const COUNTRY_NAMES: Record<string, string> = {
   SEAL: "海射公司",
   TBD: "待定",
   ABS: "ABS公司",
+  // CelesTrak I-* 格式 (国际组织)
+  "I-INT": "国际通信卫星组织",
+  "I-ESA": "欧洲航天局",
+  "I-EU": "欧盟",
+  "I-EUT": "欧洲通信卫星组织",
+  "I-EUM": "欧洲气象卫星组织",
+  "I-ARAB": "阿拉伯卫星通信组织",
+  "I-INM": "国际移动卫星组织",
+  "I-NATO": "北约",
+  "I-RASC": "俄罗斯航天局",
+  // 全名（部分数据使用全名而非代码）
+  France: "法国",
+  Russia: "俄罗斯",
+  "New Zealand": "新西兰",
+  Spain: "西班牙",
 };
 
 // 发射场映射 (数据来源: CelesTrak SATCAT Launch Sites)
