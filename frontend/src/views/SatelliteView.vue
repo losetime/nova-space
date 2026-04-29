@@ -574,9 +574,21 @@ const filteredCountries = computed(() => {
 
 // 过滤后的任务列表
 const filteredMissions = computed(() => {
-  if (!missionSearch.value) return missions.value;
-  const search = missionSearch.value.toLowerCase();
-  return missions.value.filter((m) => m.name.toLowerCase().includes(search));
+  let result = missions.value;
+
+  // 排序：其他放到最后，其他按字母排序
+  result = [...result].sort((a, b) => {
+    if (a.name === "其他") return 1;
+    if (b.name === "其他") return -1;
+    return a.name.localeCompare(b.name);
+  });
+
+  if (missionSearch.value) {
+    const search = missionSearch.value.toLowerCase();
+    result = result.filter((m) => m.name.toLowerCase().includes(search));
+  }
+
+  return result;
 });
 
 // 任务分类函数
