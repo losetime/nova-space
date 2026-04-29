@@ -31,9 +31,17 @@
           <span class="divider">/</span>
           <span class="total">{{ satellites.length }}</span>
         </span>
-        <button class="filter-toggle-btn" @click="showFilters = !showFilters">
-          {{ showFilters ? "取消" : "更多筛选" }}
-        </button>
+        <div class="meta-actions">
+          <transition name="fade">
+            <button v-if="hasActiveFilters" class="reset-btn" @click="resetAllFilters">
+              <ReloadOutlined />
+              重置
+            </button>
+          </transition>
+          <button class="filter-toggle-btn" @click="showFilters = !showFilters">
+            {{ showFilters ? "收起" : "更多筛选" }}
+          </button>
+        </div>
       </div>
     </div>
 
@@ -43,7 +51,13 @@
         <div
           v-for="{ data: satellite } in list"
           :key="satellite.noradId"
-          :class="['satellite-item', { active: selectedSatellite?.noradId === satellite.noradId, error: satellite.status === 'error' }]"
+          :class="[
+            'satellite-item',
+            {
+              active: selectedSatellite?.noradId === satellite.noradId,
+              error: satellite.status === 'error',
+            },
+          ]"
           @click="$emit('select-satellite', satellite)"
         >
           <!-- 卫星图标 -->
@@ -96,6 +110,7 @@ import {
   CloseCircleOutlined,
   GlobalOutlined,
   ArrowUpOutlined,
+  ReloadOutlined,
 } from "@ant-design/icons-vue";
 import type { Satellite } from "@/hooks/useLocalSatellites";
 import SatelliteFilters from "./SatelliteFilters.vue";
@@ -163,13 +178,31 @@ const favoriteFilter = computed({
 const searchQuery = ref("");
 const showFilters = ref(false);
 
+const hasActiveFilters = computed(() => {
+  return (
+    !!filterType.value ||
+    !!selectedCountry.value ||
+    !!selectedMission.value ||
+    favoriteFilter.value !== null ||
+    !!searchQuery.value
+  );
+});
+
+const resetAllFilters = () => {
+  searchQuery.value = "";
+  filterType.value = null;
+  selectedCountry.value = null;
+  selectedMission.value = null;
+  favoriteFilter.value = null;
+};
+
 const filteredSatellites = computed(() => {
   let result = props.satellites;
 
   // 按轨道类型筛选（排除status为error的，因为没有位置数据）
   if (filterType.value) {
     result = result.filter((sat) => {
-      if (sat.status === 'error') return false;
+      if (sat.status === "error") return false;
       const alt = sat.position?.alt ?? 0;
       if (filterType.value === "leo") return alt < 2000000;
       if (filterType.value === "meo") return alt >= 2000000 && alt < 35000000;
@@ -364,6 +397,36 @@ const formatAlt = (alt: number): string => {
       color: #00d4ff;
       background: rgba(0, 212, 255, 0.12);
       border-color: rgba(0, 212, 255, 0.35);
+    }
+  }
+
+  .meta-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .reset-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 12px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.7);
+    background: rgba(255, 77, 77, 0.08);
+    border: 1px solid rgba(255, 77, 77, 0.2);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover {
+      color: #ff4d4d;
+      background: rgba(255, 77, 77, 0.12);
+      border-color: rgba(255, 77, 77, 0.35);
+    }
+
+    .anticon {
+      font-size: 11px;
     }
   }
 }
