@@ -33,7 +33,7 @@
         </span>
         <div class="meta-actions">
           <transition name="fade">
-            <button v-if="hasActiveFilters" class="reset-btn" @click="resetAllFilters">
+            <button v-if="hasActiveFilters" class="reset-btn" @click="handleReset">
               <ReloadOutlined />
               重置
             </button>
@@ -153,6 +153,7 @@ const emit = defineEmits<{
   "update:selectedCountry": [value: string | null];
   "update:selectedMission": [value: string | null];
   "update:favoriteFilter": [value: string | null];
+  "reset-camera": [];
 }>();
 
 const filterType = computed({
@@ -194,6 +195,11 @@ const resetAllFilters = () => {
   selectedCountry.value = null;
   selectedMission.value = null;
   favoriteFilter.value = null;
+};
+
+const handleReset = () => {
+  resetAllFilters();
+  emit("reset-camera");
 };
 
 const filteredSatellites = computed(() => {

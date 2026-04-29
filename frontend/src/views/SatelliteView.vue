@@ -55,6 +55,7 @@
             v-model:selected-mission="selectedMission"
             v-model:favorite-filter="favoriteFilter"
             @select-satellite="handleSelectSatellite"
+            @reset-camera="handleResetCamera"
           />
         </aside>
       </transition>
@@ -423,11 +424,7 @@
     </div>
 
     <!-- 登录确认弹窗 -->
-    <ActionConfirmModal
-      v-model:visible="loginConfirmVisible"
-      type="login"
-      redirect="/satellite"
-    />
+    <ActionConfirmModal v-model:visible="loginConfirmVisible" type="login" redirect="/satellite" />
 
     <!-- 升级会员确认弹窗 -->
     <ActionConfirmModal
@@ -464,6 +461,7 @@ import PassPrediction from "@/components/PassPrediction.vue";
 import SunlightAnalysis from "@/components/SunlightAnalysis.vue";
 import FlagIcon from "@/components/FlagIcon.vue";
 import SatelliteLegend from "@/components/SatelliteLegend.vue";
+import * as Cesium from "cesium";
 import { useCesium, type ColorSchemeType } from "@/hooks/useCesium";
 import { useLocalSatellites } from "@/hooks/useLocalSatellites";
 import { usePanel } from "@/hooks/usePanel";
@@ -806,6 +804,21 @@ const handleSelectSatellite = (satellite: typeof selectedSatellite.value) => {
 
   baseHandleSelectSatellite(satellite);
   showSatelliteDetail();
+};
+
+// 重置相机到初始位置（不旋转）
+const handleResetCamera = () => {
+  if (cesium.viewer?.value && cesium.isInitialized.value) {
+    cesium.toggleAutoRotate(false);
+    cesium.viewer.value.camera.setView({
+      destination: Cesium.Cartesian3.fromDegrees(116.39, 39.9, 140000000),
+      orientation: {
+        heading: Cesium.Math.toRadians(0),
+        pitch: Cesium.Math.toRadians(-90),
+        roll: 0,
+      },
+    });
+  }
 };
 
 // 处理 Cesium 点击卫星事件

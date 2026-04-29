@@ -1,6 +1,7 @@
 import { ref, onUnmounted } from "vue";
 import * as Cesium from "cesium";
 import satelliteModelUrl from "@/assets/satellite.glb";
+import { GlobeAutoRotate } from "./useGlobeAutoRotate";
 
 interface Satellite {
   noradId: string;
@@ -527,6 +528,9 @@ export function useCesium() {
   let orbitCollection: Cesium.PolylineCollection | null = null;
   const orbitPolylines: Map<string, Cesium.Polyline> = new Map();
 
+  // 自动旋转器实例
+  let globeAutoRotate: GlobeAutoRotate | null = null;
+
   // 初始化 Cesium 场景
   const initCesium = () => {
     if (isInitialized.value) return;
@@ -554,15 +558,19 @@ export function useCesium() {
       },
     });
 
-    // 设置相机视角
+    // 设置相机视角 - 拉远到能看到整个地球
     viewer.value.camera.setView({
-      destination: Cesium.Cartesian3.fromDegrees(116.39, 39.9, 20000000),
+      destination: Cesium.Cartesian3.fromDegrees(116.39, 39.9, 140000000),
       orientation: {
-        heading: Cesium.Math.toRadians(0),
+        heading: Cesium.Math.toRadians(20),
         pitch: Cesium.Math.toRadians(-90),
         roll: 0,
       },
     });
+
+    // 启用地球自动旋转
+    globeAutoRotate = new GlobeAutoRotate(viewer.value, { speed: 0.001 });
+    globeAutoRotate.start();
 
     // 初始化轨道线集合
     orbitCollection = new Cesium.PolylineCollection();
@@ -572,6 +580,16 @@ export function useCesium() {
     satelliteRenderer.value = new SatelliteRenderer(viewer.value);
 
     isInitialized.value = true;
+  };
+
+  // 切换自动旋转
+  const toggleAutoRotate = (enabled: boolean) => {
+    if (!globeAutoRotate) return;
+    if (enabled) {
+      globeAutoRotate.start();
+    } else {
+      globeAutoRotate.stop();
+    }
   };
 
   // 批量更新卫星位置（高性能版本）
@@ -1520,6 +1538,10 @@ export function useCesium() {
       orbitCollection = null;
       orbitPolylines.clear();
     }
+    if (globeAutoRotate) {
+      globeAutoRotate.stop();
+      globeAutoRotate = null;
+    }
     if (viewer.value) {
       viewer.value.destroy();
       viewer.value = null;
@@ -1568,5 +1590,6 @@ export function useCesium() {
     setOnSatelliteClick,
     setColorScheme,
     getLegend,
+    toggleAutoRotate,
   };
 }
