@@ -601,11 +601,7 @@
   />
 
   <!-- 登录确认弹窗 -->
-  <ActionConfirmModal
-    v-model:visible="loginConfirmVisible"
-    type="login"
-    redirect="/satellite"
-  />
+  <ActionConfirmModal v-model:visible="loginConfirmVisible" type="login" redirect="/satellite" />
 </template>
 
 <script setup lang="ts">
@@ -618,12 +614,10 @@ import {
   CompassOutlined,
   EnvironmentOutlined,
   RocketOutlined,
-  DashboardOutlined,
   InfoCircleOutlined,
   ClockCircleOutlined,
   AimOutlined,
   ThunderboltOutlined,
-  WarningOutlined,
   StarOutlined,
   StarFilled,
   LoadingOutlined,

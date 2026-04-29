@@ -13,7 +13,7 @@
 
       <section v-if="status" class="status-card">
         <div class="status-card-header">
-          <span class="level-icon">{{ status.level === 'professional' ? '👑' : '💎' }}</span>
+          <span class="level-icon">{{ status.level === "professional" ? "👑" : "💎" }}</span>
           <span class="level-name" :class="status.level">{{ getLevelText(status.level) }}</span>
         </div>
         <div class="status-divider"></div>
@@ -21,12 +21,16 @@
           <div class="info-item">
             <span class="info-label">套餐</span>
             <span class="info-colon">：</span>
-            <span class="info-value">{{ status.subscription ? getPlanText(status.subscription.plan) : '未开通' }}</span>
+            <span class="info-value">{{
+              status.subscription ? getPlanText(status.subscription.plan) : "未开通"
+            }}</span>
           </div>
           <div class="info-item">
             <span class="info-label">到期</span>
             <span class="info-colon">：</span>
-            <span class="info-value">{{ status.subscription ? formatDate(status.subscription.endDate) : '--' }}</span>
+            <span class="info-value">{{
+              status.subscription ? formatDate(status.subscription.endDate) : "--"
+            }}</span>
           </div>
           <div class="info-item">
             <span class="info-label">积分</span>
@@ -46,10 +50,13 @@
         <h2 class="section-title">会员版本</h2>
         <div class="levels-grid">
           <div
-            v-for="level in memberLevels.filter(l => l.level !== 'basic')"
+            v-for="level in memberLevels"
             :key="level.level"
             class="level-card"
-            :class="{ current: status?.level === level.level, recommended: level.level === 'professional' }"
+            :class="{
+              current: status?.level === level.level,
+              recommended: level.level === 'professional',
+            }"
           >
             <div v-if="level.level === 'professional'" class="recommend-tag">推荐</div>
 
@@ -59,27 +66,34 @@
 
             <ul class="level-benefits">
               <li v-for="benefit in level.benefits" :key="benefit.id">
-                {{ benefit.name }}: {{ benefit.displayText || benefit.value }} {{ benefit.unit || '' }}
+                {{ benefit.name }}: {{ benefit.displayText || benefit.value }}
+                {{ benefit.unit || "" }}
               </li>
             </ul>
 
-            <div class="plans-list">
+            <!-- <div class="plans-list">
               <div
                 v-for="plan in level.plans"
                 :key="plan.id"
                 class="plan-item"
-                :class="{ recommended: plan.planCode === 'yearly' && level.level === 'professional' }"
+                :class="{
+                  recommended: plan.planCode === 'yearly' && level.level === 'professional',
+                }"
               >
                 <div class="plan-info">
                   <span class="plan-name">{{ plan.name }}</span>
-                  <span class="plan-duration">({{ plan.durationMonths === 1200 ? '永久' : `${plan.durationMonths}个月` }})</span>
+                  <span class="plan-duration"
+                    >({{
+                      plan.durationMonths === 1200 ? "永久" : `${plan.durationMonths}个月`
+                    }})</span
+                  >
                 </div>
                 <div class="plan-right">
                   <span class="plan-price">¥{{ plan.price }}</span>
                   <button class="btn-buy" @click="handleBuy(level, plan)">购买</button>
                 </div>
               </div>
-            </div>
+            </div> -->
           </div>
         </div>
       </section>
@@ -110,7 +124,9 @@
     <a-modal v-model:open="showBuyDialog" :closable="false" :footer="null" :width="380" centered>
       <div class="modal-box">
         <h3 class="modal-title">选择支付方式</h3>
-        <p class="modal-subtitle">{{ selectedLevel?.levelName }} · {{ selectedPlan?.name }} ¥{{ selectedPlan?.price }}</p>
+        <p class="modal-subtitle">
+          {{ selectedLevel?.levelName }} · {{ selectedPlan?.name }} ¥{{ selectedPlan?.price }}
+        </p>
 
         <div class="payment-select">
           <div
@@ -141,85 +157,93 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { message } from 'ant-design-vue'
-import { emitter } from '@/utils/emitter'
-import { subscriptionApi, type MemberLevelData, type MembershipPlan, type MembershipStatus, type Benefit } from '@/api'
+import { ref, onMounted } from "vue";
+import { message } from "ant-design-vue";
+import { emitter } from "@/utils/emitter";
+import {
+  subscriptionApi,
+  type MemberLevelData,
+  type MembershipPlan,
+  type MembershipStatus,
+  type Benefit,
+} from "@/api";
 
-const loading = ref(true)
-const showBuyDialog = ref(false)
-const selectedLevel = ref<MemberLevelData | null>(null)
-const selectedPlan = ref<MembershipPlan | null>(null)
-const selectedPayment = ref<string>('wechat')
+const loading = ref(true);
+const showBuyDialog = ref(false);
+const selectedLevel = ref<MemberLevelData | null>(null);
+const selectedPlan = ref<MembershipPlan | null>(null);
+const selectedPayment = ref<string>("wechat");
 
-const status = ref<MembershipStatus | null>(null)
-const memberLevels = ref<MemberLevelData[]>([])
+const status = ref<MembershipStatus | null>(null);
+const memberLevels = ref<MemberLevelData[]>([]);
 
 const levelMap = {
-  basic: '普通会员',
-  advanced: '高级会员',
-  professional: '专业会员',
-}
+  basic: "普通会员",
+  advanced: "高级会员",
+  professional: "专业会员",
+};
 
 const planMap = {
-  monthly: '月卡',
-  quarterly: '季卡',
-  yearly: '年卡',
-  lifetime: '永久卡',
-  custom: '自定义',
-}
+  monthly: "月卡",
+  quarterly: "季卡",
+  yearly: "年卡",
+  lifetime: "永久卡",
+  custom: "自定义",
+};
 
 function getLevelText(level?: string) {
-  return levelMap[level as keyof typeof levelMap] || '普通会员'
+  return levelMap[level as keyof typeof levelMap] || "普通会员";
 }
 
 function getPlanText(plan?: string) {
-  return planMap[plan as keyof typeof planMap] || '未知'
+  return planMap[plan as keyof typeof planMap] || "未知";
 }
 
 function formatDate(date?: string) {
-  if (!date) return '未知'
-  return new Date(date).toLocaleDateString('zh-CN', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  })
+  if (!date) return "未知";
+  return new Date(date).toLocaleDateString("zh-CN", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
 }
 
 async function fetchData() {
-  loading.value = true
+  loading.value = true;
   try {
     const [statusRes, plansRes] = await Promise.all([
       subscriptionApi.getStatus(),
       subscriptionApi.getPlans(),
-    ])
-    status.value = statusRes.data.data
-    memberLevels.value = plansRes.data.data
+    ]);
+    status.value = statusRes.data.data;
+    memberLevels.value = plansRes.data.data;
   } catch {
-    message.error('获取会员信息失败')
+    message.error("获取会员信息失败");
   } finally {
-    loading.value = false
+    loading.value = false;
   }
 }
 
 function handleBuy(level: MemberLevelData, plan: MembershipPlan) {
-  selectedLevel.value = level
-  selectedPlan.value = plan
-  showBuyDialog.value = true
+  selectedLevel.value = level;
+  selectedPlan.value = plan;
+  showBuyDialog.value = true;
 }
 
 function confirmBuy() {
-  if (!selectedPlan.value) return
-  const paymentName = selectedPayment.value === 'wechat' ? '微信支付' : '支付宝'
-  showBuyDialog.value = false
-  message.success(`已选择 ${selectedLevel.value?.levelName} ${selectedPlan.value.name}（${paymentName}），支付功能即将上线`)
-  emitter.emit('notification:refresh')
-  selectedPlan.value = null
-  selectedLevel.value = null
-  selectedPayment.value = 'wechat'
+  if (!selectedPlan.value) return;
+  const paymentName = selectedPayment.value === "wechat" ? "微信支付" : "支付宝";
+  showBuyDialog.value = false;
+  message.success(
+    `已选择 ${selectedLevel.value?.levelName} ${selectedPlan.value.name}（${paymentName}），支付功能即将上线`,
+  );
+  emitter.emit("notification:refresh");
+  selectedPlan.value = null;
+  selectedLevel.value = null;
+  selectedPayment.value = "wechat";
 }
 
-onMounted(() => fetchData())
+onMounted(() => fetchData());
 </script>
 
 <style scoped lang="scss">
@@ -258,7 +282,9 @@ $color-points: #ffd700;
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .page-container {
@@ -284,9 +310,11 @@ $color-points: #ffd700;
   }
 
   .contact-line {
-    font-size: 13px;
-    color: rgba(255, 255, 255, 0.5);
-    margin: 8px 0 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #00d4ff;
+    margin: 12px 0 0;
+    text-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
   }
 }
 
@@ -473,11 +501,29 @@ $color-points: #ffd700;
   list-style: none;
   padding: 0;
   margin: 0 0 20px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
 
   li {
     font-size: 13px;
     color: $text-gray;
-    padding: 4px 0;
+    padding: 10px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    &::before {
+      content: "✓";
+      color: #00ff88;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    &:last-child {
+      border-bottom: none;
+    }
   }
 }
 

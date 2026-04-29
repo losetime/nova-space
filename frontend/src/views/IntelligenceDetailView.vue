@@ -15,7 +15,7 @@
             <div class="detail-tag" :class="detail.category">
               {{ getCategoryLabel(detail.category) }}
             </div>
-            <div class="detail-level-tag">
+            <div class="detail-level-tag" :class="detail.level">
               {{ detail.level === "free" ? "免费" : levelMap[detail.level] || detail.level }}
             </div>
           </div>
@@ -120,6 +120,7 @@ import { intelligenceApi, subscriptionApi, type Intelligence } from "@/api";
 import { useUserStore } from "@/stores/user";
 import ActionConfirmModal from "@/components/ActionConfirmModal.vue";
 import { marked } from "marked";
+import truncate from "truncate-html";
 
 const route = useRoute();
 const router = useRouter();
@@ -137,59 +138,10 @@ const canViewFullContent = computed(() => {
   return false;
 });
 
-const truncateHtmlContent = (html: string, maxLength: number = 100): string => {
-  if (html.length <= maxLength) return html;
-
-  const truncated = html.slice(0, maxLength);
-
-  // 检查标签是否都闭合
-  const openTagMatches = truncated.match(/<([a-zA-Z][a-zA-Z0-9]*)(?:\s|[^>])*>/g) || [];
-  const closeTagMatches = truncated.match(/<\/([a-zA-Z][a-zA-Z0-9]*)>/g) || [];
-
-  const openTagNames: string[] = openTagMatches.map(tag => {
-    const match = tag.match(/<([a-zA-Z][a-zA-Z0-9]*)/);
-    return match ? match[1].toLowerCase() : '';
-  });
-
-  const closeTagNames: string[] = closeTagMatches.map(tag => {
-    const match = tag.match(/<\/([a-zA-Z][a-zA-Z0-9]*)>/);
-    return match ? match[1].toLowerCase() : '';
-  });
-
-  // 找出未闭合的标签（从后往前找最后一个未闭合的）
-  let lastUnclosedTag = '';
-  for (let i = openTagNames.length - 1; i >= 0; i--) {
-    const name = openTagNames[i];
-    if (name && !closeTagNames.includes(name)) {
-      lastUnclosedTag = name;
-      break;
-    }
-  }
-
-  // 如果有未闭合标签，在其闭合标签前插入 ...
-  if (lastUnclosedTag) {
-    const closeTagIndex = truncated.lastIndexOf('</' + lastUnclosedTag + '>');
-    if (closeTagIndex === -1) {
-      // 没有找到对应的闭合标签，直接在末尾加
-      return truncated + '</' + lastUnclosedTag + '>';
-    }
-    return truncated.slice(0, closeTagIndex) + '...' + truncated.slice(closeTagIndex);
-  }
-
-  // 所有标签都闭合，在最后一个闭合标签前插入 ...
-  const lastCloseIndex = truncated.lastIndexOf('</');
-  if (lastCloseIndex !== -1) {
-    return truncated.slice(0, lastCloseIndex) + '...' + truncated.slice(lastCloseIndex);
-  }
-
-  // 没有闭合标签，直接加 ...
-  return truncated + '...';
-};
-
 const displayedContent = computed(() => {
   if (!detail.value?.content) return "";
   if (canViewFullContent.value) return marked(detail.value.content);
-  return truncateHtmlContent(marked(detail.value.content));
+  return truncate(detail.value.content, 100, { ellipsis: "...", byWords: false });
 });
 
 const categoryLabels: Record<string, string> = {
@@ -386,8 +338,26 @@ onMounted(() => {
     padding: 4px 12px;
     border-radius: 4px;
     font-size: 12px;
-    background: rgba(0, 255, 136, 0.15);
-    color: #00ff88;
+
+    &.professional {
+      background: rgba(0, 255, 136, 0.15);
+      color: #00ff88;
+    }
+
+    &.basic {
+      background: rgba(255, 255, 255, 0.08);
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    &.free {
+      background: rgba(0, 212, 255, 0.15);
+      color: #00d4ff;
+    }
+
+    &.advanced {
+      background: rgba(123, 44, 191, 0.15);
+      color: #9d4edd;
+    }
   }
 
   h1 {
