@@ -747,6 +747,7 @@ const {
   selectedSatellite,
   selectedMetadata,
   handleSelectSatellite: baseHandleSelectSatellite,
+  clearSelection,
 } = useSatellite(cesium, localSatellites);
 
 // 子组件引用
@@ -1038,6 +1039,11 @@ watch(activeRightPanel, (newPanel, oldPanel) => {
     cesium.clearSunlightOrbit(selectedSatellite.value.noradId);
     // 恢复详情轨道
     handleRestoreOrbit(selectedSatellite.value.noradId);
+  }
+
+  if (oldPanel === "detail" && newPanel === "none") {
+    // 关闭详情面板时，恢复显示所有卫星（保留选中状态和轨道）
+    cesium.clearFocusedSatellite();
   }
 });
 

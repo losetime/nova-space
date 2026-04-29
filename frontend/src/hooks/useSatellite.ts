@@ -4,6 +4,7 @@ import { satelliteApi, type SatelliteDetail } from '@/api'
 
 interface CesiumHelper {
   showSatelliteLabel: (noradId: string, name: string) => void
+  hideSatelliteLabel: () => void
   clearAllOrbits: () => void
   flyToSatellite: (satellite: Satellite) => void
   updateOrbit: (noradId: string | number, points: Array<{ lat: number; lng: number; alt: number }>) => void
@@ -59,12 +60,21 @@ export function useSatellite(
     rightPanelVisible.value = !rightPanelVisible.value
   }
 
+  const clearSelection = () => {
+    selectedNoradId.value = null
+    selectedMetadata.value = null
+    if (cesium) {
+      cesium.hideSatelliteLabel()
+    }
+  }
+
   return {
     selectedSatellite,
     selectedMetadata,
     rightPanelVisible,
     orbitLoading,
     handleSelectSatellite,
-    toggleRightPanel
+    toggleRightPanel,
+    clearSelection,
   }
 }

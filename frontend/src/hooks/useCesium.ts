@@ -55,6 +55,7 @@ class SatelliteRenderer {
 
   private pointMap: Map<string, Cesium.PointPrimitive> = new Map();
   private selectedNoradId: string | null = null;
+  private focusedNoradId: string | null = null; // 焦点卫星ID，非焦点卫星将被隐藏
   private selectedModel: Cesium.Entity | null = null;
   private selectedLabel: Cesium.Label | null = null;
   private satellitePositions: Map<
@@ -430,6 +431,7 @@ class SatelliteRenderer {
     });
 
     this.selectedNoradId = noradId;
+    this.setFocusedSatellite(noradId);
   }
 
   // 取消选中 - 恢复为点
@@ -463,6 +465,31 @@ class SatelliteRenderer {
     }
 
     this.selectedNoradId = null;
+    this.setFocusedSatellite(null);
+  }
+
+  // 设置焦点卫星 - 隐藏其他所有卫星
+  setFocusedSatellite(noradId: string | null) {
+    this.focusedNoradId = noradId;
+    this.pointMap.forEach((point, id) => {
+      if (noradId === null) {
+        // 取消焦点，显示所有卫星（选中的卫星会由deselectSatellite恢复）
+        point.color = this.getColorForSatellite(id);
+      } else if (id !== noradId) {
+        // 非焦点卫星设为透明
+        point.color = Cesium.Color.TRANSPARENT;
+      }
+      // 焦点卫星不改变颜色（如果是选中状态，保持透明，由3D模型显示）
+    });
+  }
+
+  // 获取卫星颜色
+  private getColorForSatellite(noradId: string): Cesium.Color {
+    const orbitType = this.orbitTypeCache.get(noradId);
+    if (orbitType) {
+      return ORBIT_COLORS[orbitType]?.color || this.DEFAULT_COLOR;
+    }
+    return this.DEFAULT_COLOR;
   }
 
   // 设置点大小（根据相机高度）
@@ -1455,6 +1482,13 @@ export function useCesium() {
     }
   };
 
+  // 清除焦点卫星 - 只恢复其他卫星显示，不移除选中卫星的3D模型
+  const clearFocusedSatellite = () => {
+    if (satelliteRenderer.value) {
+      satelliteRenderer.value.setFocusedSatellite(null);
+    }
+  };
+
   // 隐藏卫星标签（取消选中）
   const hideSatelliteLabel = () => {
     if (!satelliteRenderer.value) return;
@@ -1591,5 +1625,6 @@ export function useCesium() {
     setColorScheme,
     getLegend,
     toggleAutoRotate,
+    clearFocusedSatellite,
   };
 }
