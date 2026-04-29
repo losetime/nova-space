@@ -24,14 +24,15 @@ export function useOrbitWorker() {
   })
 
   let computeInterval: ReturnType<typeof setInterval> | null = null
+  let lastComputeTime = 0
+  const COMPUTE_INTERVAL = 3600000
 
   const initWorker = () => {
     if (worker.value) return
 
-    worker.value = new Worker(
-      new URL('../workers/orbit.worker.ts', import.meta.url),
-      { type: 'module' }
-    )
+    worker.value = new Worker(new URL('../workers/orbit.worker.ts', import.meta.url), {
+      type: 'module',
+    })
 
     worker.value.onmessage = (e: MessageEvent) => {
       const { type, data } = e.data
@@ -72,7 +73,7 @@ export function useOrbitWorker() {
     worker.value?.postMessage({ type: 'init', data: { tles } })
   }
 
-  const startComputeLoop = (intervalMs: number = 3600000) => {
+  const startComputeLoop = (intervalMs: number = 3000) => {
     if (computeInterval) {
       clearInterval(computeInterval)
     }
@@ -94,9 +95,15 @@ export function useOrbitWorker() {
   const computePositions = (timestamp?: number) => {
     if (!worker.value || !state.value.isReady) return
 
+    const now = timestamp ?? Date.now()
+    state.value.lastUpdate = new Date().toISOString()
+
+    if (now - lastComputeTime < COMPUTE_INTERVAL) return
+
+    lastComputeTime = now
     worker.value.postMessage({
       type: 'compute',
-      data: { timestamp: timestamp ?? Date.now() },
+      data: { timestamp: now },
     })
   }
 
