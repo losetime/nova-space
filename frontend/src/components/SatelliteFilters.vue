@@ -22,7 +22,7 @@
       allow-clear
       @change="emit('update:selectedCountry', $event)"
     >
-      <a-select-option v-for="country in countries" :key="country.code" :value="country.code">
+      <a-select-option v-for="country in mergedCountries" :key="country.code" :value="country.code">
         <div class="country-option">
           <FlagIcon
             v-if="country.code"
@@ -67,7 +67,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from "vue";
+import { ref, watch, computed } from "vue";
 import FlagIcon from "./FlagIcon.vue";
 import { COUNTRY_NAMES } from "@/constants/satellite";
 
@@ -132,6 +132,25 @@ watch(
 const getCountryName = (code: string): string => {
   return COUNTRY_NAMES[code] || code;
 };
+
+const mergedCountries = computed(() => {
+  const nameToEntry = new Map<string, { code: string; count: number }>();
+
+  props.countries.forEach((c) => {
+    const name = getCountryName(c.code);
+    if (nameToEntry.has(name)) {
+      const entry = nameToEntry.get(name)!;
+      entry.count += c.count;
+      if (c.code === "CN") {
+        entry.code = "CN";
+      }
+    } else {
+      nameToEntry.set(name, { code: c.code, count: c.count });
+    }
+  });
+
+  return Array.from(nameToEntry.values());
+});
 </script>
 
 <style scoped lang="scss">

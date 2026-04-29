@@ -517,13 +517,35 @@ const missionSearch = ref("");
 
 // 过滤后的国家列表
 const filteredCountries = computed(() => {
-  if (!countrySearch.value) return countries.value;
-  const search = countrySearch.value.toLowerCase();
-  return countries.value.filter((c) => {
-    const codeMatch = c.code.toLowerCase().includes(search);
-    const nameMatch = getCountryName(c.code).includes(countrySearch.value);
-    return codeMatch || nameMatch;
+  const list = countries.value;
+
+  const nameToEntry = new Map<string, { code: string; count: number }>();
+
+  list.forEach((c) => {
+    const name = getCountryName(c.code);
+    if (nameToEntry.has(name)) {
+      const entry = nameToEntry.get(name)!;
+      entry.count += c.count;
+      if (c.code === "CN") {
+        entry.code = "CN";
+      }
+    } else {
+      nameToEntry.set(name, { code: c.code, count: c.count });
+    }
   });
+
+  let result = Array.from(nameToEntry.values());
+
+  if (countrySearch.value) {
+    const search = countrySearch.value.toLowerCase();
+    result = result.filter((c) => {
+      const codeMatch = c.code.toLowerCase().includes(search);
+      const nameMatch = getCountryName(c.code).includes(countrySearch.value);
+      return codeMatch || nameMatch;
+    });
+  }
+
+  return result;
 });
 
 // 过滤后的任务列表
