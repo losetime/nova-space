@@ -310,14 +310,14 @@
         <!-- 底部功能栏 -->
         <div class="bottom-toolbar">
           <div class="toolbar-inner">
-            <div
+            <!-- <div
               class="tool-btn"
               :class="{ active: activeLeftPanel === 'filter' }"
               @click="toggleLeftPanel('filter')"
             >
               <FilterOutlined class="tool-icon" />
               <span class="tool-text hide-on-mobile">筛选</span>
-            </div>
+            </div> -->
             <div
               class="tool-btn"
               :class="{ active: activeLeftPanel === 'satellite-list' }"
@@ -698,7 +698,7 @@ const filteredSatellites = computed(() => {
   // 按轨道类型筛选（alt 单位是米）
   if (filterType.value) {
     result = result.filter((sat) => {
-      if (sat.status === 'error') return false;
+      if (sat.status === "error") return false;
       const alt = sat.position?.alt ?? 0;
       if (filterType.value === "leo") return alt < 2000000; // < 2000 km
       if (filterType.value === "meo") return alt >= 2000000 && alt < 35000000; // 2000-35000 km

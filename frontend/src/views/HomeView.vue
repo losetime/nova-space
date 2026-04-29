@@ -134,7 +134,7 @@ const features = [
   },
   {
     icon: BookOutlined,
-    title: "航天只是科普",
+    title: "航天知识科普",
     desc: "体系化航天知识库，从入门到进阶，让每个人都能读懂航天",
     path: "/education",
   },
