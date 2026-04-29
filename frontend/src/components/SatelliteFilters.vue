@@ -44,7 +44,7 @@
       allow-clear
       @change="emit('update:selectedMission', $event)"
     >
-      <a-select-option v-for="mission in missions" :key="mission.name" :value="mission.name">
+      <a-select-option v-for="mission in sortedMissions" :key="mission.name" :value="mission.name">
         <div class="mission-option">
           <span class="mission-name">{{ mission.name }}</span>
           <!-- <span class="mission-count">({{ mission.count }})</span> -->
@@ -175,6 +175,28 @@ const mergedCountries = computed(() => {
   });
 
   return result;
+});
+
+const sortedMissions = computed(() => {
+  const priorityOrder: Record<string, number> = {
+    通信: 0,
+    导航: 1,
+    遥感: 2,
+    其他: 100,
+  };
+
+  return [...props.missions].sort((a, b) => {
+    const priorityA = priorityOrder[a.name] ?? 50;
+    const priorityB = priorityOrder[b.name] ?? 50;
+
+    if (priorityA !== priorityB) {
+      return priorityA - priorityB;
+    }
+    if (priorityA === 50) {
+      return a.name.localeCompare(b.name);
+    }
+    return 0;
+  });
 });
 </script>
 

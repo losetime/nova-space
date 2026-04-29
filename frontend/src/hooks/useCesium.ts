@@ -10,7 +10,7 @@ interface Satellite {
     lat: number | null;
     alt: number | null;
   } | null;
-  status?: 'ok' | 'error';
+  status?: "ok" | "error";
 }
 
 // 颜色分类类型
@@ -267,8 +267,14 @@ class SatelliteRenderer {
 
       for (let i = currentIndex; i < endIndex; i++) {
         const sat = satellites[i]!;
-        if (!sat.position || sat.position.lng === null || sat.position.lat === null || sat.position.alt === null) continue;
-        
+        if (
+          !sat.position ||
+          sat.position.lng === null ||
+          sat.position.lat === null ||
+          sat.position.alt === null
+        )
+          continue;
+
         const position = Cesium.Cartesian3.fromDegrees(
           sat.position.lng,
           sat.position.lat,
@@ -1454,7 +1460,7 @@ export function useCesium() {
     const destination = Cesium.Cartesian3.fromDegrees(
       position.lng,
       position.lat,
-      position.alt + 500000,
+      position.alt + 20000000,
     );
 
     viewer.value.camera.flyTo({

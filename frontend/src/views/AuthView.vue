@@ -180,7 +180,8 @@ async function handleLogin() {
     const result = await userStore.login(loginForm.username, loginForm.password);
     if (result.success) {
       message.success("登录成功");
-      router.push("/");
+      const redirect = router.currentRoute.value.query.redirect as string;
+      router.push(redirect || "/");
     } else {
       message.error(result.message || "登录失败");
     }
@@ -199,7 +200,8 @@ async function handleRegister() {
     );
     if (result.success) {
       message.success("注册成功！");
-      router.push("/");
+      const redirect = router.currentRoute.value.query.redirect as string;
+      router.push(redirect || "/");
     } else {
       message.error(result.message || "注册失败");
     }

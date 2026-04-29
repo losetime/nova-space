@@ -421,6 +421,20 @@
         </aside>
       </transition>
     </div>
+
+    <!-- 登录确认弹窗 -->
+    <ActionConfirmModal
+      v-model:visible="loginConfirmVisible"
+      type="login"
+      redirect="/satellite"
+    />
+
+    <!-- 升级会员确认弹窗 -->
+    <ActionConfirmModal
+      v-model:visible="upgradeConfirmVisible"
+      type="upgrade"
+      redirect="/membership"
+    />
   </div>
 </template>
 
@@ -442,7 +456,7 @@ import {
   StarOutlined,
   BulbOutlined,
 } from "@ant-design/icons-vue";
-import { message } from "ant-design-vue";
+import ActionConfirmModal from "@/components/ActionConfirmModal.vue";
 import SatelliteList from "@/components/SatelliteList.vue";
 import SatelliteDetail from "@/components/SatelliteDetail.vue";
 import OrbitPrediction from "@/components/OrbitPrediction.vue";
@@ -465,6 +479,10 @@ const favoriteFilter = ref<string | null>(null);
 const loading = ref(true);
 const userStore = useUserStore();
 
+// 确认弹窗状态
+const loginConfirmVisible = ref(false);
+const upgradeConfirmVisible = ref(false);
+
 // 颜色分类
 const colorScheme = ref<ColorSchemeType>("orbit");
 
@@ -486,15 +504,13 @@ const canUseAdvancedFeature = computed(() => {
 // 处理高级功能按钮点击
 function handleAdvancedFeatureClick(panel: string, featureCode: string) {
   if (!userStore.isLoggedIn) {
-    // 提示用户登录
-    message.warning("请先登录");
+    loginConfirmVisible.value = true;
     return;
   }
   if (!userStore.hasFeature(featureCode)) {
-    message.warning("升级会员后可用");
+    upgradeConfirmVisible.value = true;
     return;
   }
-  // 正常切换面板
   toggleRightPanel(panel);
 }
 

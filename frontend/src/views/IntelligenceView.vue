@@ -29,7 +29,7 @@
           <div
             v-for="item in intelligenceList"
             :key="item.id"
-            :class="['article-card', { locked: item.isLocked }]"
+            :class="['article-card']"
             @click="handleCardClick(item)"
           >
             <div class="article-main">
@@ -50,7 +50,7 @@
               </div>
             </div>
             <div class="article-action">
-              <a-button v-if="!item.isLocked" type="primary" ghost> 阅读全文 </a-button>
+              <a-button type="primary" ghost> 阅读全文 </a-button>
             </div>
           </div>
         </a-spin>
@@ -190,9 +190,6 @@ const handlePageChange = (page: number) => {
 };
 
 const handleCardClick = (item: Intelligence) => {
-  if (item.isLocked) {
-    return;
-  }
   router.push(`/intelligence/${item.id}`);
 };
 

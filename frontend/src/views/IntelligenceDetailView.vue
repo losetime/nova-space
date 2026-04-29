@@ -33,7 +33,12 @@
         </div>
 
         <!-- 正文 -->
-        <div class="content-text" v-html="renderMarkdown(detail.content)"></div>
+        <div class="content-text" v-html="renderMarkdown(displayedContent)"></div>
+
+        <!-- 阅读更多按钮（内容被截断时显示） -->
+        <div v-if="!canViewFullContent" class="read-more-container">
+          <a-button type="primary" @click="handleReadMore">阅读更多</a-button>
+        </div>
 
         <!-- 深度解读 -->
         <div v-if="detail.analysis" class="analysis-box">
@@ -85,11 +90,18 @@
         </a-result>
       </div>
     </a-spin>
+
+    <!-- 阅读更多确认弹窗 -->
+    <ActionConfirmModal
+      v-model:visible="readMoreConfirmVisible"
+      :type="userStore.isLoggedIn ? 'upgrade' : 'login'"
+      :redirect="`/intelligence/${route.params.id}`"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { message } from "ant-design-vue";
 import {
@@ -106,6 +118,7 @@ import {
 } from "@ant-design/icons-vue";
 import { intelligenceApi, subscriptionApi, type Intelligence } from "@/api";
 import { useUserStore } from "@/stores/user";
+import ActionConfirmModal from "@/components/ActionConfirmModal.vue";
 import { marked } from "marked";
 
 const route = useRoute();
@@ -115,6 +128,69 @@ const userStore = useUserStore();
 const loading = ref(false);
 const detail = ref<Intelligence | null>(null);
 const levelMap = ref<Record<string, string>>({});
+const readMoreConfirmVisible = ref(false);
+
+const canViewFullContent = computed(() => {
+  if (!userStore.isLoggedIn) return false;
+  if (userStore.isVip) return true;
+  if (detail.value?.level === "basic") return true;
+  return false;
+});
+
+const truncateHtmlContent = (html: string, maxLength: number = 100): string => {
+  if (html.length <= maxLength) return html;
+
+  const truncated = html.slice(0, maxLength);
+
+  // 检查标签是否都闭合
+  const openTagMatches = truncated.match(/<([a-zA-Z][a-zA-Z0-9]*)(?:\s|[^>])*>/g) || [];
+  const closeTagMatches = truncated.match(/<\/([a-zA-Z][a-zA-Z0-9]*)>/g) || [];
+
+  const openTagNames: string[] = openTagMatches.map(tag => {
+    const match = tag.match(/<([a-zA-Z][a-zA-Z0-9]*)/);
+    return match ? match[1].toLowerCase() : '';
+  });
+
+  const closeTagNames: string[] = closeTagMatches.map(tag => {
+    const match = tag.match(/<\/([a-zA-Z][a-zA-Z0-9]*)>/);
+    return match ? match[1].toLowerCase() : '';
+  });
+
+  // 找出未闭合的标签（从后往前找最后一个未闭合的）
+  let lastUnclosedTag = '';
+  for (let i = openTagNames.length - 1; i >= 0; i--) {
+    const name = openTagNames[i];
+    if (name && !closeTagNames.includes(name)) {
+      lastUnclosedTag = name;
+      break;
+    }
+  }
+
+  // 如果有未闭合标签，在其闭合标签前插入 ...
+  if (lastUnclosedTag) {
+    const closeTagIndex = truncated.lastIndexOf('</' + lastUnclosedTag + '>');
+    if (closeTagIndex === -1) {
+      // 没有找到对应的闭合标签，直接在末尾加
+      return truncated + '</' + lastUnclosedTag + '>';
+    }
+    return truncated.slice(0, closeTagIndex) + '...' + truncated.slice(closeTagIndex);
+  }
+
+  // 所有标签都闭合，在最后一个闭合标签前插入 ...
+  const lastCloseIndex = truncated.lastIndexOf('</');
+  if (lastCloseIndex !== -1) {
+    return truncated.slice(0, lastCloseIndex) + '...' + truncated.slice(lastCloseIndex);
+  }
+
+  // 没有闭合标签，直接加 ...
+  return truncated + '...';
+};
+
+const displayedContent = computed(() => {
+  if (!detail.value?.content) return "";
+  if (canViewFullContent.value) return marked(detail.value.content);
+  return truncateHtmlContent(marked(detail.value.content));
+});
 
 const categoryLabels: Record<string, string> = {
   launch: "发射任务",
@@ -216,6 +292,10 @@ const handleCollect = async () => {
     console.error("收藏操作失败:", error);
     message.error("操作失败");
   }
+};
+
+const handleReadMore = () => {
+  readMoreConfirmVisible.value = true;
 };
 
 const handleShare = () => {
@@ -489,6 +569,12 @@ onMounted(() => {
   gap: 16px;
   padding-top: 24px;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.read-more-container {
+  text-align: center;
+  padding: 16px;
+  margin-bottom: 32px;
 }
 
 .error-state {

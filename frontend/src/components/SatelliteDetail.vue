@@ -75,12 +75,12 @@
                 {{ getStatusLabel(metadata.status) }}
               </span>
             </div>
-            <div class="info-item">
+            <!-- <div class="info-item">
               <span class="info-label">对象类型</span>
               <span :class="['info-value', 'type-badge', getObjectTypeClass(metadata.objectType)]">
                 {{ getObjectTypeLabel(metadata.objectType) }}
               </span>
-            </div>
+            </div> -->
             <div class="info-item">
               <span class="info-label">COSPAR编号</span>
               <span class="info-value">{{ metadata.cosparId || "--" }}</span>
@@ -151,7 +151,13 @@
               </div>
               <div class="param-content">
                 <label>轨道类型</label>
-                <span :class="['param-value', 'orbit-type', getOrbitClass(satellite.position?.alt ?? 0)]">
+                <span
+                  :class="[
+                    'param-value',
+                    'orbit-type',
+                    getOrbitClass(satellite.position?.alt ?? 0),
+                  ]"
+                >
                   {{ getOrbitType(satellite.position?.alt ?? 0) }}
                 </span>
               </div>
@@ -593,12 +599,20 @@
     :open="companyDetailVisible"
     @update:open="companyDetailVisible = $event"
   />
+
+  <!-- 登录确认弹窗 -->
+  <ActionConfirmModal
+    v-model:visible="loginConfirmVisible"
+    type="login"
+    redirect="/satellite"
+  />
 </template>
 
 <script setup lang="ts">
 import { ref, watch, computed } from "vue";
 import { message } from "ant-design-vue";
 import CompanyDetailModal from "./CompanyDetailModal.vue";
+import ActionConfirmModal from "./ActionConfirmModal.vue";
 import {
   GlobalOutlined,
   CompassOutlined,
@@ -720,6 +734,7 @@ const emit = defineEmits<{
 const userStore = useUserStore();
 const isFavorited = ref(false);
 const followLoading = ref(false);
+const loginConfirmVisible = ref(false);
 
 // 权限检查
 const canViewTechnical = computed(() => userStore.hasFeature("satellite_technical"));
@@ -744,7 +759,7 @@ function toggleSection(section: keyof typeof expandedSections.value) {
   }[section];
 
   if (!hasPermission) {
-    message.warning("登录后可用");
+    loginConfirmVisible.value = true;
     return;
   }
 
