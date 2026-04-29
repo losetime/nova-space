@@ -150,7 +150,31 @@ const mergedCountries = computed(() => {
     }
   });
 
-  return Array.from(nameToEntry.values());
+  const result = Array.from(nameToEntry.values());
+
+  const priorityOrder: Record<string, number> = {
+    中国: 0,
+    美国: 1,
+    俄罗斯: 2,
+    其他: 100,
+  };
+
+  result.sort((a, b) => {
+    const nameA = getCountryName(a.code);
+    const nameB = getCountryName(b.code);
+    const priorityA = priorityOrder[nameA] ?? 50;
+    const priorityB = priorityOrder[nameB] ?? 50;
+
+    if (priorityA !== priorityB) {
+      return priorityA - priorityB;
+    }
+    if (priorityA === 50) {
+      return nameA.localeCompare(nameB);
+    }
+    return 0;
+  });
+
+  return result;
 });
 </script>
 

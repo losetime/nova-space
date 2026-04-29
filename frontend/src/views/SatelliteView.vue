@@ -537,6 +537,29 @@ const filteredCountries = computed(() => {
 
   let result = Array.from(nameToEntry.values());
 
+  // 自定义排序：中国 > 美国 > 俄罗斯 > 其他 > 其他按字母排序
+  const priorityOrder: Record<string, number> = {
+    中国: 0,
+    美国: 1,
+    俄罗斯: 2,
+    其他: 100,
+  };
+
+  result.sort((a, b) => {
+    const nameA = getCountryName(a.code);
+    const nameB = getCountryName(b.code);
+    const priorityA = priorityOrder[nameA] ?? 50;
+    const priorityB = priorityOrder[nameB] ?? 50;
+
+    if (priorityA !== priorityB) {
+      return priorityA - priorityB;
+    }
+    if (priorityA === 50) {
+      return nameA.localeCompare(nameB);
+    }
+    return 0;
+  });
+
   if (countrySearch.value) {
     const search = countrySearch.value.toLowerCase();
     result = result.filter((c) => {
