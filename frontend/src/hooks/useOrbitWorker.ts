@@ -72,7 +72,7 @@ export function useOrbitWorker() {
     worker.value?.postMessage({ type: 'init', data: { tles } })
   }
 
-  const startComputeLoop = (intervalMs: number = 3000) => {
+  const startComputeLoop = (intervalMs: number = 3600000) => {
     if (computeInterval) {
       clearInterval(computeInterval)
     }
